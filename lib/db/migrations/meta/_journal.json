@@ -8,6 +8,13 @@
       "when": 1788972297036,
       "tag": "0000_concerned_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788973514132,
+      "tag": "0001_enable_rls",
+      "breakpoints": true
     }
   ]
 }

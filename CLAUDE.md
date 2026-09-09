@@ -22,6 +22,23 @@ Next.js 15 App Router + TypeScript estricto · Tailwind + shadcn/ui · Supabase 
 - Antes de crear una dependencia nueva, comprobar si shadcn/ui o la librería estándar lo cubren.
 - Cada PR debe desplegar en preview de Vercel y pasar lint + typecheck + tests.
 
+## Seguridad (ver SECURITY.md)
+
+- Todo endpoint parsea su body con zod (`lib/security/validation.ts`) antes de cualquier otra cosa.
+- Nunca persistir IPs en claro: usar `hashIp` de `lib/security/crypto.ts`.
+- El texto de documentos Pro se cifra con `encryptText`/`decryptText` antes de tocar la base de datos.
+- Toda tabla nueva lleva RLS con política deny-by-default en su migración.
+- Protecciones anti-abuso (Turnstile, rate limit, cuotas) fail-closed en producción.
+- Nunca `dangerouslySetInnerHTML` con contenido de usuario; nunca loggear texto de usuario (tampoco a Sentry/PostHog).
+- Al añadir un script de terceros, ampliar la CSP en `next.config.ts`.
+
+## Principios de código y coste
+
+- Mínimo código: no crear abstracciones especulativas ni módulos "por si acaso"; cada archivo nuevo debe usarse en el mismo PR que lo crea. Preferir editar lo existente a añadir.
+- Una sola fuente de verdad: si un dato/límite/config existe, se importa; nunca se duplica.
+- Coste de computación: Server Components y páginas estáticas por defecto; mínimo JS en cliente; nada de polling — streaming o webhooks.
+- Coste de IA: prompt caching siempre en system prompts; Haiku para textos < 150 palabras; cachear resultados idénticos por hash del input; truncar/rechazar entradas fuera de límite ANTES de llamar a la API; registrar coste por petición en `usage_daily`.
+
 ## Comandos
 
 pnpm dev · pnpm build · pnpm lint · pnpm typecheck · pnpm test · pnpm test:e2e · pnpm db:generate · pnpm db:migrate · pnpm stripe:listen (stripe CLI → localhost:3000/api/stripe/webhook)
