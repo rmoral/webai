@@ -8,14 +8,14 @@
 
 ## 0. Resumen ejecutivo (leer antes de tocar código)
 
-| Qué | Decisión |
-|---|---|
-| Tipo de producto | Web app SaaS freemium con suscripción mensual/anual |
-| Mercado | España + LATAM, estudiantes universitarios, opositores, redactores, marketing |
-| Features MVP (semana 1-3) | Humanizador · Detector IA · Parafraseador · Corrector |
-| Monetización | Stripe Checkout + Customer Portal. Gratis: 300 palabras/día. Pro: 9,99 €/mes o 59,99 €/año |
-| Stack | Next.js 15 (App Router, TS) · Tailwind + shadcn/ui · Supabase (Postgres + Auth) · Stripe · Anthropic API · Vercel |
-| Principio rector | Cada sprint termina con algo desplegado en producción. No se construye nada que no acerque al primer pago |
+| Qué                       | Decisión                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Tipo de producto          | Web app SaaS freemium con suscripción mensual/anual                                                               |
+| Mercado                   | España + LATAM, estudiantes universitarios, opositores, redactores, marketing                                     |
+| Features MVP (semana 1-3) | Humanizador · Detector IA · Parafraseador · Corrector                                                             |
+| Monetización              | Stripe Checkout + Customer Portal. Gratis: 300 palabras/día. Pro: 9,99 €/mes o 59,99 €/año                        |
+| Stack                     | Next.js 15 (App Router, TS) · Tailwind + shadcn/ui · Supabase (Postgres + Auth) · Stripe · Anthropic API · Vercel |
+| Principio rector          | Cada sprint termina con algo desplegado en producción. No se construye nada que no acerque al primer pago         |
 
 Evidencia de mercado (datos de Google Ads de competidores, mayo 2026): Quillbot recupera 1,45× la inversión publicitaria en la primera compra; JustDone opera con objetivo ROAS 105-130 %; Textguard gasta 76 K €/mes solo en España; ZeroGPT compra keywords "detector IA" en español a 0,01-0,02 $ de CPC. Hay demanda hispana y los incumbentes son productos en inglés traducidos.
 
@@ -48,25 +48,25 @@ Generación de imágenes, app móvil nativa, equipos/seats, marketplace de plant
 
 ### 2.1 Aplicación
 
-| Capa | Herramienta | Motivo |
-|---|---|---|
-| Framework | **Next.js 15** (App Router) + TypeScript | SSR para SEO, Server Actions para llamadas a IA, un solo repo |
-| UI | **Tailwind CSS + shadcn/ui** | Velocidad. Componentes accesibles sin diseñar desde cero |
-| Estado servidor | React Server Components + `@tanstack/react-query` para cliente | Simplicidad |
-| Base de datos + Auth | **Supabase** (Postgres, Auth con Google + email magic link, RLS) | Auth gratis, Postgres gestionado, tier gratuito suficiente para MVP |
-| ORM | **Drizzle ORM** | Tipado, migraciones ligeras, funciona bien con Supabase |
-| Pagos | **Stripe** (Checkout, Customer Portal, Webhooks) | Estándar. Gestiona IVA UE con Stripe Tax |
-| IA | **Anthropic API** (Claude Sonnet por defecto; Haiku para tareas cortas) + **OpenAI API** como segundo proveedor detrás de la misma interfaz `provider.ts`. Selección por herramienta en `lib/ai/tools.ts`; fallback automático si un proveedor falla o supera latencia | Calidad en español, streaming, prompt caching, sin dependencia única |
-| Detector IA | Fase 1: ensemble propio con ambos proveedores (puntuación por frase de Claude y GPT, promedio ponderado) + opcionalmente API externa (GPTZero / Sapling) si el presupuesto lo permite. Fase 2: clasificador propio | No construir un detector desde cero antes de facturar |
-| Email transaccional | **Resend** + React Email | Bienvenida, recibo, fin de trial |
-| Rate limiting | **Upstash Redis** (`@upstash/ratelimit`) | Cuotas del plan gratuito y anti-abuso |
-| Anti-bot | **Cloudflare Turnstile** en formularios públicos | Evitar scraping del detector gratuito |
-| Analítica producto | **PostHog** (eventos, funnels, feature flags) | Medir trial → pago |
-| Errores | **Sentry** | Obligatorio antes de lanzar |
-| Hosting | **Vercel** (Pro) | Deploy por PR, edge, cron |
-| DNS/CDN | **Cloudflare** | Dominio, WAF, cache |
-| Testing | Vitest (unit) · Playwright (e2e del flujo de pago) | Solo tests del camino crítico |
-| CI | GitHub Actions: lint + typecheck + tests + deploy preview | |
+| Capa                 | Herramienta                                                                                                                                                                                                                                                            | Motivo                                                               |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Framework            | **Next.js 15** (App Router) + TypeScript                                                                                                                                                                                                                               | SSR para SEO, Server Actions para llamadas a IA, un solo repo        |
+| UI                   | **Tailwind CSS + shadcn/ui**                                                                                                                                                                                                                                           | Velocidad. Componentes accesibles sin diseñar desde cero             |
+| Estado servidor      | React Server Components + `@tanstack/react-query` para cliente                                                                                                                                                                                                         | Simplicidad                                                          |
+| Base de datos + Auth | **Supabase** (Postgres, Auth con Google + email magic link, RLS)                                                                                                                                                                                                       | Auth gratis, Postgres gestionado, tier gratuito suficiente para MVP  |
+| ORM                  | **Drizzle ORM**                                                                                                                                                                                                                                                        | Tipado, migraciones ligeras, funciona bien con Supabase              |
+| Pagos                | **Stripe** (Checkout, Customer Portal, Webhooks)                                                                                                                                                                                                                       | Estándar. Gestiona IVA UE con Stripe Tax                             |
+| IA                   | **Anthropic API** (Claude Sonnet por defecto; Haiku para tareas cortas) + **OpenAI API** como segundo proveedor detrás de la misma interfaz `provider.ts`. Selección por herramienta en `lib/ai/tools.ts`; fallback automático si un proveedor falla o supera latencia | Calidad en español, streaming, prompt caching, sin dependencia única |
+| Detector IA          | Fase 1: ensemble propio con ambos proveedores (puntuación por frase de Claude y GPT, promedio ponderado) + opcionalmente API externa (GPTZero / Sapling) si el presupuesto lo permite. Fase 2: clasificador propio                                                     | No construir un detector desde cero antes de facturar                |
+| Email transaccional  | **Resend** + React Email                                                                                                                                                                                                                                               | Bienvenida, recibo, fin de trial                                     |
+| Rate limiting        | **Upstash Redis** (`@upstash/ratelimit`)                                                                                                                                                                                                                               | Cuotas del plan gratuito y anti-abuso                                |
+| Anti-bot             | **Cloudflare Turnstile** en formularios públicos                                                                                                                                                                                                                       | Evitar scraping del detector gratuito                                |
+| Analítica producto   | **PostHog** (eventos, funnels, feature flags)                                                                                                                                                                                                                          | Medir trial → pago                                                   |
+| Errores              | **Sentry**                                                                                                                                                                                                                                                             | Obligatorio antes de lanzar                                          |
+| Hosting              | **Vercel** (Pro)                                                                                                                                                                                                                                                       | Deploy por PR, edge, cron                                            |
+| DNS/CDN              | **Cloudflare**                                                                                                                                                                                                                                                         | Dominio, WAF, cache                                                  |
+| Testing              | Vitest (unit) · Playwright (e2e del flujo de pago)                                                                                                                                                                                                                     | Solo tests del camino crítico                                        |
+| CI                   | GitHub Actions: lint + typecheck + tests + deploy preview                                                                                                                                                                                                              |                                                                      |
 
 ### 2.2 Herramientas de negocio
 
@@ -152,6 +152,7 @@ Cliente (ToolEditor)
 ```
 
 Reglas:
+
 - Usuario anónimo: 300 palabras/día por IP, sin historial. Se le pide email al agotar.
 - Usuario gratuito registrado: 500 palabras/día, 1 herramienta a la vez.
 - Pro: 10 000 palabras/petición, sin límite diario razonable (soft cap 150 K/mes para controlar coste).
@@ -184,12 +185,12 @@ RLS activado: cada usuario solo lee sus filas. El service role solo se usa en we
 
 ### 4.1 Planes
 
-| Plan | Precio | Límites | Objetivo |
-|---|---|---|---|
-| Gratis | 0 € | 500 palabras/día, 1 herramienta, con marca de agua "Generado con…" en el detector | Adquisición y SEO |
-| Pro mensual | 9,99 €/mes (IVA incl.) | 10 K palabras/petición, todas las herramientas, historial, sin anuncios | Ingreso principal |
-| Pro anual | 59,99 €/año (≈ 5 €/mes) | Igual que Pro | Bajar churn, mejorar cash flow |
-| Estudiante (v1.1) | 4,99 €/mes con email .edu/.es universitario | Igual que Pro | Segmento núcleo en España |
+| Plan              | Precio                                      | Límites                                                                           | Objetivo                       |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------ |
+| Gratis            | 0 €                                         | 500 palabras/día, 1 herramienta, con marca de agua "Generado con…" en el detector | Adquisición y SEO              |
+| Pro mensual       | 9,99 €/mes (IVA incl.)                      | 10 K palabras/petición, todas las herramientas, historial, sin anuncios           | Ingreso principal              |
+| Pro anual         | 59,99 €/año (≈ 5 €/mes)                     | Igual que Pro                                                                     | Bajar churn, mejorar cash flow |
+| Estudiante (v1.1) | 4,99 €/mes con email .edu/.es universitario | Igual que Pro                                                                     | Segmento núcleo en España      |
 
 Precios para LATAM (v1.1): usar **Stripe Adaptive Pricing** o precios en USD por país (MX, CO, AR, CL, PE) 30-50 % más bajos.
 
@@ -255,6 +256,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 ## 7. Plan de sprints (6 semanas hasta primer pago, 8 hasta v1.1)
 
 ### Sprint 0 — Día 1-2: cimientos
+
 - [ ] Repo, Next.js 15 + TS + Tailwind + shadcn, ESLint/Prettier, Husky
 - [ ] Supabase proyecto, Auth (Google + magic link), Drizzle schema + migración inicial
 - [ ] Vercel + dominio + Cloudflare, deploy vacío en producción
@@ -262,6 +264,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - [ ] Sentry + PostHog instalados
 
 ### Sprint 1 — Semana 1: primera herramienta en producción
+
 - [ ] `lib/ai/provider.ts` con streaming y prompt caching
 - [ ] Humanizador end-to-end: prompt, endpoint, `ToolEditor` con streaming y `DiffView`
 - [ ] Cuotas anónimo/gratis con Upstash + Turnstile
@@ -269,6 +272,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - **Entregable:** cualquiera puede humanizar 300 palabras gratis en producción
 
 ### Sprint 2 — Semana 2: cobrar
+
 - [ ] Stripe productos, checkout, webhook, portal, `entitlements.ts`
 - [ ] Página `/precios`, muros de pago, contador de palabras
 - [ ] Emails: bienvenida, recibo, fin de trial (Resend)
@@ -277,6 +281,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - **Entregable:** primer pago real posible (poner en live mode)
 
 ### Sprint 3 — Semana 3: completar MVP
+
 - [ ] Detector IA (adapter externo + fallback interno), `DetectorGauge` y resaltado por frase
 - [ ] Parafraseador con modos, Corrector con JSON de cambios
 - [ ] Landings de las 3 herramientas + FAQ schema
@@ -284,6 +289,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - **Entregable:** 4 herramientas, 4 landings, pago activo
 
 ### Sprint 4 — Semana 4: lanzar y comprar tráfico
+
 - [ ] Google Ads: campaña Search ES, conversiones desde webhook con `gclid`
 - [ ] Search Console, sitemap, robots, Open Graph
 - [ ] 10 artículos de blog
@@ -292,6 +298,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - **Entregable:** tráfico de pago corriendo, métricas visibles
 
 ### Sprint 5-6 — Semanas 5-6: optimizar conversión
+
 - [ ] A/B con PostHog flags: precio 7,99 vs 9,99; trial 3 días vs sin trial; muro al 50 % vs al 100 %
 - [ ] Historial de documentos (Pro)
 - [ ] Recuperación de carritos: email si abre checkout y no paga
@@ -299,6 +306,7 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 - **Objetivo:** CAC < 20 €, conversión gratis→Pro ≥ 2,5 %, primer MRR de 500-1 000 €
 
 ### Sprint 7-8 — Semanas 7-8: v1.1
+
 - [ ] Resumidor, citas APA, traductor
 - [ ] Plan Estudiante y precios LATAM
 - [ ] Extensión Chrome (Manifest V3, reutiliza `/api/ai`)
@@ -330,12 +338,15 @@ Vercel Pro 20 $ · Supabase Pro 25 $ · Upstash ~10 $ · Resend 20 $ · Sentry 2
 # Proyecto: Write AI en español (SaaS)
 
 ## Objetivo
+
 Monetizar cuanto antes. Prioriza siempre: (1) flujo de pago funcionando, (2) herramienta funcionando en producción, (3) SEO, (4) todo lo demás.
 
 ## Stack
+
 Next.js 15 App Router + TypeScript estricto · Tailwind + shadcn/ui · Supabase (Auth + Postgres, Drizzle ORM) · Stripe · Anthropic API (streaming, prompt caching) · Upstash · Resend · PostHog · Sentry · Vercel.
 
 ## Reglas
+
 - Idioma de UI y textos: español neutro (evitar localismos salvo en landings por país). Código, comentarios y commits: inglés.
 - Nunca hardcodear límites de planes en componentes: usar `lib/billing/plans.ts` y `lib/ai/tools.ts`.
 - Todo gating de features pasa por `lib/billing/entitlements.ts`.
@@ -349,12 +360,15 @@ Next.js 15 App Router + TypeScript estricto · Tailwind + shadcn/ui · Supabase 
 - Cada PR debe desplegar en preview de Vercel y pasar lint + typecheck + tests.
 
 ## Comandos
+
 pnpm dev · pnpm build · pnpm lint · pnpm typecheck · pnpm test · pnpm test:e2e · pnpm db:generate · pnpm db:migrate · pnpm stripe:listen (stripe CLI → localhost:3000/api/stripe/webhook)
 
 ## Estructura
+
 Ver PLAN_DESARROLLO_WRITE_AI.md sección 3.1.
 
 ## Definición de hecho
+
 Funciona en producción, tiene evento PostHog, tiene manejo de error con Sentry, no rompe el flujo de pago.
 ```
 
@@ -375,11 +389,11 @@ Funciona en producción, tiene evento PostHog, tiene manejo de error con Sentry,
 
 ## 11. Riesgos y mitigaciones
 
-| Riesgo | Mitigación |
-|---|---|
-| Calidad del humanizador insuficiente frente a detectores (Turnitin, GPTZero) | Iterar prompts con un set de evaluación de 50 textos; medir con la API externa antes de cada release |
-| Coste de IA se dispara con usuarios abusivos | Soft cap mensual, alertas, Haiku para textos cortos, caché de resultados idénticos (hash del input) |
-| Google Ads rechaza anuncios del detector | No prometer precisión; texto orientativo; landings con disclaimer |
-| Dependencia de un proveedor de IA | `provider.ts` abstrae Anthropic y OpenAI desde el MVP con fallback automático |
-| Churn alto | Plan anual por defecto, historial y extensión Chrome como razones para quedarse, email de reactivación |
-| Competencia baja precios | Diferenciar por español nativo (RAE, TFG, oposiciones, LATAM) y soporte en español |
+| Riesgo                                                                       | Mitigación                                                                                             |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Calidad del humanizador insuficiente frente a detectores (Turnitin, GPTZero) | Iterar prompts con un set de evaluación de 50 textos; medir con la API externa antes de cada release   |
+| Coste de IA se dispara con usuarios abusivos                                 | Soft cap mensual, alertas, Haiku para textos cortos, caché de resultados idénticos (hash del input)    |
+| Google Ads rechaza anuncios del detector                                     | No prometer precisión; texto orientativo; landings con disclaimer                                      |
+| Dependencia de un proveedor de IA                                            | `provider.ts` abstrae Anthropic y OpenAI desde el MVP con fallback automático                          |
+| Churn alto                                                                   | Plan anual por defecto, historial y extensión Chrome como razones para quedarse, email de reactivación |
+| Competencia baja precios                                                     | Diferenciar por español nativo (RAE, TFG, oposiciones, LATAM) y soporte en español                     |
