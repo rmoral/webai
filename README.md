@@ -1,4 +1,4 @@
-# Escribia — Write AI en español
+# Verbalyx — Write AI en español
 
 SaaS de escritura con IA para el mercado hispanohablante: humanizador, detector de IA, parafraseador y corrector.
 
