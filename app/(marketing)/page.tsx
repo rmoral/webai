@@ -28,14 +28,31 @@ export default function HomePage() {
       </div>
 
       <div className="grid w-full gap-4 sm:grid-cols-2">
-        {Object.values(TOOLS).map((tool) => (
-          <Card key={tool.id}>
-            <CardHeader>
-              <CardTitle>{tool.name}</CardTitle>
-              <CardDescription>Disponible muy pronto</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
+        {Object.values(TOOLS).map((tool) => {
+          const available = tool.id === "humanize";
+          const card = (
+            <Card
+              key={tool.id}
+              className={
+                available ? "hover:bg-accent/40 transition-colors" : ""
+              }
+            >
+              <CardHeader>
+                <CardTitle>{tool.name}</CardTitle>
+                <CardDescription>
+                  {available ? "Pruébalo gratis →" : "Disponible muy pronto"}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          );
+          return available ? (
+            <Link key={tool.id} href={tool.path}>
+              {card}
+            </Link>
+          ) : (
+            card
+          );
+        })}
       </div>
     </main>
   );
