@@ -12,7 +12,7 @@
 | Acceso entre usuarios (IDOR)                                            | RLS con `auth.uid()` + todo gating server-side por `entitlements.ts`; las claves anónimas de Supabase no pueden leer filas ajenas                         | ✅                                              |
 | Clickjacking, MIME sniffing, downgrade a HTTP                           | `frame-ancestors 'none'`, `nosniff`, HSTS con preload, CSP completa en `next.config.ts`                                                                   | ✅                                              |
 | XSS                                                                     | React escapa por defecto + CSP; regla: nunca `dangerouslySetInnerHTML` con contenido de usuario                                                           | ✅                                              |
-| Webhooks de Stripe falsificados o repetidos                             | Verificación de firma (`STRIPE_WEBHOOK_SECRET`) + idempotencia por `event.id`                                                                             | ⏳ Sprint 2                                     |
+| Webhooks de Stripe falsificados o repetidos                             | Verificación de firma (`STRIPE_WEBHOOK_SECRET`) + idempotencia por `event.id` (tabla `stripe_events`)                                                     | ✅                                              |
 | Exposición de claves de API                                             | Solo llamadas server-side; claves solo en variables de entorno de Vercel; `.env*` en gitignore; `poweredByHeader` off                                     | ✅                                              |
 | Almacenar IPs en claro (RGPD)                                           | HMAC-SHA256 con `IP_HASH_SECRET` (`hashIp`); nunca se persiste la IP original                                                                             | ✅                                              |
 | CSRF                                                                    | Server Actions de Next validan Origin; los endpoints API solo aceptan JSON del mismo origen (`form-action 'self'`)                                        | ✅                                              |
@@ -39,6 +39,6 @@
 
 ## Pendiente por sprint
 
-- Sprint 2: firma + idempotencia de webhooks Stripe, test e2e del flujo de pago, botón "Eliminar mi cuenta y datos" (RGPD).
+- Sprint 3: botón "Eliminar mi cuenta y datos" (RGPD) en /app/cuenta.
 - Sprint 4: revisar CSP al añadir GTM/Consent Mode; cabecera `Report-To` para violaciones de CSP.
 - Antes de live: pasar `/security-review` sobre el diff acumulado y revisar dependencias (`pnpm audit`).
