@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     ? new URL(process.env.NEXT_PUBLIC_APP_URL)
     : undefined,
   title: {
-    default: "Escribia — Escribe mejor con IA, en español",
-    template: "%s · Escribia",
+    default: "Verbalyx — Escribe mejor con IA, en español",
+    template: "%s · Verbalyx",
   },
   description:
     "Humaniza, detecta, parafrasea y corrige textos con IA. Hecho para el español de España y LATAM.",

@@ -2,7 +2,7 @@
 
 > Documento de trabajo para Claude Code. Objetivo: lanzar una web SaaS de escritura con IA (humanizador, detector, parafraseador, corrector académico) orientada al mercado hispanohablante y **cobrar la primera suscripción en menos de 6 semanas**.
 >
-> Nombre de trabajo: `escribia` (sustituir por el dominio definitivo cuando exista). Idioma del producto: español (ES + LATAM). Idioma del código y commits: inglés.
+> Nombre definitivo: **Verbalyx** (dominio `verbalyx.ai`). Idioma del producto: español (ES + LATAM). Idioma del código y commits: inglés.
 
 ---
 
