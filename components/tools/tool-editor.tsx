@@ -36,6 +36,7 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
   const [output, setOutput] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [upsell, setUpsell] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const tokenRef = useRef<string>("");
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -75,7 +76,11 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        if (res.status === 429) posthog?.capture("quota_hit", { tool });
+        if (res.status === 429) {
+          posthog?.capture("quota_hit", { tool });
+          posthog?.capture("paywall_shown", { tool });
+          setUpsell(true);
+        }
         setError(data?.message ?? "Algo ha salido mal. Inténtalo de nuevo.");
         setStatus("idle");
         return;
@@ -152,7 +157,16 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
         </div>
       </div>
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p className="text-destructive text-sm">
+          {error}{" "}
+          {upsell && (
+            <a href="/precios" className="text-foreground underline">
+              Desbloquea Pro con 3 días de prueba →
+            </a>
+          )}
+        </p>
+      )}
 
       <div className="flex items-center gap-4">
         <Button

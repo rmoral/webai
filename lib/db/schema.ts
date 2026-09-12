@@ -111,6 +111,14 @@ export const detections = pgTable("detections", {
     .defaultNow(),
 });
 
+// Processed Stripe webhook event ids, for idempotency.
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 // Minimal mirror of PostHog events for Ads conversion attribution (gclid).
 export const events = pgTable("events", {
   id: uuid("id").primaryKey().defaultRandom(),
