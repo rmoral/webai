@@ -29,6 +29,10 @@ pnpm dev
 | `pnpm db:generate` / `pnpm db:migrate`               | Migraciones Drizzle                 |
 | `pnpm stripe:listen`                                 | Reenviar webhooks de Stripe a local |
 
+## Migraciones en producción
+
+No hace falta terminal: en GitHub → **Actions → Migrate database → Run workflow**. Requiere el secreto de repositorio `DATABASE_URL` (cadena del _Session pooler_ de Supabase, puerto 5432).
+
 ## Servicios externos (pendientes de conectar)
 
 El código está listo, pero requieren crear cuentas y rellenar `.env.local` / variables en Vercel: Supabase, Stripe, Upstash, Resend, PostHog, Sentry, Turnstile. Ver sección 2.3 del plan.
