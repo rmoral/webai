@@ -22,6 +22,7 @@ function subscriptionFields(sub: Stripe.Subscription) {
     stripeSubscriptionId: sub.id,
     stripeCustomerId: sub.customer as string,
     plan: (PRO_STATUSES.has(sub.status) ? "pro" : "free") as "pro" | "free",
+    interval: sub.items?.data[0]?.price?.recurring?.interval ?? null,
     status: sub.status as typeof subscriptions.$inferInsert.status,
     currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
     cancelAtPeriodEnd: sub.cancel_at_period_end ? 1 : 0,

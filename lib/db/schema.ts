@@ -52,6 +52,8 @@ export const subscriptions = pgTable("subscriptions", {
   stripeSubscriptionId: text("stripe_subscription_id").unique(),
   plan: planEnum("plan").notNull().default("free"),
   status: subscriptionStatusEnum("status"),
+  /** Billing interval: "month" | "year". Needed to compute MRR. */
+  interval: text("interval"),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   cancelAtPeriodEnd: integer("cancel_at_period_end").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
