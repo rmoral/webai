@@ -24,14 +24,14 @@ const words = (value: number) => value.toLocaleString("es-ES");
 
 export default function PricingPage() {
   return (
-    <main className="mx-auto max-w-5xl px-6 py-12">
+    <main className="mx-auto max-w-[65rem] px-6 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Precios</h1>
       <p className="text-muted-foreground mt-3">
         Empieza gratis. Prueba Ilimitado {TRIAL.days} días y decide después.
       </p>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-3">
-        <section className="rounded-md border p-4">
+        <section className="rounded-xl border p-4">
           <h2 className="font-semibold">{PLANS.free.name}</h2>
           <p className="mt-1 text-2xl font-semibold">{formatUsd(0)}</p>
           <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
@@ -46,7 +46,7 @@ export default function PricingPage() {
           </Button>
         </section>
 
-        <section className="rounded-md border p-4">
+        <section className="rounded-xl border p-4">
           <h2 className="font-semibold">{PLANS.pro.name}</h2>
           <p className="mt-1 text-2xl font-semibold">
             {formatUsd(PRICES.pro.yearly.monthlyEquivalent)}
@@ -84,9 +84,10 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="border-primary rounded-md border p-4">
+        <section className="border-brand ring-brand rounded-xl border p-4 ring-1">
           <h2 className="flex items-center gap-2 font-semibold">
-            {PLANS.unlimited.name} <Badge>Prueba {TRIAL.days} días</Badge>
+            {PLANS.unlimited.name}{" "}
+            <Badge variant="brand">Prueba {TRIAL.days} días</Badge>
           </h2>
           <p className="mt-1 text-2xl font-semibold">
             {formatUsd(PRICES.unlimited.yearly.monthlyEquivalent)}
@@ -130,7 +131,7 @@ export default function PricingPage() {
         </section>
       </div>
 
-      <section className="mt-8 rounded-md border p-4">
+      <section className="mt-8 rounded-xl border p-4">
         <h2 className="font-semibold">Recarga de palabras</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           {formatUsd(TOPUP.amount)} por {words(TOPUP.words)} palabras

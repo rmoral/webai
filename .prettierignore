@@ -3,3 +3,9 @@ node_modules
 pnpm-lock.yaml
 lib/db/migrations
 next-env.d.ts
+
+# Design-system reference material, not application code.
+.claude/skills/
+# Playwright output.
+test-results/
+playwright-report/

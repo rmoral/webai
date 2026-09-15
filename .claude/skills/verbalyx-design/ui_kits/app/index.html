@@ -1,0 +1,28 @@
+<!-- @dsCard group="App" viewport="1100x760" name="Signed-in app" subtitle="Login → herramienta con pestañas, puntuación, cuota y upsell → mi cuenta" -->
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Verbalyx — app</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { AppShell, AppLogin, AppToolPage, AppAccount, PricingPage } = window.VerbalyxDesignSystem_caebf9;
+const TOOLS=[{id:'humanize',label:'Humanizador',hint:'Que suene a persona',live:true,modes:['academico','neutro','informal']},{id:'detect',label:'Detector de IA',hint:'Mide antes de entregar',live:false,modes:[]},{id:'paraphrase',label:'Parafraseador',hint:'Seis registros',live:false,modes:['estandar','fluido','formal','simple','creativo','academico']},{id:'correct',label:'Corrector',hint:'Ortografía y gramática',live:false,modes:['general','academico']}];
+function App(){
+  const [signedIn,setSignedIn] = React.useState(false);
+  const [page,setPage] = React.useState('herramienta');
+  const [toolId,setToolId] = React.useState('humanize');
+  const tool = TOOLS.find(t=>t.id===toolId);
+  const go = (p) => { setPage(p); window.scrollTo(0,0); };
+  if(!signedIn) return <AppLogin onSignedIn={()=>{setSignedIn(true);go('herramienta')}}/>;
+  return <AppShell tools={TOOLS} tool={toolId} onTool={setToolId} page={page} onNavigate={go} onSignOut={()=>setSignedIn(false)}>
+    {page==='herramienta' && <AppToolPage tool={tool} onNavigate={go}/>}
+    {page==='cuenta' && <AppAccount onNavigate={go}/>}
+    {page==='precios' && <PricingPage onNavigate={go}/>}
+  </AppShell>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

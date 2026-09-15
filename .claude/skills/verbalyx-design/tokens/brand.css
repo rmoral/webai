@@ -1,0 +1,62 @@
+/* Brand colour — added September 2026 after a competitive review of
+   QuillBot, Smodin and Undetectable AI. The upstream repo was fully
+   achromatic; the category is not, and colour does real work here:
+   it marks WHAT THE TOOL CHANGED in the output. Accent chosen to avoid
+   QuillBot's green and the generic AI purple. */
+:root {
+  --brand: #2b45c4;          /* ink blue — primary actions, active tab, brand mark */
+  --brand-hover: #2339a3;    /* pressed/hover fill */
+  --brand-active: #1d2f88;
+  --brand-fg: #ffffff;
+  --brand-soft: #eef1fd;     /* tinted surface: pills, active side item, upsell */
+  --brand-softer: #f7f8fe;
+  --brand-line: #c6cef4;     /* border on tinted surfaces */
+  --brand-ink: #1b2a76;      /* text on --brand-soft (AA on tint) */
+
+  /* Semantic — needed by the Detector score and the diff highlighting */
+  --success: #15774e;
+  --success-fg: #ffffff;
+  --success-soft: #e6f4ed;
+  --success-line: #a8d8c1;
+  --success-ink: #0f5537;
+
+  --warning: #9a5b06;        /* text-safe amber (the fill below is the bright one) */
+  --warning-fill: #d98b18;
+  --warning-fg: #ffffff;
+  --warning-soft: #fdf3e2;
+  --warning-line: #edc98a;
+  --warning-ink: #7a4705;
+
+  --danger: oklch(0.577 0.245 27.325);  /* = upstream --destructive */
+  --danger-fg: #ffffff;
+  --danger-soft: #fceceb;
+  --danger-line: #f0b4b0;
+  --danger-ink: #8f2018;
+
+  /* Diff highlighting inside a tool result */
+  --hl-rewritten: var(--warning-soft);
+  --hl-rewritten-line: var(--warning-line);
+  --hl-added: var(--success-soft);
+  --hl-added-line: var(--success-line);
+}
+
+.dark {
+  --brand: #7d90f0;
+  --brand-hover: #93a3f4;
+  --brand-active: #a7b4f7;
+  --brand-fg: #10143a;
+  --brand-soft: #1b2050;
+  --brand-softer: #15183c;
+  --brand-line: #2f3873;
+  --brand-ink: #c8d0fb;
+
+  --success-soft: #10301f;
+  --success-line: #1f5a3b;
+  --success-ink: #8fd6b1;
+  --warning-soft: #33230a;
+  --warning-line: #6b4a15;
+  --warning-ink: #e8bd78;
+  --danger-soft: #3a1512;
+  --danger-line: #6e2a24;
+  --danger-ink: #f0a9a2;
+}

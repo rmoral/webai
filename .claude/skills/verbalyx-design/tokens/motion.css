@@ -1,0 +1,15 @@
+/* Motion — transitions only, no keyframe animation in product UI.
+   Upstream uses Tailwind's transition-all / transition-colors defaults. */
+:root {
+  --duration-fast: 150ms; /* @kind other */
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --transition-colors: color var(--duration-fast) var(--easing-default),
+    background-color var(--duration-fast) var(--easing-default),
+    border-color var(--duration-fast) var(--easing-default);
+  --transition-control: all var(--duration-fast) var(--easing-default);
+
+  /* Interaction conventions */
+  --hover-mix: 90%;        /* solid fills darken to 90% of themselves */
+  --hover-mix-soft: 80%;   /* secondary fills */
+  --disabled-opacity: 0.5; /* @kind other */
+}

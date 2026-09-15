@@ -1,0 +1,11 @@
+<!-- @dsCard group="Brand" viewport="700x160" name="Interaction states" subtitle="Brand fills step to --brand-hover / --brand-active; disabled drops to 50%" -->
+<!doctype html><html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css"><style>body{margin:0;padding:16px;font-family:var(--font-sans);font-size:12px}</style></head><body><div style="display:flex;flex-direction:column;gap:10px;font-size:11px;color:var(--muted-foreground)">
+<div style="display:flex;gap:10px;align-items:center">
+<span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:var(--radius-md);background:var(--brand);color:var(--brand-fg);font-size:14px;font-weight:500;box-shadow:var(--shadow-xs)">rest</span>
+<span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:var(--radius-md);background:var(--brand-hover);color:var(--brand-fg);font-size:14px;font-weight:500">hover</span>
+<span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:var(--radius-md);background:var(--brand);color:var(--brand-fg);font-size:14px;font-weight:500;opacity:.5">disabled .5</span>
+<span style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:var(--radius-md);border:1px solid var(--brand);box-shadow:0 0 0 3px color-mix(in oklab,var(--brand) 30%,transparent);font-size:14px;font-weight:500">focus-visible</span>
+</div>
+<div>Los rellenos de marca pasan a <code>--brand-hover</code> y <code>--brand-active</code>. Outline y ghost → fondo <code>--accent</code>. Enlaces → subrayado.</div>
+<div>No press/active state, no scale, no translate. Transitions are 150ms colour-only; there is no keyframe animation in the product.</div>
+</div></body></html>

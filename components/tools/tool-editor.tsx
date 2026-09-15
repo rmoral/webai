@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
+import type { Change } from "diff";
 
+import { UpsellBanner } from "@/components/billing/upsell-banner";
+import {
+  DiffMarks,
+  HighlightLegend,
+  diffParts,
+} from "@/components/tools/highlight";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Chip } from "@/components/ui/chip";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import type { PlanId } from "@/lib/billing/plans";
 import { countWords } from "@/lib/security/validation";
 
 declare global {
@@ -27,13 +36,26 @@ const MODE_LABELS: Record<string, string> = {
   academico: "Académico",
   neutro: "Neutro",
   informal: "Informal",
+  estandar: "Estándar",
+  fluido: "Fluido",
+  formal: "Formal",
+  simple: "Simple",
+  creativo: "Creativo",
+  general: "General",
 };
 
-export function ToolEditor({ tool }: { tool: ToolId }) {
+export function ToolEditor({
+  tool,
+  plan = "anonymous",
+}: {
+  tool: ToolId;
+  plan?: PlanId;
+}) {
   const modes = TOOLS[tool].modes;
   const [mode, setMode] = useState<string | undefined>(modes[1] ?? modes[0]);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
+  const [parts, setParts] = useState<Change[] | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [upsell, setUpsell] = useState(false);
@@ -58,11 +80,16 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
   }, []);
 
   const words = countWords(input);
+  const paid = plan === "pro" || plan === "unlimited";
 
   async function run() {
     setStatus("loading");
     setError(null);
     setOutput("");
+    setParts(null);
+    // Frozen so the diff compares against what was actually sent, even if
+    // the user keeps typing while the answer streams in.
+    const sent = input;
     try {
       const res = await fetch(`/api/ai/${tool}`, {
         method: "POST",
@@ -99,6 +126,7 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
         setOutput(acc);
       }
       setStatus("done");
+      setParts(await diffParts(sent, acc));
       posthog?.capture("tool_used", { tool, words, mode });
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
@@ -117,76 +145,110 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
         />
       )}
 
-      {modes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {modes.map((m) => (
-            <Button
-              key={m}
-              size="sm"
-              variant={m === mode ? "default" : "outline"}
-              onClick={() => setMode(m)}
-            >
-              {MODE_LABELS[m] ?? m}
-            </Button>
-          ))}
-        </div>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Pega aquí tu texto…"
-            className="min-h-56"
-          />
-          <p className="text-muted-foreground text-sm">
-            {words} palabras
-            {remaining !== null && ` · Te quedan ${remaining} hoy`}
-          </p>
-        </div>
-        <div className="bg-muted/40 min-h-56 rounded-md border p-3 text-sm whitespace-pre-wrap">
-          {output ||
-            (status === "loading" ? (
-              <span className="text-muted-foreground">Escribiendo…</span>
-            ) : (
-              <span className="text-muted-foreground">
-                El resultado aparecerá aquí
-              </span>
+      <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
+        {modes.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
+            {modes.map((m) => (
+              <Chip key={m} pressed={m === mode} onClick={() => setMode(m)}>
+                {MODE_LABELS[m] ?? m}
+              </Chip>
             ))}
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-2 md:divide-x">
+          <div className="flex flex-col">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Pega aquí tu texto…"
+              aria-label="Texto de entrada"
+              className="min-h-44 w-full resize-y bg-transparent p-5 text-base outline-none md:min-h-64 md:text-sm"
+            />
+            <p className="text-muted-foreground border-t px-5 py-2 text-xs">
+              {words.toLocaleString("es-ES")} palabras
+              {remaining !== null &&
+                ` · te quedan ${remaining.toLocaleString("es-ES")}`}
+            </p>
+          </div>
+
+          <div className="flex min-h-44 flex-col border-t md:min-h-64 md:border-t-0">
+            <div className="flex-1 p-5 text-base whitespace-pre-wrap md:text-sm">
+              {status === "done" ? (
+                <DiffMarks parts={parts} fallback={output} />
+              ) : (
+                output || (
+                  <span className="text-muted-foreground">
+                    {status === "loading"
+                      ? "Escribiendo…"
+                      : "El resultado aparecerá aquí"}
+                  </span>
+                )
+              )}
+            </div>
+            {status === "done" && parts && (
+              <div className="flex flex-wrap items-center gap-4 border-t px-5 py-2">
+                <HighlightLegend kind="rewritten" />
+                <HighlightLegend kind="added" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
+          <Button
+            onClick={run}
+            disabled={status === "loading" || words === 0}
+            size="lg"
+          >
+            {status === "loading" ? "Procesando…" : TOOLS[tool].name}
+          </Button>
+          {status === "done" && (
+            <Button
+              variant="outline"
+              onClick={() => navigator.clipboard.writeText(output)}
+            >
+              Copiar resultado
+            </Button>
+          )}
+          <div ref={widgetRef} className="ml-auto" />
         </div>
       </div>
 
       {error && (
-        <p className="text-destructive text-sm">
-          {error}{" "}
-          {upsell && (
-            <a href="/precios" className="text-foreground underline">
-              Prueba Ilimitado 3 días gratis →
-            </a>
-          )}
+        <p className="text-destructive text-sm" role="alert">
+          {error}
         </p>
       )}
 
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={run}
-          disabled={status === "loading" || words === 0}
-          size="lg"
+      {upsell ? (
+        <UpsellBanner
+          tone="quota"
+          title="Has agotado tu límite."
+          action={
+            <Button size="sm" asChild>
+              <Link href="/precios">Ver planes</Link>
+            </Button>
+          }
         >
-          {status === "loading" ? "Procesando…" : TOOLS[tool].name}
-        </Button>
-        {status === "done" && (
-          <Button
-            variant="outline"
-            onClick={() => navigator.clipboard.writeText(output)}
+          Sigue escribiendo hoy mismo con Ilimitado: 3 días gratis y cancelas
+          cuando quieras.
+        </UpsellBanner>
+      ) : (
+        !paid && (
+          <UpsellBanner
+            title="¿Textos más largos?"
+            action={
+              <Button size="sm" variant="soft" asChild>
+                <Link href="/precios">Ver planes</Link>
+              </Button>
+            }
           >
-            Copiar resultado
-          </Button>
-        )}
-      </div>
-
-      <div ref={widgetRef} />
+            Los planes de pago amplían el límite por petición, guardan tu
+            historial y desbloquean todas las herramientas.
+          </UpsellBanner>
+        )
+      )}
     </div>
   );
 }

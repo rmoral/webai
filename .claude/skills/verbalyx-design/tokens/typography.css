@@ -1,0 +1,37 @@
+/* Typography — Geist Sans for everything, Geist Mono for code/data.
+   Sizes are the Tailwind steps the product actually uses. */
+:root {
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Scale (rem values as emitted by Tailwind) */
+  --text-xs: 0.75rem;      /* 12px — legal, footnotes, footer */
+  --text-sm: 0.875rem;     /* 14px — UI default, table cells, descriptions */
+  --text-base: 1rem;       /* 16px — editor input on mobile */
+  --text-lg: 1.125rem;     /* 18px — lede paragraphs, stat values */
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;      /* 24px — page titles (h1 in app/admin) */
+  --text-3xl: 1.875rem;    /* 30px — landing h1 */
+  --text-4xl: 2.25rem;     /* 36px — home h1 */
+  --text-5xl: 3rem;        /* 48px — home h1, sm: and up */
+
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  --font-normal: 400;
+  --font-medium: 500;      /* buttons, badges, table headers */
+  --font-semibold: 600;    /* card titles, section headings */
+  --font-bold: 700;        /* marketing h1 only */
+
+  --tracking-tight: -0.025em;  /* every marketing h1 */
+  --tracking-normal: 0;
+
+  /* Semantic aliases */
+  --text-body: var(--text-sm);
+  --text-body-marketing: var(--text-lg);
+  --text-title-page: var(--text-2xl);
+  --text-title-card: var(--text-base);
+  --text-caption: var(--text-xs);
+}

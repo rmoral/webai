@@ -1,0 +1,8 @@
+/* Elevation — almost flat. Two shadows exist in the whole product:
+   shadow-xs on controls and shadow-sm on cards. No coloured or large shadows. */
+:root {
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --ring-focus: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+  --ring-invalid: 0 0 0 3px color-mix(in oklab, var(--destructive) 20%, transparent);
+}

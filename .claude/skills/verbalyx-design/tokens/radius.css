@@ -1,0 +1,9 @@
+/* Radii — derived from a single --radius, exactly as upstream. */
+:root {
+  --radius: 0.625rem;                      /* 10px */
+  --radius-sm: calc(var(--radius) - 4px);  /* 6px  */
+  --radius-md: calc(var(--radius) - 2px);  /* 8px  — buttons, inputs, tables */
+  --radius-lg: var(--radius);              /* 10px */
+  --radius-xl: calc(var(--radius) + 4px);  /* 14px — cards */
+  --radius-full: 9999px;
+}

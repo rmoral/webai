@@ -181,6 +181,32 @@ export async function addTopupWords(
     .where(eq(subscriptions.userId, userId));
 }
 
+/**
+ * Read-only view of the allowance, for rendering the quota bar. Never
+ * consumes. Unlike the consuming path this fails soft: a missing Redis must
+ * degrade to "no bar", not to a blank page.
+ */
+export async function peekWords(
+  subject: string,
+  subscriber: Subscriber,
+): Promise<{ used: number; limit: number | null }> {
+  const { limits } = subscriber.plan;
+  const limit = limits.wordsPerDay ?? limits.wordsPerMonth;
+  if (limit === null) return { used: 0, limit: null };
+  try {
+    const client = getRedis();
+    if (!client) return { used: 0, limit };
+    const key =
+      limits.wordsPerDay !== null
+        ? dailyKey(subject)
+        : monthlyKey(subject, subscriber.periodStart);
+    return { used: Number((await client.get<number>(key)) ?? 0), limit };
+  } catch (error) {
+    Sentry.captureException(error);
+    return { used: 0, limit };
+  }
+}
+
 /** Kept for callers that only know the plan (anonymous requests). */
 export async function consumeDailyWords(
   subject: string,
