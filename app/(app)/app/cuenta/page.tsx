@@ -61,8 +61,14 @@ export default async function AccountPage() {
             {isPaid ? (
               <form action="/api/stripe/portal" method="POST">
                 <Button type="submit" variant="outline">
-                  Gestionar suscripción y facturas
+                  Gestionar o cancelar suscripción
                 </Button>
+                {/* US auto-renewal laws require the cancellation path to be
+                    as easy as signing up, and to be labelled as such. */}
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Puedes cancelar en línea y en cualquier momento. Conservas el
+                  acceso hasta el final del periodo ya pagado.
+                </p>
               </form>
             ) : (
               <Button asChild>
