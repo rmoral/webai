@@ -26,6 +26,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # GitHub substitutes an empty string for a missing secret, which
+      # surfaces much later as a confusing driver error.
+      - name: Check the DATABASE_URL secret is set
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::The DATABASE_URL repository secret is empty or missing."
+            echo "Add it under Settings → Secrets and variables → Actions → New repository secret,"
+            echo "using Supabase's Session pooler connection string (port 5432)."
+            exit 1
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Apply migrations
         run: pnpm db:migrate
         env:

@@ -28,6 +28,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check the STRIPE_SECRET_KEY secret is set
+        run: |
+          if [ -z "$STRIPE_SECRET_KEY" ]; then
+            echo "::error::The STRIPE_SECRET_KEY repository secret is empty or missing."
+            echo "Add it under Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
       - name: Sync products and prices
         run: pnpm stripe:sync
         env:
