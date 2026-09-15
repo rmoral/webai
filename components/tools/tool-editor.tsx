@@ -7,6 +7,7 @@ import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
 
 import { UpsellBanner } from "@/components/billing/upsell-banner";
+import { DetectorResultView } from "@/components/tools/detector-result";
 import {
   DiffMarks,
   HighlightLegend,
@@ -15,7 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
-import type { PlanId } from "@/lib/billing/plans";
+import type { DetectorResult } from "@/lib/ai/detector/features";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { countWords } from "@/lib/security/validation";
 
 declare global {
@@ -56,6 +58,7 @@ export function ToolEditor({
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [parts, setParts] = useState<Change[] | null>(null);
+  const [report, setReport] = useState<DetectorResult | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [upsell, setUpsell] = useState(false);
@@ -81,12 +84,16 @@ export function ToolEditor({
 
   const words = countWords(input);
   const paid = plan === "pro" || plan === "unlimited";
+  // The detector measures the text instead of rewriting it, so it answers
+  // with JSON rather than a stream and renders its own result view.
+  const measures = tool === "detect";
 
   async function run() {
     setStatus("loading");
     setError(null);
     setOutput("");
     setParts(null);
+    setReport(null);
     // Frozen so the diff compares against what was actually sent, even if
     // the user keeps typing while the answer streams in.
     const sent = input;
@@ -115,6 +122,13 @@ export function ToolEditor({
 
       const remainingHeader = res.headers.get("x-words-remaining");
       if (remainingHeader !== null) setRemaining(Number(remainingHeader));
+
+      if (measures) {
+        setReport((await res.json()) as DetectorResult);
+        setStatus("done");
+        posthog?.capture("tool_used", { tool, words });
+        return;
+      }
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -173,20 +187,31 @@ export function ToolEditor({
           </div>
 
           <div className="flex min-h-44 flex-col border-t md:min-h-64 md:border-t-0">
-            <div className="flex-1 p-5 text-base whitespace-pre-wrap md:text-sm">
-              {status === "done" ? (
-                <DiffMarks parts={parts} fallback={output} />
-              ) : (
-                output || (
-                  <span className="text-muted-foreground">
-                    {status === "loading"
-                      ? "Escribiendo…"
-                      : "El resultado aparecerá aquí"}
-                  </span>
-                )
-              )}
-            </div>
-            {status === "done" && parts && (
+            {measures && report ? (
+              <DetectorResultView
+                result={report}
+                canSeeSentences={PLANS[plan].limits.sentenceHighlight}
+              />
+            ) : (
+              <div className="flex-1 p-5 text-base whitespace-pre-wrap md:text-sm">
+                {status === "done" && !measures ? (
+                  <DiffMarks parts={parts} fallback={output} />
+                ) : (
+                  output || (
+                    <span className="text-muted-foreground">
+                      {status === "loading"
+                        ? measures
+                          ? "Analizando…"
+                          : "Escribiendo…"
+                        : measures
+                          ? "El análisis aparecerá aquí"
+                          : "El resultado aparecerá aquí"}
+                    </span>
+                  )
+                )}
+              </div>
+            )}
+            {status === "done" && parts && !measures && (
               <div className="flex flex-wrap items-center gap-4 border-t px-5 py-2">
                 <HighlightLegend kind="rewritten" />
                 <HighlightLegend kind="added" />
@@ -203,7 +228,7 @@ export function ToolEditor({
           >
             {status === "loading" ? "Procesando…" : TOOLS[tool].name}
           </Button>
-          {status === "done" && (
+          {status === "done" && !measures && (
             <Button
               variant="outline"
               onClick={() => navigator.clipboard.writeText(output)}
