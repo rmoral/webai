@@ -109,3 +109,20 @@ test("the legal pages identify the operating company and its jurisdiction", asyn
     page.getByRole("heading", { name: /Consumidores en la UE/ }),
   ).toBeVisible();
 });
+
+test("the marketing header resolves the session instead of assuming", async ({
+  page,
+}) => {
+  // The marketing pages are statically prerendered, so the header used to be
+  // hardcoded and told signed-in visitors to create an account — on /precios,
+  // where that costs money. It now resolves in the browser.
+  await page.goto("/precios");
+  const header = page.locator("header");
+
+  // Signed out: the sign-in calls to action, and no account link.
+  await expect(header.getByRole("link", { name: "Entrar" })).toBeVisible();
+  await expect(
+    header.getByRole("link", { name: "Crear cuenta gratis" }),
+  ).toBeVisible();
+  await expect(header.getByRole("link", { name: "Mi cuenta" })).toHaveCount(0);
+});

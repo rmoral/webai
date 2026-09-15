@@ -1,7 +1,7 @@
 import Link from "next/link";
 
+import { HeaderAuth } from "@/components/marketing/header-auth";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
-import { Button } from "@/components/ui/button";
 import { TOOLS } from "@/lib/ai/tools";
 
 // Footer groups are SEO infrastructure, not decoration: every entry must
@@ -51,13 +51,8 @@ export default function MarketingLayout({
                 Precios
               </Link>
             </nav>
-            <span className="ml-auto flex gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Entrar</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/login">Crear cuenta gratis</Link>
-              </Button>
+            <span className="ml-auto flex items-center gap-2">
+              <HeaderAuth />
             </span>
           </div>
           <ToolTabs />
