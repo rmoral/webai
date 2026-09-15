@@ -88,3 +88,37 @@ test("gates the per-sentence breakdown behind the paid plans", async ({
     result.getByText("Frase por frase", { exact: true }),
   ).toHaveCount(0);
 });
+
+// Paraphraser and proofreader are paid-only (lib/billing/plans.ts FREE_TOOLS),
+// so an anonymous visitor arriving from search must meet the paywall before
+// writing, not a 403 after pressing the button.
+for (const { path, name } of [
+  { path: "/parafrasear-texto", name: "Parafraseador" },
+  { path: "/corrector-ortografico-gramatical", name: "Corrector" },
+]) {
+  test(`${name}: shows the paywall up front to a free visitor`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    await expect(
+      page.getByText(`${name} está en los planes de pago.`),
+    ).toBeVisible();
+
+    const run = page.getByRole("button", { name: "Requiere un plan de pago" });
+    await expect(run).toBeVisible();
+    await expect(run).toBeDisabled();
+
+    // Typing must not enable it: the plan, not the input, is the gate.
+    await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+    await expect(run).toBeDisabled();
+  });
+}
+
+test("the free tools stay usable without a plan", async ({ page }) => {
+  for (const path of ["/humanizador-de-texto-ia", "/detector-de-ia"]) {
+    await page.goto(path);
+    await expect(
+      page.getByRole("button", { name: "Requiere un plan de pago" }),
+    ).toHaveCount(0);
+  }
+});

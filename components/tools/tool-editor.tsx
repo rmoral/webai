@@ -54,7 +54,9 @@ export function ToolEditor({
   plan?: PlanId;
 }) {
   const modes = TOOLS[tool].modes;
-  const [mode, setMode] = useState<string | undefined>(modes[1] ?? modes[0]);
+  const [mode, setMode] = useState<string | undefined>(
+    TOOLS[tool].defaultMode ?? modes[0],
+  );
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [parts, setParts] = useState<Change[] | null>(null);
@@ -87,6 +89,10 @@ export function ToolEditor({
   // The detector measures the text instead of rewriting it, so it answers
   // with JSON rather than a stream and renders its own result view.
   const measures = tool === "detect";
+  // Whether the plan may use this tool at all. Checked here so a visitor
+  // sees the paywall before writing, not as a 403 after pressing the
+  // button. The server enforces it either way.
+  const included = PLANS[plan].limits.tools.includes(tool);
 
   async function run() {
     setStatus("loading");
@@ -159,6 +165,20 @@ export function ToolEditor({
         />
       )}
 
+      {!included && (
+        <UpsellBanner
+          title={`${TOOLS[tool].name} está en los planes de pago.`}
+          action={
+            <Button size="sm" asChild>
+              <Link href="/precios">Ver planes</Link>
+            </Button>
+          }
+        >
+          Puedes probar gratis el humanizador y el detector de IA sin crear
+          cuenta.
+        </UpsellBanner>
+      )}
+
       <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
         {modes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
@@ -223,10 +243,14 @@ export function ToolEditor({
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
             onClick={run}
-            disabled={status === "loading" || words === 0}
+            disabled={!included || status === "loading" || words === 0}
             size="lg"
           >
-            {status === "loading" ? "Procesando…" : TOOLS[tool].name}
+            {!included
+              ? "Requiere un plan de pago"
+              : status === "loading"
+                ? "Procesando…"
+                : TOOLS[tool].name}
           </Button>
           {status === "done" && !measures && (
             <Button
@@ -260,7 +284,8 @@ export function ToolEditor({
           cuando quieras.
         </UpsellBanner>
       ) : (
-        !paid && (
+        !paid &&
+        included && (
           <UpsellBanner
             title="¿Textos más largos?"
             action={
