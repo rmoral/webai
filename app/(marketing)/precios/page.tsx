@@ -146,9 +146,11 @@ export default function PricingPage() {
       </section>
 
       <p className="text-muted-foreground mt-8 text-xs">
-        Precios en dólares, sin impuestos incluidos; los impuestos aplicables se
-        calculan en el pago. La renovación es automática y puedes cancelar en
-        cualquier momento desde tu cuenta. Consulta los{" "}
+        Precios en dólares estadounidenses, sin impuestos incluidos; los
+        impuestos aplicables —incluido el impuesto sobre ventas de EE. UU. o el
+        IVA de tu país cuando corresponda— se calculan en el pago. La renovación
+        es automática y puedes cancelar en línea, en cualquier momento, desde tu
+        cuenta. Consulta los{" "}
         <Link href="/legal/terminos" className="underline">
           términos del servicio
         </Link>

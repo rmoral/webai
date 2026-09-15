@@ -25,7 +25,7 @@ const FOOTER_GROUPS = [
   {
     title: "Legal",
     links: [
-      { href: "/legal/aviso-legal", label: "Aviso legal" },
+      { href: "/legal/aviso-legal", label: "Información legal" },
       { href: "/legal/terminos", label: "Términos" },
       { href: "/legal/privacidad", label: "Privacidad" },
       { href: "/legal/cookies", label: "Cookies" },
@@ -98,7 +98,9 @@ export default function MarketingLayout({
             ))}
           </div>
           <div className="text-muted-foreground mt-10 flex flex-wrap gap-4 border-t pt-6 text-xs">
-            <span>© {new Date().getFullYear()} Verbalyx</span>
+            <span>
+              © {new Date().getFullYear()} YBB Solutions, LLC — Verbalyx
+            </span>
             <span>Español de España y LATAM</span>
             <span className="sm:ml-auto">
               No guardamos los textos de los planes gratuitos.

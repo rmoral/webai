@@ -11,7 +11,7 @@ import { events } from "@/lib/db/schema";
 import { hashIp } from "@/lib/security/crypto";
 
 // Terms version recorded with the consent, per study §6.7.
-const TERMS_VERSION = "2026-09";
+const TERMS_VERSION = "2026-09-15";
 
 const bodySchema = z.object({
   plan: z.enum(["pro", "unlimited", "topup"]),

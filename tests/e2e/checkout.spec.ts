@@ -84,3 +84,28 @@ test("footer tool links resolve instead of 404ing", async ({ page }) => {
     page.getByRole("heading", { name: "Detector de IA en español" }),
   ).toBeVisible();
 });
+
+test("the legal pages identify the operating company and its jurisdiction", async ({
+  page,
+}) => {
+  // Stripe review and US auto-renewal laws both look for these: who is
+  // charging, under which law, and how to cancel.
+  await page.goto("/legal/aviso-legal");
+  await expect(page.getByText("YBB SOLUTIONS, LLC").first()).toBeVisible();
+  await expect(page.getByText(/Orlando, Florida/).first()).toBeVisible();
+
+  await page.goto("/legal/terminos");
+  await expect(
+    page.getByRole("heading", { name: "Ley aplicable y jurisdicción" }),
+  ).toBeVisible();
+  await expect(page.getByText(/leyes del estado de Florida/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Cancelación" }),
+  ).toBeVisible();
+  await expect(page.getByText(/sin llamar por teléfono/)).toBeVisible();
+
+  // EU consumers are the target market, so their mandatory rights survive.
+  await expect(
+    page.getByRole("heading", { name: /Consumidores en la UE/ }),
+  ).toBeVisible();
+});
