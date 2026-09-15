@@ -18,6 +18,8 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Design-system reference material, not application code.
+      ".claude/skills/**",
     ],
   },
 ];

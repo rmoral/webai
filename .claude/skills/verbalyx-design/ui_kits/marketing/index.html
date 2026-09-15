@@ -1,0 +1,31 @@
+<!-- @dsCard group="Marketing site" viewport="1100x760" name="Marketing site" subtitle="Home con editor en portada, pestañas de herramienta, landings y precios" -->
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Verbalyx — sitio de marketing</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}</style>
+</head><body><div id="root"></div>
+<script type="text/babel">
+const { SiteHeader, MarketingHome, HumanizerLanding, DetectorLanding, PricingPage, MarketingFooter, AppLogin } = window.VerbalyxDesignSystem_caebf9;
+const TOOLS=[{id:'humanize',label:'Humanizador',hint:'Que suene a persona',live:true,modes:['academico','neutro','informal']},{id:'detect',label:'Detector de IA',hint:'Mide antes de entregar',live:false,modes:[]},{id:'paraphrase',label:'Parafraseador',hint:'Seis registros',live:false,modes:['estandar','fluido','formal','simple','creativo','academico']},{id:'correct',label:'Corrector',hint:'Ortografía y gramática',live:false,modes:['general','academico']}];
+function Site(){
+  const [page,setPage] = React.useState('home');
+  const [tool,setTool] = React.useState('humanize');
+  const go = (p) => { setPage(p); window.scrollTo(0,0); };
+  const pickTool = (id) => { setTool(id); go(id === 'detect' ? 'detector' : 'humanizador'); };
+  return <div>
+    <SiteHeader tools={TOOLS} tool={tool} onTool={pickTool} page={page} onNavigate={go}/>
+    {page==='home' && <MarketingHome tools={TOOLS} tool={tool} onTool={pickTool} onNavigate={go}/>}
+    {page==='humanizador' && <HumanizerLanding onNavigate={go}/>}
+    {page==='detector' && <DetectorLanding onNavigate={go}/>}
+    {page==='precios' && <PricingPage onNavigate={go}/>}
+    {page==='login' && <AppLogin onSignedIn={()=>go('home')}/>}
+    {(page==='blog'||page==='ayuda') && <main style={{maxWidth:'65rem',margin:'0 auto',padding:'var(--pad-page-y) var(--gutter-page)',color:'var(--muted-foreground)'}}>Esta sección no existe todavía en el repositorio: se deja en blanco a propósito.</main>}
+    <MarketingFooter onNavigate={go}/>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Site/>);
+</script></body></html>

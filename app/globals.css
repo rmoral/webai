@@ -24,6 +24,38 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
+  /* Brand. The only chromatic tokens in the system: colour marks what the
+     tool changed, it is not decoration. See .claude/skills/verbalyx-design. */
+  --brand: #2b45c4;
+  --brand-hover: #2339a3;
+  --brand-active: #1d2f88;
+  --brand-fg: #ffffff;
+  --brand-soft: #eef1fd;
+  --brand-softer: #f7f8fe;
+  --brand-line: #c6cef4;
+  --brand-ink: #1b2a76;
+
+  /* Semantic. Only used when the colour means something: score, diff, quota. */
+  --success: #15774e;
+  --success-soft: #e6f4ed;
+  --success-line: #a8d8c1;
+  --success-ink: #0f5537;
+  --warning: #9a5b06;
+  --warning-fill: #d98b18;
+  --warning-soft: #fdf3e2;
+  --warning-line: #edc98a;
+  --warning-ink: #7a4705;
+  --danger: var(--destructive);
+  --danger-soft: #fceceb;
+  --danger-line: #f0b4b0;
+  --danger-ink: #8f2018;
+
+  /* Diff highlighting inside a tool result. */
+  --hl-rewritten: var(--warning-soft);
+  --hl-rewritten-line: var(--warning-line);
+  --hl-added: var(--success-soft);
+  --hl-added-line: var(--success-line);
 }
 
 .dark {
@@ -46,6 +78,24 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+
+  --brand: #7d90f0;
+  --brand-hover: #93a3f4;
+  --brand-active: #a7b4f7;
+  --brand-fg: #10143a;
+  --brand-soft: #1b2050;
+  --brand-softer: #15183c;
+  --brand-line: #2f3873;
+  --brand-ink: #c8d0fb;
+  --success-soft: #10301f;
+  --success-line: #1f5a3b;
+  --success-ink: #8fd6b1;
+  --warning-soft: #33230a;
+  --warning-line: #6b4a15;
+  --warning-ink: #e8bd78;
+  --danger-soft: #3a1512;
+  --danger-line: #6e2a24;
+  --danger-ink: #f0a9a2;
 }
 
 @theme inline {
@@ -72,6 +122,27 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-active: var(--brand-active);
+  --color-brand-foreground: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-softer: var(--brand-softer);
+  --color-brand-line: var(--brand-line);
+  --color-brand-ink: var(--brand-ink);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-line: var(--success-line);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-warning-fill: var(--warning-fill);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-line: var(--warning-line);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-line: var(--danger-line);
+  --color-danger-ink: var(--danger-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

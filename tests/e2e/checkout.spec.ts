@@ -55,3 +55,32 @@ test("trial checkout through Stripe with a test card", async ({ page }) => {
   await page.waitForURL(/\/app\?checkout=success/, { timeout: 60_000 });
   await expect(page.getByText(/Ilimitado/)).toBeVisible({ timeout: 30_000 });
 });
+
+test("the home page offers the tool and routes the upsell to pricing", async ({
+  page,
+}) => {
+  // The editor is the home page: no click between landing and first use.
+  await page.goto("/");
+  await expect(page.getByLabel("Texto de entrada")).toBeVisible();
+
+  // Anonymous visitors are not on a paid plan, so the upsell is present and
+  // is the entry point to the funnel.
+  const upsell = page.getByText("¿Textos más largos?");
+  await expect(upsell).toBeVisible();
+  await page.getByRole("link", { name: "Ver planes" }).first().click();
+  await page.waitForURL(/\/precios/);
+  await expect(page.getByRole("heading", { name: "Precios" })).toBeVisible();
+});
+
+test("footer tool links resolve instead of 404ing", async ({ page }) => {
+  // The footer groups are SEO infrastructure: a dead link there costs more
+  // than a missing one.
+  await page.goto("/precios");
+  const detector = page.getByRole("link", { name: "Detector de IA" }).last();
+  await expect(detector).toBeVisible();
+  await detector.click();
+  await page.waitForURL(/\/detector-de-ia/);
+  await expect(
+    page.getByRole("heading", { name: "Detector de IA en español" }),
+  ).toBeVisible();
+});
