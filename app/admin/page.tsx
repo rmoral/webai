@@ -33,17 +33,26 @@ export default async function AdminPage() {
   // Not an admin: behave as if the route did not exist.
   if (!isAdmin(user.email)) notFound();
 
-  const [totals, rows] = await Promise.all([getAdminTotals(), listUsers()]);
+  // The configuration panel below exists to diagnose a broken deployment,
+  // and a missing DATABASE_URL is one of the things it has to report. If
+  // these queries could take the page down, the diagnosis would be
+  // unreachable exactly when it is needed.
+  const [totals, rows] = await Promise.all([
+    getAdminTotals().catch(() => null),
+    listUsers().catch(() => []),
+  ]);
   const config = configHealth();
   const missing = config.filter((c) => !c.present);
 
-  const stats = [
-    { label: "Usuarios", value: totals.users.toLocaleString("es-ES") },
-    { label: "De pago activos", value: totals.pro.toLocaleString("es-ES") },
-    { label: "En prueba", value: totals.trialing.toLocaleString("es-ES") },
-    { label: "MRR", value: formatUsd(totals.mrr) },
-    { label: "Coste IA (mes)", value: formatUsd(totals.aiCostMonth) },
-  ];
+  const stats = totals
+    ? [
+        { label: "Usuarios", value: totals.users.toLocaleString("es-ES") },
+        { label: "De pago activos", value: totals.pro.toLocaleString("es-ES") },
+        { label: "En prueba", value: totals.trialing.toLocaleString("es-ES") },
+        { label: "MRR", value: formatUsd(totals.mrr) },
+        { label: "Coste IA (mes)", value: formatUsd(totals.aiCostMonth) },
+      ]
+    : [];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -112,6 +121,16 @@ export default async function AdminPage() {
           </details>
         </CardContent>
       </Card>
+
+      {!totals && (
+        <p className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">
+          <b className="font-semibold">No se puede leer la base de datos.</b>{" "}
+          Las métricas y el listado de usuarios no se muestran. Revisa abajo si
+          falta <code className="font-mono">DATABASE_URL</code>; si está
+          presente, comprueba que sea la cadena del <i>pooler</i> de Supabase
+          (la conexión directa no es accesible desde Vercel).
+        </p>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map(({ label, value }) => (
