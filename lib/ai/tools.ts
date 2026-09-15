@@ -44,7 +44,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
     path: "/detector-de-ia",
     minPlan: "anonymous",
     modes: [],
-    live: false,
+    live: true,
     landing: true,
   },
   paraphrase: {

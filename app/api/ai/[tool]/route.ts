@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse, after } from "next/server";
 
+import { analyze } from "@/lib/ai/detector/features";
 import { PROMPTS } from "@/lib/ai/prompts";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
@@ -34,7 +35,7 @@ export async function POST(
   const { tool, text, mode, turnstileToken } = parsed.data;
 
   const prompt = PROMPTS[tool];
-  if (!prompt) {
+  if (!prompt && tool !== "detect") {
     return error(501, "tool_not_available", "Esta herramienta llegará pronto.");
   }
 
@@ -98,9 +99,34 @@ export async function POST(
     );
   }
 
+  if (tool === "detect") {
+    const result = analyze(text, {
+      withSentences: plan.limits.sentenceHighlight,
+    });
+    after(() =>
+      recordUsage({
+        subjectKey: subject,
+        userId: user?.id ?? null,
+        tool,
+        wordsIn,
+        wordsOut: 0,
+        // Measured locally: no model call, so no per-request AI cost.
+        costCents: 0,
+      }).catch(() => {}),
+    );
+    return NextResponse.json(result, {
+      headers: {
+        "cache-control": "no-store",
+        ...(quota.remaining !== null
+          ? { "x-words-remaining": String(quota.remaining) }
+          : {}),
+      },
+    });
+  }
+
   const messageStream = streamCompletion({
-    system: prompt.system,
-    user: prompt.user(text, mode),
+    system: prompt!.system,
+    user: prompt!.user(text, mode),
     wordCount: wordsIn,
   });
 
