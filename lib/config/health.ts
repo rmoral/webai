@@ -136,3 +136,67 @@ export function configHealth(): ConfigCheck[] {
     present: Boolean(value && value.trim()),
   }));
 }
+
+/** Where DATABASE_URL points, and what is wrong with it if anything. */
+export interface DatabaseTarget {
+  /** Host and port. Never the user, never the password. */
+  endpoint: string | null;
+  /** Null when the string looks right; otherwise what to change. */
+  problem: string | null;
+}
+
+/**
+ * Supabase hands out three connection strings and only one of them works
+ * from Vercel for everything. The direct one resolves over IPv6, which the
+ * functions cannot reach, so it fails exactly like a wrong password — from
+ * a browser the two are indistinguishable. Reading the host apart tells
+ * them apart without ever touching the credentials.
+ */
+export function databaseTarget(): DatabaseTarget {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) return { endpoint: null, problem: "No está definida." };
+
+  if (url.includes("YOUR-PASSWORD")) {
+    return {
+      endpoint: null,
+      problem:
+        "Sigue el marcador [YOUR-PASSWORD] sin sustituir por la contraseña real.",
+    };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return {
+      endpoint: null,
+      problem:
+        "No es una URL válida. ¿Se ha colado un espacio o un salto de línea al pegarla?",
+    };
+  }
+
+  const port = parsed.port || "5432";
+  const endpoint = `${parsed.hostname}:${port}`;
+
+  if (!parsed.password) {
+    return { endpoint, problem: "La cadena no lleva contraseña." };
+  }
+
+  if (/^db\..+\.supabase\.co$/.test(parsed.hostname)) {
+    return {
+      endpoint,
+      problem:
+        "Es la conexión directa de Supabase: solo resuelve en IPv6 y las funciones de Vercel son IPv4, así que nunca conectará. Copia la cadena de Supabase → Connect → Session pooler.",
+    };
+  }
+
+  if (parsed.hostname.endsWith(".pooler.supabase.com") && port === "6543") {
+    return {
+      endpoint,
+      problem:
+        "Es el transaction pooler. La app lee y escribe bien, pero «Migrate database» fallará porque ese puerto no admite DDL. El session pooler, puerto 5432, sirve para las dos cosas.",
+    };
+  }
+
+  return { endpoint, problem: null };
+}

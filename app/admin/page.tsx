@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isAdmin } from "@/lib/auth/admin";
 import { getSession } from "@/lib/auth/server";
-import { configHealth } from "@/lib/config/health";
+import { configHealth, databaseTarget } from "@/lib/config/health";
 import { getAdminTotals, listUsers } from "@/lib/usage/summary";
 
 export const metadata: Metadata = {
@@ -27,6 +27,12 @@ const STATUS_LABELS: Record<string, string> = {
   incomplete_expired: "Caducada",
 };
 
+// Driver errors are not supposed to quote the connection string, but this
+// text is rendered on a page, so do not depend on that.
+function redactCredentials(message: string): string {
+  return message.replace(/\/\/[^\/@\s]*@/g, "//…@");
+}
+
 export default async function AdminPage() {
   const user = await getSession();
   if (!user) redirect("/login?next=/admin");
@@ -37,10 +43,20 @@ export default async function AdminPage() {
   // and a missing DATABASE_URL is one of the things it has to report. If
   // these queries could take the page down, the diagnosis would be
   // unreachable exactly when it is needed.
-  const [totals, rows] = await Promise.all([
-    getAdminTotals().catch(() => null),
+  const [metrics, rows] = await Promise.all([
+    // The driver message is the only account of why the connection failed,
+    // and there is no terminal here to read it in. Keep it.
+    getAdminTotals().then(
+      (value) => ({ value, error: null as string | null }),
+      (e: unknown) => ({
+        value: null,
+        error: redactCredentials(e instanceof Error ? e.message : String(e)),
+      }),
+    ),
     listUsers().catch(() => []),
   ]);
+  const totals = metrics.value;
+  const db = databaseTarget();
   const config = configHealth();
   const missing = config.filter((c) => !c.present);
 
@@ -123,12 +139,29 @@ export default async function AdminPage() {
       </Card>
 
       {!totals && (
-        <p className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">
-          <b className="font-semibold">No se puede leer la base de datos.</b>{" "}
-          Las métricas y el listado de usuarios no se muestran. Revisa abajo si
-          falta <code className="font-mono">DATABASE_URL</code>; si está
-          presente, comprueba que sea la cadena del <i>pooler</i> de Supabase
-          (la conexión directa no es accesible desde Vercel).
+        <div className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">
+          <p>
+            <b className="font-semibold">No se puede leer la base de datos.</b>{" "}
+            Las métricas y el listado de usuarios no se muestran.
+          </p>
+          {db.endpoint && (
+            <p className="mt-2">
+              <code className="font-mono">DATABASE_URL</code> apunta a{" "}
+              <code className="font-mono break-all">{db.endpoint}</code>.
+            </p>
+          )}
+          {db.problem && <p className="mt-2">{db.problem}</p>}
+          {metrics.error && (
+            <p className="mt-2 font-mono text-xs break-all">{metrics.error}</p>
+          )}
+        </div>
+      )}
+
+      {totals && db.problem && (
+        <p className="border-warning-line bg-warning-soft text-warning-ink mt-8 rounded-xl border px-6 py-4 text-sm">
+          <b className="font-semibold">Revisa DATABASE_URL.</b> Apunta a{" "}
+          <code className="font-mono break-all">{db.endpoint}</code>.{" "}
+          {db.problem}
         </p>
       )}
 
