@@ -13,9 +13,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-function euros(amount: number) {
-  return amount.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
-}
+import { formatUsd } from "@/lib/billing/plans";
 
 const STATUS_LABELS: Record<string, string> = {
   trialing: "En prueba",
@@ -38,10 +36,10 @@ export default async function AdminPage() {
 
   const stats = [
     { label: "Usuarios", value: totals.users.toLocaleString("es-ES") },
-    { label: "Pro activos", value: totals.pro.toLocaleString("es-ES") },
+    { label: "De pago activos", value: totals.pro.toLocaleString("es-ES") },
     { label: "En prueba", value: totals.trialing.toLocaleString("es-ES") },
-    { label: "MRR", value: euros(totals.mrr) },
-    { label: "Coste IA (mes)", value: euros(totals.aiCostMonth) },
+    { label: "MRR", value: formatUsd(totals.mrr) },
+    { label: "Coste IA (mes)", value: formatUsd(totals.aiCostMonth) },
   ];
 
   return (
@@ -89,8 +87,14 @@ export default async function AdminPage() {
               <tr key={row.id} className="border-t">
                 <td className="px-3 py-2">{row.email}</td>
                 <td className="px-3 py-2">
-                  <Badge variant={row.plan === "pro" ? "default" : "secondary"}>
-                    {row.plan === "pro" ? "Pro" : "Gratis"}
+                  <Badge
+                    variant={row.plan === "free" ? "secondary" : "default"}
+                  >
+                    {row.plan === "unlimited"
+                      ? "Ilimitado"
+                      : row.plan === "pro"
+                        ? "Pro"
+                        : "Gratis"}
                   </Badge>
                   {row.interval && (
                     <span className="text-muted-foreground ml-2">
@@ -113,7 +117,7 @@ export default async function AdminPage() {
                   {row.wordsMonth.toLocaleString("es-ES")}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  {euros(row.costCentsMonth / 100)}
+                  {formatUsd(row.costCentsMonth / 100)}
                 </td>
                 <td className="px-3 py-2">
                   {row.createdAt.toLocaleDateString("es-ES")}

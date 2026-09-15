@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
-import { PRICING } from "@/lib/billing/plans";
+import { PRICES, type PaidTier } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
 import { subscriptions, usageDaily, users } from "@/lib/db/schema";
 
@@ -40,7 +40,7 @@ export interface AdminUserRow {
   id: string;
   email: string;
   createdAt: Date;
-  plan: "free" | "pro" | null;
+  plan: "free" | "pro" | "unlimited" | null;
   status: string | null;
   interval: string | null;
   currentPeriodEnd: Date | null;
@@ -105,6 +105,7 @@ export async function getAdminTotals(): Promise<AdminTotals> {
     db.select({ count: sql<number>`count(*)::int` }).from(users),
     db
       .select({
+        plan: subscriptions.plan,
         interval: subscriptions.interval,
         status: subscriptions.status,
         count: sql<number>`count(*)::int`,
@@ -112,11 +113,15 @@ export async function getAdminTotals(): Promise<AdminTotals> {
       .from(subscriptions)
       .where(
         and(
-          eq(subscriptions.plan, "pro"),
+          inArray(subscriptions.plan, ["pro", "unlimited"]),
           inArray(subscriptions.status, [...ACTIVE_STATUSES]),
         ),
       )
-      .groupBy(subscriptions.interval, subscriptions.status),
+      .groupBy(
+        subscriptions.plan,
+        subscriptions.interval,
+        subscriptions.status,
+      ),
     db
       .select({
         cents: sql<number>`coalesce(sum(${usageDaily.costCents}), 0)::float8`,
@@ -126,8 +131,11 @@ export async function getAdminTotals(): Promise<AdminTotals> {
   ]);
 
   // Prices come from lib/billing/plans.ts — never hardcoded here.
-  const monthly = PRICING.proMonthly.amount;
-  const yearlyPerMonth = PRICING.proYearly.amount / 12;
+  const monthlyValue = (plan: string | null, interval: string | null) => {
+    const tier = (plan === "unlimited" ? "unlimited" : "pro") as PaidTier;
+    return PRICES[tier][interval === "year" ? "yearly" : "monthly"]
+      .monthlyEquivalent;
+  };
 
   return {
     users: userCount?.count ?? 0,
@@ -136,9 +144,7 @@ export async function getAdminTotals(): Promise<AdminTotals> {
       .filter((row) => row.status === "trialing")
       .reduce((total, row) => total + row.count, 0),
     mrr: byInterval.reduce(
-      (total, row) =>
-        total +
-        row.count * (row.interval === "year" ? yearlyPerMonth : monthly),
+      (total, row) => total + row.count * monthlyValue(row.plan, row.interval),
       0,
     ),
     aiCostMonth: (cost?.cents ?? 0) / 100,

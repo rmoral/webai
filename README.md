@@ -3,6 +3,7 @@
 SaaS de escritura con IA para el mercado hispanohablante: humanizador, detector de IA, parafraseador y corrector.
 
 - **Plan de desarrollo:** [PLAN_DESARROLLO_WRITE_AI.md](./PLAN_DESARROLLO_WRITE_AI.md)
+- **Precios y Stripe (vigente):** [ESTUDIO_PRECIOS_Y_CONFIG_STRIPE_USD.md](./ESTUDIO_PRECIOS_Y_CONFIG_STRIPE_USD.md)
 - **Reglas para Claude Code:** [CLAUDE.md](./CLAUDE.md)
 
 ## Stack
@@ -28,6 +29,10 @@ pnpm dev
 | `pnpm test:e2e`                                      | Tests e2e (Playwright)              |
 | `pnpm db:generate` / `pnpm db:migrate`               | Migraciones Drizzle                 |
 | `pnpm stripe:listen`                                 | Reenviar webhooks de Stripe a local |
+
+## Productos de Stripe
+
+GitHub → **Actions → Sync Stripe products → Run workflow** crea (o actualiza) los productos, precios y metadata del estudio de precios. Requiere el secreto `STRIPE_SECRET_KEY`. Los precios se resuelven por `lookup_key`, así que no hay ids que copiar a ninguna variable.
 
 ## Migraciones en producción
 

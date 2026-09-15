@@ -5,29 +5,71 @@ import type Stripe from "stripe";
 
 import { TrialEndingEmail } from "@/emails/trial-ending";
 import { WelcomeEmail } from "@/emails/welcome";
+import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
+import { resolveEntitlements } from "@/lib/billing/metadata";
+import { TOPUP } from "@/lib/billing/plans";
 import { getStripe } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events, stripeEvents, subscriptions, users } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
+import { addTopupWords } from "@/lib/usage/quotas";
 
-// Statuses that keep Pro access (entitlements uses the same set).
-const PRO_STATUSES = new Set(["trialing", "active", "past_due"]);
+// The seven events of study §3.4. Idempotency is enforced by inserting the
+// event id first; the mark is rolled back if the handler throws, so Stripe
+// retries a failed delivery instead of skipping it as a duplicate.
 
-function subscriptionFields(sub: Stripe.Subscription) {
-  // current_period_end moved to subscription items in newer Stripe API versions.
-  const periodEnd =
-    sub.items?.data[0]?.current_period_end ??
-    (sub as unknown as { current_period_end?: number }).current_period_end;
+function timestampToDate(seconds: number | null | undefined): Date | null {
+  return seconds ? new Date(seconds * 1000) : null;
+}
+
+/**
+ * Maps a Stripe subscription onto our row, resolving the plan limits from
+ * the product metadata (falling back to plans.ts) and snapshotting them.
+ */
+async function subscriptionFields(sub: Stripe.Subscription) {
+  const item = sub.items?.data[0];
+  const price = item?.price;
+  const active = (ACTIVE_STATUSES as readonly string[]).includes(sub.status);
+
+  let product: Stripe.Product | null = null;
+  if (price?.product) {
+    product =
+      typeof price.product === "string"
+        ? ((await getStripe().products.retrieve(
+            price.product,
+          )) as Stripe.Product)
+        : (price.product as Stripe.Product);
+  }
+
+  const fallbackTier =
+    (sub.metadata?.plan as "pro" | "unlimited" | undefined) ?? "pro";
+  const resolved = resolveEntitlements(product?.metadata, fallbackTier);
+
   return {
     stripeSubscriptionId: sub.id,
     stripeCustomerId: sub.customer as string,
-    plan: (PRO_STATUSES.has(sub.status) ? "pro" : "free") as "pro" | "free",
-    interval: sub.items?.data[0]?.price?.recurring?.interval ?? null,
+    plan: (active ? resolved.tier : "free") as "pro" | "unlimited" | "free",
+    entitlements: resolved.limits,
+    interval: price?.recurring?.interval ?? null,
     status: sub.status as typeof subscriptions.$inferInsert.status,
-    currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+    currentPeriodStart: timestampToDate(item?.current_period_start),
+    currentPeriodEnd: timestampToDate(item?.current_period_end),
     cancelAtPeriodEnd: sub.cancel_at_period_end ? 1 : 0,
     updatedAt: new Date(),
   };
+}
+
+async function upsertSubscription(userId: string, sub: Stripe.Subscription) {
+  const fields = await subscriptionFields(sub);
+  await getDb()
+    .insert(subscriptions)
+    .values({ userId, ...fields })
+    .onConflictDoUpdate({ target: subscriptions.userId, set: fields });
+}
+
+async function customerEmail(customer: string): Promise<string | null> {
+  const record = await getStripe().customers.retrieve(customer);
+  return record.deleted ? null : record.email;
 }
 
 export async function POST(request: NextRequest) {
@@ -49,8 +91,6 @@ export async function POST(request: NextRequest) {
   }
 
   const db = getDb();
-
-  // Idempotency: first insert wins; replays are acknowledged and skipped.
   const inserted = await db
     .insert(stripeEvents)
     .values({ id: event.id })
@@ -64,15 +104,12 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
+      // 1. New subscription or word top-up.
       case "checkout.session.completed": {
         const session = event.data.object;
         const userId = session.client_reference_id;
         const email = session.customer_details?.email;
-        if (!userId || !session.subscription) break;
-
-        const sub = await getStripe().subscriptions.retrieve(
-          session.subscription as string,
-        );
+        if (!userId) break;
 
         if (email) {
           await db
@@ -80,36 +117,54 @@ export async function POST(request: NextRequest) {
             .values({ id: userId, email })
             .onConflictDoNothing();
         }
-        const fields = subscriptionFields(sub);
-        await db
-          .insert(subscriptions)
-          .values({ userId, ...fields })
-          .onConflictDoUpdate({
-            target: subscriptions.userId,
-            set: fields,
-          });
 
-        // Attribution mirror for Ads conversions (gclid wiring in Sprint 4).
+        if (session.mode === "payment") {
+          await addTopupWords(userId, TOPUP.words);
+        } else if (session.subscription) {
+          const sub = await getStripe().subscriptions.retrieve(
+            session.subscription as string,
+          );
+          await upsertSubscription(userId, sub);
+          if (email) {
+            await sendEmail({
+              to: email,
+              subject: "Tu prueba de Verbalyx ya está activa",
+              react: WelcomeEmail({ appUrl }),
+            });
+          }
+        }
+
+        // Mirrored for the Google Ads conversion (gclid wiring, sprint 4).
         await db.insert(events).values({
           userId,
           name: "purchase",
-          props: { amountTotal: session.amount_total, mode: session.mode },
+          props: {
+            amountTotal: session.amount_total,
+            currency: session.currency,
+            mode: session.mode,
+          },
         });
+        break;
+      }
 
+      // 2. Reminder 24 h before the trial converts (required by §6.5).
+      case "customer.subscription.trial_will_end": {
+        const sub = event.data.object;
+        const email = await customerEmail(sub.customer as string);
         if (email) {
           await sendEmail({
             to: email,
-            subject: "Tu prueba de Verbalyx Pro ya está activa",
-            react: WelcomeEmail({ appUrl }),
+            subject: "Tu prueba de Verbalyx termina mañana",
+            react: TrialEndingEmail({ appUrl }),
           });
         }
         break;
       }
 
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
+      // 3. Plan or status change: recompute entitlements.
+      case "customer.subscription.updated": {
         const sub = event.data.object;
-        const fields = subscriptionFields(sub);
+        const fields = await subscriptionFields(sub);
         await db
           .update(subscriptions)
           .set(fields)
@@ -117,27 +172,95 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      case "customer.subscription.trial_will_end": {
+      // 4. Cancelled: back to free. The date feeds the win-back campaign.
+      case "customer.subscription.deleted": {
         const sub = event.data.object;
-        const customer = await getStripe().customers.retrieve(
-          sub.customer as string,
-        );
-        const email = customer.deleted ? null : customer.email;
-        if (email) {
-          await sendEmail({
-            to: email,
-            subject: "Tu prueba de Verbalyx Pro termina mañana",
-            react: TrialEndingEmail({ appUrl }),
-          });
-        }
+        await db
+          .update(subscriptions)
+          .set({
+            plan: "free",
+            status: "canceled",
+            entitlements: null,
+            canceledAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
         break;
       }
 
+      // 5. Renewal paid: move the period forward. The monthly quota key is
+      // derived from this date, so the allowance resets by itself.
+      case "invoice.paid": {
+        const invoice = event.data.object;
+        const subscriptionId = invoice.lines?.data[0]?.subscription;
+        if (!subscriptionId) break;
+        const sub = await getStripe().subscriptions.retrieve(
+          typeof subscriptionId === "string"
+            ? subscriptionId
+            : subscriptionId.id,
+        );
+        const fields = await subscriptionFields(sub);
+        await db
+          .update(subscriptions)
+          .set(fields)
+          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+        break;
+      }
+
+      // 6. Payment failed: Stripe dunning retries and emails the customer.
       case "invoice.payment_failed": {
-        // Stripe dunning handles retries and emails; keep the trace.
+        const invoice = event.data.object;
+        const subscriptionId = invoice.lines?.data[0]?.subscription;
+        if (subscriptionId) {
+          await db
+            .update(subscriptions)
+            .set({ status: "past_due", updatedAt: new Date() })
+            .where(
+              eq(
+                subscriptions.stripeSubscriptionId,
+                typeof subscriptionId === "string"
+                  ? subscriptionId
+                  : subscriptionId.id,
+              ),
+            );
+        }
         Sentry.captureMessage("stripe.invoice.payment_failed", {
           level: "warning",
-          extra: { eventId: event.id },
+          extra: { eventId: event.id, customer: invoice.customer },
+        });
+        break;
+      }
+
+      // 7. Chargeback: drop to free and alert. Disputes are the metric that
+      // can close the payment gateway (§4), so they page the owner.
+      case "charge.dispute.created": {
+        const dispute = event.data.object;
+        const customer =
+          typeof dispute.charge === "string"
+            ? null
+            : ((dispute.charge as Stripe.Charge)?.customer as string | null);
+        const customerId = customer ?? null;
+
+        if (customerId) {
+          await db
+            .update(subscriptions)
+            .set({
+              plan: "free",
+              entitlements: null,
+              suspendedAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.stripeCustomerId, customerId));
+        }
+
+        Sentry.captureMessage("stripe.charge.dispute.created", {
+          level: "error",
+          extra: {
+            eventId: event.id,
+            amount: dispute.amount,
+            reason: dispute.reason,
+            customer: customerId,
+          },
         });
         break;
       }

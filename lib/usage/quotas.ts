@@ -1,11 +1,22 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import * as Sentry from "@sentry/nextjs";
+import { and, eq, gte, sql } from "drizzle-orm";
 
+import type { Subscriber } from "@/lib/billing/entitlements";
 import type { Plan } from "@/lib/billing/plans";
+import { getDb } from "@/lib/db/client";
+import { subscriptions } from "@/lib/db/schema";
 
-// Quota and anti-abuse layer (Upstash Redis). Subjects are `user:<id>` or
-// `ip:<hashIp(ip)>`. Fails closed in production if Redis is not configured;
-// in dev without Redis, limits are disabled so the app still runs.
+// Quota and anti-abuse layer. Subjects are `user:<id>` or `ip:<hashIp(ip)>`.
+// Fails closed in production if Redis is not configured; in dev without
+// Redis, limits are disabled so the app still runs.
+//
+// Free tiers are metered per day. Paid tiers are metered per billing
+// period: the Redis key embeds the period start, so a new period yields a
+// new key and the quota resets on its own — `invoice.paid` only has to
+// refresh the stored dates. Top-up words live in Postgres because they
+// never expire.
 
 let redis: Redis | null | undefined;
 
@@ -41,28 +52,144 @@ export async function checkBurstLimit(
   return { allowed: success, retryAt: reset };
 }
 
+export interface QuotaResult {
+  allowed: boolean;
+  /** Words left in the plan allowance. `null` when the plan is unmetered. */
+  remaining: number | null;
+  /** Words taken from the top-up balance, if any. */
+  fromTopup?: number;
+}
+
+/** Keys the monthly quota to the billing period, so renewal resets it. */
+function monthlyKey(subject: string, periodStart: Date | null): string {
+  const anchor = (periodStart ?? new Date()).toISOString().slice(0, 10);
+  return `quota:words:period:${subject}:${anchor}`;
+}
+
+function dailyKey(subject: string): string {
+  return `quota:words:day:${subject}:${new Date().toISOString().slice(0, 10)}`;
+}
+
+async function consume(
+  client: Redis,
+  key: string,
+  limit: number,
+  words: number,
+  ttlSeconds: number,
+): Promise<{ used: number; allowed: boolean }> {
+  const used = await client.incrby(key, words);
+  if (used === words) await client.expire(key, ttlSeconds);
+  if (used > limit) {
+    await client.decrby(key, words);
+    return { used: used - words, allowed: false };
+  }
+  return { used, allowed: true };
+}
+
 /**
- * Atomically reserves `words` against the plan's daily quota (UTC day).
- * Rolls back the reservation when over the limit.
+ * Reserves `words` against the subscriber's allowance. Free tiers spend the
+ * daily limit; paid tiers spend the billing-period limit and then any
+ * top-up balance. A soft cap (Ilimitado) alerts instead of blocking.
  */
+export async function consumeWords(
+  subject: string,
+  subscriber: Subscriber,
+  words: number,
+): Promise<QuotaResult> {
+  const { limits } = subscriber.plan;
+  const client = getRedis();
+
+  if (limits.wordsPerDay !== null) {
+    if (!client) return { allowed: true, remaining: limits.wordsPerDay };
+    const { used, allowed } = await consume(
+      client,
+      dailyKey(subject),
+      limits.wordsPerDay,
+      words,
+      25 * 60 * 60,
+    );
+    return { allowed, remaining: Math.max(0, limits.wordsPerDay - used) };
+  }
+
+  if (limits.wordsPerMonth === null) return { allowed: true, remaining: null };
+  if (!client) return { allowed: true, remaining: limits.wordsPerMonth };
+
+  const { used, allowed } = await consume(
+    client,
+    monthlyKey(subject, subscriber.periodStart),
+    limits.wordsPerMonth,
+    words,
+    40 * 24 * 60 * 60,
+  );
+  const remaining = Math.max(0, limits.wordsPerMonth - used);
+
+  if (allowed) return { allowed: true, remaining };
+
+  // Ilimitado is sold as unlimited: warn the owner, keep serving.
+  if (limits.softCap) {
+    Sentry.captureMessage("quota.soft_cap_exceeded", {
+      level: "warning",
+      extra: { subject, words, limit: limits.wordsPerMonth },
+    });
+    return { allowed: true, remaining: 0 };
+  }
+
+  const fromTopup = await consumeTopupWords(subject, words);
+  if (fromTopup) return { allowed: true, remaining: 0, fromTopup: words };
+
+  return { allowed: false, remaining };
+}
+
+/**
+ * Spends purchased words. Conditional update: the row is only touched when
+ * the balance still covers the request, so concurrent requests cannot take
+ * the balance negative.
+ */
+async function consumeTopupWords(
+  subject: string,
+  words: number,
+): Promise<boolean> {
+  const userId = subject.startsWith("user:") ? subject.slice(5) : null;
+  if (!userId || !process.env.DATABASE_URL) return false;
+
+  try {
+    const updated = await getDb()
+      .update(subscriptions)
+      .set({ topupWords: sql`${subscriptions.topupWords} - ${words}` })
+      .where(
+        and(
+          eq(subscriptions.userId, userId),
+          gte(subscriptions.topupWords, words),
+        ),
+      )
+      .returning({ left: subscriptions.topupWords });
+    return updated.length > 0;
+  } catch (error) {
+    Sentry.captureException(error);
+    return false;
+  }
+}
+
+/** Adds purchased words to the balance. Called from the Stripe webhook. */
+export async function addTopupWords(
+  userId: string,
+  words: number,
+): Promise<void> {
+  await getDb()
+    .update(subscriptions)
+    .set({ topupWords: sql`${subscriptions.topupWords} + ${words}` })
+    .where(eq(subscriptions.userId, userId));
+}
+
+/** Kept for callers that only know the plan (anonymous requests). */
 export async function consumeDailyWords(
   subject: string,
   plan: Plan,
   words: number,
-): Promise<{ allowed: boolean; remaining: number | null }> {
-  const limit = plan.limits.wordsPerDay;
-  if (limit === null) return { allowed: true, remaining: null };
-
-  const client = getRedis();
-  if (!client) return { allowed: true, remaining: limit };
-
-  const key = `quota:words:${subject}:${new Date().toISOString().slice(0, 10)}`;
-  const used = await client.incrby(key, words);
-  if (used === words) await client.expire(key, 25 * 60 * 60);
-
-  if (used > limit) {
-    await client.decrby(key, words);
-    return { allowed: false, remaining: Math.max(0, limit - (used - words)) };
-  }
-  return { allowed: true, remaining: limit - used };
+): Promise<QuotaResult> {
+  return consumeWords(
+    subject,
+    { plan, topupWords: 0, periodStart: null, subscriptionId: null },
+    words,
+  );
 }

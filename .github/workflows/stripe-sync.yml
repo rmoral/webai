@@ -1,0 +1,34 @@
+# Creates or updates the Stripe products, prices and metadata of the
+# pricing study. Run it from GitHub → Actions → "Sync Stripe products" →
+# Run workflow (works from a phone). Idempotent: prices are matched by
+# lookup_key, products by metadata.
+#
+# Requires the STRIPE_SECRET_KEY repository secret. Use the TEST mode key
+# until the Stripe account country is final — see study §7.
+name: Sync Stripe products
+
+on:
+  workflow_dispatch:
+
+concurrency: stripe-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync products and prices
+        run: pnpm stripe:sync
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}

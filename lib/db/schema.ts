@@ -11,7 +11,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-export const planEnum = pgEnum("plan", ["free", "pro"]);
+export const planEnum = pgEnum("plan", ["free", "pro", "unlimited"]);
 
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "trialing",
@@ -54,6 +54,20 @@ export const subscriptions = pgTable("subscriptions", {
   status: subscriptionStatusEnum("status"),
   /** Billing interval: "month" | "year". Needed to compute MRR. */
   interval: text("interval"),
+  /**
+   * Entitlements resolved from the Stripe product metadata at webhook time.
+   * Read by lib/billing/entitlements.ts so limits can change in Stripe
+   * without a deploy and without calling Stripe on every request.
+   */
+  entitlements: jsonb("entitlements"),
+  /** Anchors the monthly word quota to the billing period. */
+  currentPeriodStart: timestamp("current_period_start", { withTimezone: true }),
+  /** Purchased words that never expire; consumed after the monthly quota. */
+  topupWords: integer("topup_words").notNull().default(0),
+  /** Set on a chargeback: access drops to free until cleared by hand. */
+  suspendedAt: timestamp("suspended_at", { withTimezone: true }),
+  /** When the subscription was cancelled, for the win-back campaign. */
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
   currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   cancelAtPeriodEnd: integer("cancel_at_period_end").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
