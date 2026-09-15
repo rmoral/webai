@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/server";
-import { getPlan } from "@/lib/billing/entitlements";
+import { getSubscriber } from "@/lib/billing/entitlements";
 import { getUserUsage } from "@/lib/usage/summary";
 
 export const metadata: Metadata = { title: "Mi cuenta" };
@@ -21,11 +21,12 @@ export default async function AccountPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const [plan, usage] = await Promise.all([
-    getPlan(user.id).catch(() => null),
+  const [subscriber, usage] = await Promise.all([
+    getSubscriber(user.id).catch(() => null),
     getUserUsage(user.id).catch(() => null),
   ]);
-  const isPro = plan?.id === "pro";
+  const plan = subscriber?.plan ?? null;
+  const isPaid = plan !== null && plan.id !== "free" && plan.id !== "anonymous";
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -50,11 +51,14 @@ export default async function AccountPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-sm">
             <p className="text-muted-foreground">
-              {isPro
-                ? `${plan!.limits.wordsPerRequest.toLocaleString("es-ES")} palabras por petición, sin límite diario.`
-                : `${plan?.limits.wordsPerDay ?? 0} palabras al día.`}
+              {isPaid
+                ? `${plan!.limits.wordsPerMonth?.toLocaleString("es-ES")} palabras al mes · hasta ${plan!.limits.maxWordsPerRequest.toLocaleString("es-ES")} por petición.`
+                : `${plan?.limits.wordsPerDay ?? 0} palabras al día · hasta ${plan?.limits.maxWordsPerRequest ?? 0} por petición.`}
+              {subscriber && subscriber.topupWords > 0
+                ? ` Recargas disponibles: ${subscriber.topupWords.toLocaleString("es-ES")} palabras.`
+                : ""}
             </p>
-            {isPro ? (
+            {isPaid ? (
               <form action="/api/stripe/portal" method="POST">
                 <Button type="submit" variant="outline">
                   Gestionar suscripción y facturas
@@ -62,7 +66,7 @@ export default async function AccountPage() {
               </form>
             ) : (
               <Button asChild>
-                <Link href="/precios">Probar Pro 3 días</Link>
+                <Link href="/precios">Ver planes</Link>
               </Button>
             )}
           </CardContent>

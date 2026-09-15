@@ -162,7 +162,7 @@ export function ToolEditor({ tool }: { tool: ToolId }) {
           {error}{" "}
           {upsell && (
             <a href="/precios" className="text-foreground underline">
-              Desbloquea Pro con 3 días de prueba →
+              Prueba Ilimitado 3 días gratis →
             </a>
           )}
         </p>

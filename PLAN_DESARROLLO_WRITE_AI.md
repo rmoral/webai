@@ -183,6 +183,8 @@ RLS activado: cada usuario solo lee sus filas. El service role solo se usa en we
 
 ## 4. Monetización y pagos
 
+> ⚠️ **Sustituida por `ESTUDIO_PRECIOS_Y_CONFIG_STRIPE_USD.md`.** Los precios en euros y el plan único de esta sección ya no aplican: la configuración vigente es en USD con tres planes (Pro, Ilimitado y recarga) y el trial de 3 días sobre Ilimitado. Se conserva como registro histórico.
+
 ### 4.1 Planes
 
 | Plan              | Precio                                      | Límites                                                                           | Objetivo                       |

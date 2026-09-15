@@ -10,18 +10,20 @@ import {
 } from "@/components/ui/card";
 import { TOOLS } from "@/lib/ai/tools";
 import { getSession } from "@/lib/auth/server";
-import { getPlan } from "@/lib/billing/entitlements";
+import { getSubscriber } from "@/lib/billing/entitlements";
 import { getUserUsage } from "@/lib/usage/summary";
 
 export default async function DashboardPage() {
   const user = await getSession();
   if (!user) redirect("/login");
 
-  const [plan, usage] = await Promise.all([
-    getPlan(user.id).catch(() => null),
+  const [subscriber, usage] = await Promise.all([
+    getSubscriber(user.id).catch(() => null),
     getUserUsage(user.id).catch(() => null),
   ]);
+  const plan = subscriber?.plan ?? null;
   const dailyLimit = plan?.limits.wordsPerDay ?? null;
+  const monthlyLimit = plan?.limits.wordsPerMonth ?? null;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
@@ -32,21 +34,30 @@ export default async function DashboardPage() {
         </Badge>
         {usage && (
           <span className="text-muted-foreground text-sm">
-            {dailyLimit === null
-              ? `${usage.wordsToday.toLocaleString("es-ES")} palabras hoy`
-              : `Te quedan ${Math.max(0, dailyLimit - usage.wordsToday).toLocaleString("es-ES")} palabras hoy`}
+            {dailyLimit !== null
+              ? `Te quedan ${Math.max(0, dailyLimit - usage.wordsToday).toLocaleString("es-ES")} palabras hoy`
+              : monthlyLimit !== null
+                ? `Te quedan ${Math.max(0, monthlyLimit - usage.wordsMonth).toLocaleString("es-ES")} palabras este mes`
+                : `${usage.wordsMonth.toLocaleString("es-ES")} palabras este mes`}
           </span>
         )}
-        {plan?.id !== "pro" && (
+        {subscriber && subscriber.topupWords > 0 && (
+          <span className="text-muted-foreground text-sm">
+            + {subscriber.topupWords.toLocaleString("es-ES")} de recarga
+          </span>
+        )}
+        {plan?.id === "free" && (
           <Link href="/precios" className="text-sm underline">
-            Pásate a Pro
+            Ver planes
           </Link>
         )}
       </div>
 
       <div className="mt-10 grid gap-4 sm:grid-cols-2">
         {Object.values(TOOLS).map((tool) => {
-          const available = tool.id === "humanize";
+          const available =
+            tool.id === "humanize" &&
+            (plan?.limits.tools.includes(tool.id) ?? true);
           const card = (
             <Card
               key={tool.id}

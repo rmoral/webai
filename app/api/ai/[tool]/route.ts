@@ -3,14 +3,14 @@ import { NextRequest, NextResponse, after } from "next/server";
 
 import { PROMPTS } from "@/lib/ai/prompts";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
-import type { ToolId } from "@/lib/ai/tools";
+import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { getSession } from "@/lib/auth/server";
-import { checkEntitlement, getPlan } from "@/lib/billing/entitlements";
-import { PLANS, type Plan } from "@/lib/billing/plans";
+import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
+import { PLANS } from "@/lib/billing/plans";
 import { hashIp } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { aiToolRequestSchema, countWords } from "@/lib/security/validation";
-import { checkBurstLimit, consumeDailyWords } from "@/lib/usage/quotas";
+import { checkBurstLimit, consumeWords } from "@/lib/usage/quotas";
 import { recordUsage } from "@/lib/usage/tracking";
 
 export const maxDuration = 120;
@@ -56,32 +56,45 @@ export async function POST(
     );
   }
 
-  let plan: Plan = PLANS.anonymous;
+  let subscriber = {
+    plan: PLANS.anonymous,
+    topupWords: 0,
+    periodStart: null as Date | null,
+    subscriptionId: null as string | null,
+  };
   if (user) {
     try {
-      plan = await getPlan(user.id);
+      subscriber = await getSubscriber(user.id);
     } catch (e) {
       Sentry.captureException(e);
-      plan = PLANS.free;
+      subscriber = { ...subscriber, plan: PLANS.free };
     }
   }
+  const plan = subscriber.plan;
 
   const wordsIn = countWords(text);
   const entitlement = checkEntitlement(plan, tool, wordsIn);
   if (!entitlement.allowed) {
+    const messages: Record<string, string> = {
+      unknown_tool: "Esta herramienta no existe.",
+      tool_not_in_plan: `${TOOLS[tool].name} está disponible en los planes de pago.`,
+      request_too_long: `Tu plan admite hasta ${plan.limits.maxWordsPerRequest.toLocaleString("es-ES")} palabras por petición.`,
+    };
     return error(
       entitlement.reason === "request_too_long" ? 413 : 403,
       entitlement.reason ?? "forbidden",
-      `Tu plan admite hasta ${plan.limits.wordsPerRequest} palabras por petición.`,
+      messages[entitlement.reason ?? ""] ?? "No disponible en tu plan.",
     );
   }
 
-  const quota = await consumeDailyWords(subject, plan, wordsIn);
+  const quota = await consumeWords(subject, subscriber, wordsIn);
   if (!quota.allowed) {
     return error(
       429,
       "quota_exceeded",
-      "Has agotado tus palabras de hoy. Pásate a Pro para seguir.",
+      plan.limits.wordsPerDay !== null
+        ? "Has agotado tus palabras de hoy. Prueba Ilimitado 3 días gratis."
+        : "Has agotado las palabras de tu plan este mes. Puedes comprar una recarga.",
     );
   }
 

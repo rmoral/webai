@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: "¿Es gratis?",
-    a: `Sí. Puedes humanizar hasta ${PLANS.anonymous.limits.wordsPerDay} palabras al día sin registrarte, y ${PLANS.free.limits.wordsPerDay} al día con una cuenta gratuita. El plan Pro amplía el límite a ${PLANS.pro.limits.wordsPerRequest.toLocaleString("es-ES")} palabras por petición.`,
+    a: `Sí. Puedes humanizar hasta ${PLANS.anonymous.limits.wordsPerDay} palabras al día sin registrarte, y ${PLANS.free.limits.wordsPerDay} al día con una cuenta gratuita. El plan Pro amplía el límite a ${PLANS.pro.limits.maxWordsPerRequest.toLocaleString("es-ES")} palabras por petición.`,
   },
   {
     q: "¿Funciona con textos académicos?",
@@ -29,7 +29,7 @@ const FAQ = [
   },
   {
     q: "¿Guardáis mis textos?",
-    a: "No. Los textos de usuarios anónimos y gratuitos no se almacenan: solo registramos métricas de uso. El historial es una función opcional del plan Pro.",
+    a: "No. Los textos de usuarios anónimos y gratuitos no se almacenan: solo registramos métricas de uso. El historial es una función de los planes de pago.",
   },
 ];
 
@@ -43,7 +43,7 @@ export default function HumanizerLandingPage() {
         applicationCategory: "UtilitiesApplication",
         operatingSystem: "Web",
         inLanguage: "es",
-        offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       },
       {
         "@type": "FAQPage",
