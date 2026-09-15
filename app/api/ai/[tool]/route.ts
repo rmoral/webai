@@ -20,7 +20,31 @@ function error(status: number, code: string, message: string) {
   return NextResponse.json({ error: code, message }, { status });
 }
 
+/**
+ * Boundary catch. The anti-abuse layer fails closed by throwing when a
+ * required secret is missing (hashIp without IP_HASH_SECRET, Redis without
+ * Upstash credentials in production). Failing closed is right; failing with
+ * an empty 500 is not — the browser then shows a generic "algo ha salido
+ * mal" and the cause is invisible from both ends. Answer with JSON and
+ * report it, so a misconfiguration is diagnosable instead of silent.
+ */
 export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ tool: string }> },
+) {
+  try {
+    return await handle(request, context);
+  } catch (e) {
+    Sentry.captureException(e);
+    return error(
+      500,
+      "server_error",
+      "No hemos podido procesar tu texto. Vuelve a intentarlo en unos minutos.",
+    );
+  }
+}
+
+async function handle(
   request: NextRequest,
   { params }: { params: Promise<{ tool: string }> },
 ) {

@@ -38,6 +38,20 @@ GitHub → **Actions → Sync Stripe products → Run workflow** crea (o actuali
 
 No hace falta terminal: en GitHub → **Actions → Migrate database → Run workflow**. Requiere el secreto de repositorio `DATABASE_URL` (cadena del _Session pooler_ de Supabase, puerto 5432).
 
+## Variables obligatorias en producción
+
+Estas tres no son opcionales: sin ellas las peticiones **anónimas** fallan, aunque
+las de usuarios con sesión funcionen, así que el fallo pasa desapercibido en las
+pruebas y solo lo sufre el tráfico de captación.
+
+| Variable                            | Por qué                                                    | Si falta                                         |
+| ----------------------------------- | ---------------------------------------------------------- | ------------------------------------------------ |
+| `IP_HASH_SECRET`                    | Identifica al visitante anónimo sin guardar su IP en claro | Toda petición anónima a `/api/ai/*` responde 500 |
+| `UPSTASH_REDIS_REST_URL` + `_TOKEN` | Cuotas y límite de ráfaga                                  | Igual: las protecciones fallan cerradas          |
+| `TURNSTILE_SECRET_KEY`              | Anti-bot en endpoints públicos                             | Toda petición anónima responde 403               |
+
+`openssl rand -base64 32` genera las dos claves locales.
+
 ## Servicios externos (pendientes de conectar)
 
 El código está listo, pero requieren crear cuentas y rellenar `.env.local` / variables en Vercel: Supabase, Stripe, Upstash, Resend, PostHog, Sentry, Turnstile. Ver sección 2.3 del plan.
