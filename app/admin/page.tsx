@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { isAdmin } from "@/lib/auth/admin";
 import { getSession } from "@/lib/auth/server";
+import { configHealth } from "@/lib/config/health";
 import { getAdminTotals, listUsers } from "@/lib/usage/summary";
 
 export const metadata: Metadata = {
@@ -33,6 +34,8 @@ export default async function AdminPage() {
   if (!isAdmin(user.email)) notFound();
 
   const [totals, rows] = await Promise.all([getAdminTotals(), listUsers()]);
+  const config = configHealth();
+  const missing = config.filter((c) => !c.present);
 
   const stats = [
     { label: "Usuarios", value: totals.users.toLocaleString("es-ES") },
@@ -50,6 +53,65 @@ export default async function AdminPage() {
           Volver a la app
         </Link>
       </div>
+
+      <Card className={missing.length ? "border-danger mt-8" : "mt-8"}>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+            Configuración del servidor
+            {missing.length === 0 ? (
+              <Badge variant="success">Todo configurado</Badge>
+            ) : (
+              <Badge
+                variant={missing.some((c) => c.critical) ? "danger" : "warning"}
+              >
+                {missing.length} sin configurar
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <p className="text-muted-foreground">
+            Solo se comprueba si cada variable está definida; su valor nunca se
+            lee ni se muestra. Una variable que falta rompe una ruta concreta y
+            deja el resto del sitio con buen aspecto, así que la suele encontrar
+            un usuario antes que nosotros.
+          </p>
+          {missing.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {missing.map((check) => (
+                <li key={check.name} className="flex flex-col">
+                  <span className="flex items-center gap-2 font-mono text-xs">
+                    {check.name}
+                    {check.critical && <Badge variant="danger">Crítica</Badge>}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {check.breaks}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <details className="mt-4">
+            <summary className="text-muted-foreground cursor-pointer text-xs">
+              Ver las {config.length} variables
+            </summary>
+            <ul className="mt-2 space-y-1">
+              {config.map((check) => (
+                <li key={check.name} className="flex items-center gap-2">
+                  <span
+                    className={
+                      check.present
+                        ? "bg-success size-1.5 shrink-0 rounded-full"
+                        : "bg-danger size-1.5 shrink-0 rounded-full"
+                    }
+                  />
+                  <span className="font-mono text-xs">{check.name}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </CardContent>
+      </Card>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map(({ label, value }) => (
