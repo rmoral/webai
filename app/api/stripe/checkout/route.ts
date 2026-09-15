@@ -45,7 +45,19 @@ async function handle(request: NextRequest) {
   }
   const { plan, interval } = parsed.data;
 
-  const subscriber = await getSubscriber(user.id);
+  // These two are the only things that can throw before the Stripe call,
+  // and they fail for completely different reasons. One `server_error`
+  // covering both costs a round trip every time, so they answer separately.
+  let subscriber;
+  try {
+    subscriber = await getSubscriber(user.id);
+  } catch (e) {
+    Sentry.captureException(e);
+    return NextResponse.json(
+      { error: "database_unavailable" },
+      { status: 503 },
+    );
+  }
 
   // Top-ups top up an existing plan: they are worthless without one.
   if (plan === "topup" && subscriber.plan.id === "free") {
@@ -55,7 +67,13 @@ async function handle(request: NextRequest) {
     );
   }
 
-  const price = await findPrice(lookupKeyFor(plan, interval));
+  let price;
+  try {
+    price = await findPrice(lookupKeyFor(plan, interval));
+  } catch (e) {
+    Sentry.captureException(e);
+    return NextResponse.json({ error: "stripe_unavailable" }, { status: 503 });
+  }
   if (!price) {
     return NextResponse.json(
       { error: "price_not_configured" },

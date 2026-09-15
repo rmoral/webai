@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import type { BillingInterval } from "@/lib/billing/plans";
 
 const MESSAGES: Record<string, string> = {
+  stripe_unavailable:
+    "No hemos podido contactar con el proveedor de pagos. Vuelve a intentarlo en unos minutos.",
+  database_unavailable:
+    "No hemos podido leer tu plan. Vuelve a intentarlo en unos minutos.",
   price_not_configured:
     "Este plan todavía no está disponible para comprar. Estamos en ello.",
   checkout_failed:
