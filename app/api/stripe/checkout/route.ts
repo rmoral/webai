@@ -18,7 +18,22 @@ const bodySchema = z.object({
   interval: z.enum(["monthly", "yearly"]).default("yearly"),
 });
 
+/**
+ * Boundary catch. `getSubscriber` and `findPrice` run before the Stripe
+ * call and can both throw (no STRIPE_SECRET_KEY, no database), which used
+ * to surface as an empty 500 and an unhelpful "no se pudo abrir el pago".
+ * Every failure now carries a code the client can act on.
+ */
 export async function POST(request: NextRequest) {
+  try {
+    return await handle(request);
+  } catch (e) {
+    Sentry.captureException(e);
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
+  }
+}
+
+async function handle(request: NextRequest) {
   const user = await getSession();
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -106,22 +121,29 @@ export async function POST(request: NextRequest) {
       cancel_url: `${appUrl}/precios?checkout=cancelled`,
     });
 
-    // Auditable consent record: who, when, from where, which terms.
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-    await getDb()
-      .insert(events)
-      .values({
-        userId: user.id,
-        name: "checkout_started",
-        props: {
-          plan,
-          interval,
-          trial: withTrial,
-          termsVersion: TERMS_VERSION,
-          sessionId: session.id,
-          ipHash: ip ? hashIp(ip) : null,
-        },
-      });
+    // Auditable consent record: who, when, from where, which terms. Stripe
+    // records the acceptance itself through consent_collection, so this row
+    // is a local mirror — losing it must not cost the sale, and blocking a
+    // paying customer over a failed insert is the worse failure.
+    try {
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+      await getDb()
+        .insert(events)
+        .values({
+          userId: user.id,
+          name: "checkout_started",
+          props: {
+            plan,
+            interval,
+            trial: withTrial,
+            termsVersion: TERMS_VERSION,
+            sessionId: session.id,
+            ipHash: ip ? hashIp(ip) : null,
+          },
+        });
+    } catch (e) {
+      Sentry.captureException(e);
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

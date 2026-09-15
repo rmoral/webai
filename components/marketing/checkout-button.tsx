@@ -7,6 +7,17 @@ import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import type { BillingInterval } from "@/lib/billing/plans";
 
+const MESSAGES: Record<string, string> = {
+  price_not_configured:
+    "Este plan todavía no está disponible para comprar. Estamos en ello.",
+  checkout_failed:
+    "Nuestro proveedor de pagos ha rechazado la solicitud. Vuelve a intentarlo en unos minutos.",
+  server_error:
+    "No hemos podido abrir el pago por un problema nuestro. Vuelve a intentarlo en unos minutos.",
+  invalid_request: "La solicitud no era válida. Recarga la página.",
+  default: "No se pudo abrir el pago. Inténtalo de nuevo.",
+};
+
 export function CheckoutButton({
   plan,
   interval,
@@ -47,10 +58,15 @@ export function CheckoutButton({
     const data = await res.json().catch(() => null);
     if (data?.url) {
       window.location.href = data.url;
-    } else {
-      setError("No se pudo abrir el pago. Inténtalo de nuevo.");
-      setLoading(false);
+      return;
     }
+
+    // Every failure used to read the same, so the four causes were
+    // indistinguishable from the outside. The reference is what turns a
+    // support message into a diagnosis.
+    const code = typeof data?.error === "string" ? data.error : "sin_respuesta";
+    setError(`${MESSAGES[code] ?? MESSAGES.default} (ref: ${code})`);
+    setLoading(false);
   }
 
   return (
