@@ -67,6 +67,43 @@ async function upsertSubscription(userId: string, sub: Stripe.Subscription) {
     .onConflictDoUpdate({ target: subscriptions.userId, set: fields });
 }
 
+/**
+ * Applies a subscription to our row, creating it if the row is missing.
+ *
+ * checkout.session.completed is what normally creates it, and it is the
+ * only event carrying client_reference_id. When that one delivery is lost
+ * -- a redirect Stripe will not follow, an endpoint added after the first
+ * sale, an outage -- every later event was an UPDATE matching no row, so
+ * the customer kept paying and kept the free plan, and nothing said so.
+ * The subscription metadata carries the user id, so any later event can
+ * repair the state instead of discarding it.
+ */
+async function applySubscription(sub: Stripe.Subscription) {
+  const updated = await getDb()
+    .update(subscriptions)
+    .set(await subscriptionFields(sub))
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .returning({ userId: subscriptions.userId });
+  if (updated.length > 0) return;
+
+  const userId = sub.metadata?.user_id;
+  if (!userId) {
+    console.error(
+      `[webhook] ${sub.id} has no local row and no user_id in its metadata: the account cannot be identified`,
+    );
+    Sentry.captureMessage("stripe.subscription.unattributed", {
+      level: "error",
+      extra: { subscriptionId: sub.id },
+    });
+    return;
+  }
+
+  await upsertSubscription(userId, sub);
+  console.warn(
+    `[webhook] recreated the missing row for ${sub.id}: an earlier checkout.session.completed never arrived`,
+  );
+}
+
 async function customerEmail(customer: string): Promise<string | null> {
   const record = await getStripe().customers.retrieve(customer);
   return record.deleted ? null : record.email;
@@ -185,12 +222,7 @@ export async function POST(request: NextRequest) {
 
       // 3. Plan or status change: recompute entitlements.
       case "customer.subscription.updated": {
-        const sub = event.data.object;
-        const fields = await subscriptionFields(sub);
-        await db
-          .update(subscriptions)
-          .set(fields)
-          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+        await applySubscription(event.data.object);
         break;
       }
 
@@ -216,16 +248,13 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object;
         const subscriptionId = invoice.lines?.data[0]?.subscription;
         if (!subscriptionId) break;
-        const sub = await getStripe().subscriptions.retrieve(
-          typeof subscriptionId === "string"
-            ? subscriptionId
-            : subscriptionId.id,
+        await applySubscription(
+          await getStripe().subscriptions.retrieve(
+            typeof subscriptionId === "string"
+              ? subscriptionId
+              : subscriptionId.id,
+          ),
         );
-        const fields = await subscriptionFields(sub);
-        await db
-          .update(subscriptions)
-          .set(fields)
-          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
         break;
       }
 
