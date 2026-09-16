@@ -171,7 +171,7 @@ export function databaseTarget(): DatabaseTarget {
     return {
       endpoint: null,
       problem:
-        "No es una URL válida. ¿Se ha colado un espacio o un salto de línea al pegarla?",
+        "No es una URL válida. Suele ser un carácter sin codificar en la contraseña: #, ? o / la rompen. Lo más simple es resetearla en Supabase por una de solo letras y números.",
     };
   }
 
@@ -203,6 +203,17 @@ export function databaseTarget(): DatabaseTarget {
         problem: `El usuario debe ser ${expected}, no ${actual}. El pooler enruta por el ref del proyecto que va en el usuario; sin él no sabe a qué base de datos conectar.`,
       };
     }
+  }
+
+  // A password containing a raw @ still parses -- the last @ wins as the
+  // delimiter -- so the host reads correctly and only the credentials come
+  // out wrong. Nothing downstream can tell that from a wrong password.
+  if ((url.match(/@/g) ?? []).length > 1) {
+    return {
+      endpoint,
+      problem:
+        "La contraseña contiene una @ sin codificar, así que se corta al leer la cadena. Escríbela como %40, o resetea la contraseña en Supabase por una de solo letras y números.",
+    };
   }
 
   if (parsed.hostname.endsWith(".pooler.supabase.com") && port === "6543") {
@@ -246,7 +257,7 @@ const HINTS: Record<string, string> = {
   "42501":
     "El usuario de la cadena no tiene permiso sobre la tabla. Usa el usuario postgres del proyecto.",
   "28P01":
-    "Contraseña incorrecta. Resetéala en Supabase → Settings → Database y actualízala aquí y en el secret DATABASE_URL de GitHub Actions.",
+    "Contraseña incorrecta. Si lleva caracteres como @, #, ? o /, la cadena se lee mal aunque la contraseña sea la buena. Lo más rápido: resetéala en Supabase → Settings → Database por una de solo letras y números, y actualízala aquí y en el secret DATABASE_URL de GitHub Actions.",
   "28000":
     "Usuario rechazado. En el pooler el usuario es postgres.<ref-del-proyecto>, no solo postgres.",
   "3D000":

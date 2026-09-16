@@ -192,3 +192,38 @@ describe("sslFor", () => {
     expect(sslFor("not a url")).toEqual({});
   });
 });
+
+describe("password encoding traps", () => {
+  const original = process.env.DATABASE_URL;
+  afterEach(() => {
+    if (original === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = original;
+  });
+
+  function target(password: string) {
+    process.env.DATABASE_URL = `postgresql://postgres.abc:${password}@aws-0-us-east-1.pooler.supabase.com:5432/postgres`;
+    return databaseTarget();
+  }
+
+  it("catches a raw @, which parses but truncates the password", () => {
+    // The last @ wins as the delimiter, so the host still reads correctly
+    // and nothing downstream can tell this from a wrong password.
+    const t = target("pa@ss123");
+    expect(t.endpoint).toBe("aws-0-us-east-1.pooler.supabase.com:5432");
+    expect(t.problem).toMatch(/@ sin codificar/);
+  });
+
+  it("accepts a correctly encoded @", () => {
+    expect(target("pa%40ss123").problem).toBeNull();
+  });
+
+  it("blames the password when # or ? make the string unparseable", () => {
+    for (const password of ["pa#ss", "pa?ss", "pa/ss"]) {
+      expect(target(password).problem).toMatch(/contraseña/);
+    }
+  });
+
+  it("leaves an ordinary password alone", () => {
+    expect(target("Simple123").problem).toBeNull();
+  });
+});
