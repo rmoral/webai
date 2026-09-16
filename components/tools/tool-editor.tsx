@@ -15,7 +15,7 @@ import {
 } from "@/components/tools/highlight";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorResult } from "@/lib/ai/detector/features";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { countWords } from "@/lib/security/validation";
@@ -54,9 +54,10 @@ export function ToolEditor({
   plan?: PlanId;
 }) {
   const modes = TOOLS[tool].modes;
-  const [mode, setMode] = useState<string | undefined>(
-    TOOLS[tool].defaultMode ?? modes[0],
-  );
+  // What the user picked, which may belong to a tool they have since left.
+  // resolveMode is what decides the mode actually in force.
+  const [picked, setPicked] = useState<string>();
+  const mode = resolveMode(tool, picked);
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [parts, setParts] = useState<Change[] | null>(null);
@@ -69,6 +70,16 @@ export function ToolEditor({
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string>(null);
   const posthog = usePostHog();
+
+  // Switching tool reuses this component, so a previous result would sit
+  // under the new tool's heading as if it had produced it.
+  useEffect(() => {
+    setOutput("");
+    setParts(null);
+    setReport(null);
+    setError(null);
+    setStatus("idle");
+  }, [tool]);
 
   useEffect(() => {
     if (!TURNSTILE_KEY || !widgetRef.current || widgetId.current) return;
@@ -183,7 +194,7 @@ export function ToolEditor({
         {modes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
             {modes.map((m) => (
-              <Chip key={m} pressed={m === mode} onClick={() => setMode(m)}>
+              <Chip key={m} pressed={m === mode} onClick={() => setPicked(m)}>
                 {MODE_LABELS[m] ?? m}
               </Chip>
             ))}

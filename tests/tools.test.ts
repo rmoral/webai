@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PROMPTS } from "@/lib/ai/prompts";
-import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import { PLANS } from "@/lib/billing/plans";
 
 const tools = Object.values(TOOLS);
@@ -86,6 +86,48 @@ describe("prompt builders", () => {
       if (!builder) continue;
       expect(builder.system).toBe(PROMPTS[tool.id]!.system);
       expect(builder.system.length).toBeGreaterThan(200);
+    }
+  });
+});
+
+describe("resolveMode", () => {
+  it("drops a mode left over from another tool", () => {
+    // The editor is reused across tools inside /app, so the previous
+    // tool's mode survives the switch. Sending it made the server reject
+    // the request as malformed: "Petición no válida" on a tool the user
+    // had not configured at all.
+    expect(resolveMode("detect", "neutro")).toBeUndefined();
+    expect(resolveMode("paraphrase", "neutro")).toBe("estandar");
+    expect(resolveMode("correct", "neutro")).toBe("general");
+  });
+
+  it("keeps a mode the tool actually offers", () => {
+    expect(resolveMode("humanize", "informal")).toBe("informal");
+    // Shared across two tools, so switching keeps the user's choice.
+    expect(resolveMode("correct", "academico")).toBe("academico");
+  });
+
+  it("falls back to the tool's own default when nothing is picked", () => {
+    for (const tool of tools) {
+      const resolved = resolveMode(tool.id);
+      expect(resolved, `${tool.id} default`).toBe(
+        tool.defaultMode ?? tool.modes[0],
+      );
+    }
+  });
+
+  it("only ever resolves to something the request schema accepts", () => {
+    // The guarantee that matters: whatever the state history, the mode
+    // sent is one this tool declares, or none at all.
+    for (const tool of tools) {
+      for (const chosen of [undefined, "neutro", "estandar", "inventado"]) {
+        const resolved = resolveMode(tool.id, chosen);
+        if (resolved !== undefined) {
+          expect(tool.modes, `${tool.id} ← ${chosen}`).toContain(resolved);
+        } else {
+          expect(tool.modes, `${tool.id} has no modes`).toHaveLength(0);
+        }
+      }
     }
   });
 });
