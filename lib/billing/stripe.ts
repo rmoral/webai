@@ -40,3 +40,55 @@ export async function findPrice(
   });
   return data[0] ?? null;
 }
+
+/** Why Stripe refused to open a checkout session. */
+export interface CheckoutRejection {
+  /** Error code for the client, surfaced to the operator as `(ref: …)`. */
+  code: string;
+  /** What has to change in the Stripe Dashboard. Null when unrecognised. */
+  fix: string | null;
+}
+
+/**
+ * Stripe states its objections precisely and then we throw that away: the
+ * route answered every refusal with `checkout_failed`, so a Dashboard
+ * setting nobody turned on looked identical to an outage.
+ *
+ * Classification keys off `param`, which Stripe sets on an invalid request
+ * and which does not change wording between API versions the way the
+ * message does. The message is only a fallback.
+ */
+export function describeCheckoutRejection(error: unknown): CheckoutRejection {
+  const e = error as { type?: string; param?: string; message?: string };
+  const where = `${e?.param ?? ""} ${e?.message ?? ""}`;
+
+  if (e?.type === "StripeAuthenticationError") {
+    return {
+      code: "stripe_key_invalid",
+      fix: "STRIPE_SECRET_KEY no es válida para esta cuenta. Cópiala de nuevo desde Stripe → Developers → API keys, y comprueba que sea del mismo modo (test o live) que los precios.",
+    };
+  }
+
+  if (where.includes("automatic_tax")) {
+    return {
+      code: "tax_not_configured",
+      fix: "Stripe Tax no está activado. Actívalo en Stripe → Tax y define la dirección de origen de YBB Solutions, LLC. Sin eso Stripe rechaza cualquier sesión con automatic_tax.",
+    };
+  }
+
+  if (where.includes("consent_collection")) {
+    return {
+      code: "terms_url_missing",
+      fix: "Falta la URL de los términos en Stripe → Settings → Business → Public details. Es obligatoria para pedir la aceptación de términos en el checkout. Usa https://www.verbalyx.ai/legal/terminos.",
+    };
+  }
+
+  if (where.includes("customer_update")) {
+    return {
+      code: "customer_update_invalid",
+      fix: "Stripe rechaza customer_update porque la sesión no lleva un cliente asociado. Revisa el plan del usuario antes de abrir el pago.",
+    };
+  }
+
+  return { code: "checkout_failed", fix: null };
+}
