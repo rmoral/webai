@@ -7,7 +7,16 @@ import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import type { BillingInterval } from "@/lib/billing/plans";
 
+// Stripe refusing us is our problem, not the customer's, and there is
+// nothing for them to retry. The reference is what tells us which setting.
+const CONFIG_PROBLEM =
+  "El pago no está disponible ahora mismo por un problema de configuración nuestro. Ya estamos en ello.";
+
 const MESSAGES: Record<string, string> = {
+  tax_not_configured: CONFIG_PROBLEM,
+  terms_url_missing: CONFIG_PROBLEM,
+  stripe_key_invalid: CONFIG_PROBLEM,
+  customer_update_invalid: CONFIG_PROBLEM,
   stripe_unavailable:
     "No hemos podido contactar con el proveedor de pagos. Vuelve a intentarlo en unos minutos.",
   database_unavailable:

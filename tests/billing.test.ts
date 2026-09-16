@@ -4,6 +4,7 @@ import { checkEntitlement } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
 import { PLANS, PRICES, TOPUP, TRIAL, yearlySaving } from "@/lib/billing/plans";
 import { trialDisclosure } from "@/lib/billing/disclosure";
+import { describeCheckoutRejection } from "@/lib/billing/stripe";
 
 describe("plan catalogue", () => {
   it("matches the prices of the pricing study", () => {
@@ -112,5 +113,57 @@ describe("trialDisclosure", () => {
     expect(text).toContain("29,99");
     expect(text).toContain("14,99");
     expect(text).toContain("cancelar");
+  });
+});
+
+describe("describeCheckoutRejection", () => {
+  it("names Stripe Tax when that is what Stripe objected to", () => {
+    const e = {
+      type: "StripeInvalidRequestError",
+      param: "automatic_tax[enabled]",
+      message: "You cannot use automatic tax without a registered address.",
+    };
+    const { code, fix } = describeCheckoutRejection(e);
+    expect(code).toBe("tax_not_configured");
+    expect(fix).toMatch(/Stripe Tax/);
+  });
+
+  it("names the terms URL when consent collection is refused", () => {
+    const e = {
+      type: "StripeInvalidRequestError",
+      param: "consent_collection[terms_of_service]",
+      message: "You must provide a terms of service URL.",
+    };
+    expect(describeCheckoutRejection(e).code).toBe("terms_url_missing");
+  });
+
+  it("classifies from the message when param is absent", () => {
+    // Older API versions omit param on some errors.
+    const e = {
+      type: "StripeInvalidRequestError",
+      message: "automatic_tax requires an origin address",
+    };
+    expect(describeCheckoutRejection(e).code).toBe("tax_not_configured");
+  });
+
+  it("separates a bad key from a bad request", () => {
+    const { code, fix } = describeCheckoutRejection({
+      type: "StripeAuthenticationError",
+      message: "Invalid API Key provided",
+    });
+    expect(code).toBe("stripe_key_invalid");
+    expect(fix).toMatch(/STRIPE_SECRET_KEY/);
+  });
+
+  it("falls back without inventing a fix it cannot know", () => {
+    for (const e of [
+      { type: "StripeAPIError", message: "An unexpected error occurred" },
+      new Error("socket hang up"),
+      null,
+    ]) {
+      const { code, fix } = describeCheckoutRejection(e);
+      expect(code).toBe("checkout_failed");
+      expect(fix).toBeNull();
+    }
   });
 });

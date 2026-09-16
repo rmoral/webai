@@ -126,3 +126,26 @@ test("the marketing header resolves the session instead of assuming", async ({
   ).toBeVisible();
   await expect(header.getByRole("link", { name: "Mi cuenta" })).toHaveCount(0);
 });
+
+test("a Stripe configuration refusal names itself instead of reading as an outage", async ({
+  page,
+}) => {
+  // Stripe refusing a setting we never turned on is our problem and there
+  // is nothing to retry, so the customer must not be told to come back in
+  // a few minutes. The reference is how we learn which setting it was.
+  await page.route("**/api/stripe/checkout", (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "tax_not_configured" }),
+    }),
+  );
+
+  await page.goto("/precios");
+  await page.getByRole("button", { name: /Probar 3 días gratis/ }).click();
+
+  const error = page.getByText(/ref: tax_not_configured/);
+  await expect(error).toBeVisible();
+  await expect(error).toContainText("configuración nuestro");
+  await expect(error).not.toContainText("Vuelve a intentarlo");
+});

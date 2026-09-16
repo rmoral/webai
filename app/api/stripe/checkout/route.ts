@@ -5,7 +5,12 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
 import { TRIAL } from "@/lib/billing/plans";
-import { findPrice, getStripe, lookupKeyFor } from "@/lib/billing/stripe";
+import {
+  describeCheckoutRejection,
+  findPrice,
+  getStripe,
+  lookupKeyFor,
+} from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events } from "@/lib/db/schema";
 import { hashIp } from "@/lib/security/crypto";
@@ -166,6 +171,15 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     Sentry.captureException(error);
-    return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
+    // Stripe says exactly what it objected to, and a generic 502 threw
+    // that away. The code reaches the operator as `(ref: …)`; the fix and
+    // Stripe's own words go to the server log, which is the one place a
+    // customer never sees.
+    const { code, fix } = describeCheckoutRejection(error);
+    console.error(
+      `[checkout] ${code}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    if (fix) console.error(`[checkout] ${fix}`);
+    return NextResponse.json({ error: code }, { status: 502 });
   }
 }
