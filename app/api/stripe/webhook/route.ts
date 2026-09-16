@@ -110,7 +110,9 @@ async function customerEmail(customer: string): Promise<string | null> {
 }
 
 export async function POST(request: NextRequest) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  // Trimmed: a newline picked up while pasting into a dashboard fails
+  // verification exactly like a wrong secret, and reads as one.
+  const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   const signature = request.headers.get("stripe-signature");
   if (!secret || !signature) {
     console.error(
@@ -127,10 +129,15 @@ export async function POST(request: NextRequest) {
       secret,
     );
   } catch {
-    // Almost always the wrong secret: each endpoint in Stripe has its own,
-    // and test and live endpoints never share one.
+    // Two different mistakes arrive as the same failure. A value that is
+    // not a signing secret at all -- the endpoint id `we_…`, an API key --
+    // is worth naming apart, because looking for the "right" secret when
+    // the wrong *kind* of value is configured wastes the whole search.
+    // The value itself is never logged.
     console.error(
-      "[webhook] signature verification failed. STRIPE_WEBHOOK_SECRET must be the signing secret of this exact endpoint, in this exact mode.",
+      secret.startsWith("whsec_")
+        ? "[webhook] signature verification failed. STRIPE_WEBHOOK_SECRET is a signing secret, but not this endpoint's: every endpoint has its own, and test and live never share one. Copy it from this endpoint's page in Stripe and redeploy — Vercel only applies a variable to new deployments."
+        : "[webhook] STRIPE_WEBHOOK_SECRET does not look like a signing secret: it must start with whsec_. The endpoint id (we_…) and the API key (sk_…) are different values and neither will ever verify.",
     );
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
