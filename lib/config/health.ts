@@ -251,9 +251,11 @@ export interface DatabaseFailure {
 // prose, and the code is the part that maps to an action. Only the ones a
 // fresh deployment actually hits are listed; anything else falls through
 // to the driver's own words.
+const MIGRATIONS_PENDING =
+  "Lánzalas desde GitHub → Actions → «Migrate database» → Run workflow.";
+
 const HINTS: Record<string, string> = {
-  "42P01":
-    "La tabla no existe: las migraciones no se han aplicado a esta base de datos. Lánzalas desde GitHub → Actions → «Migrate database» → Run workflow.",
+  "42P01": `La tabla no existe: las migraciones no se han aplicado a esta base de datos. ${MIGRATIONS_PENDING}`,
   "42501":
     "El usuario de la cadena no tiene permiso sobre la tabla. Usa el usuario postgres del proyecto.",
   "28P01":
@@ -289,9 +291,19 @@ export function describeDatabaseFailure(error: unknown): DatabaseFailure {
   const raw = (inner as { code?: unknown })?.code;
   const code = typeof raw === "string" ? raw : null;
 
+  // A value the code knows and the database does not means the schema is
+  // behind the code, not bad input from a user. 22P02 is too broad to map
+  // on its own -- it also covers a malformed uuid or integer -- so match
+  // the complaint, not the code.
+  const staleSchema = /invalid input value for enum/.test(message);
+
   return {
     detail: redactCredentials(code ? `${code}: ${message}` : message),
-    hint: code ? (HINTS[code] ?? null) : null,
+    hint: staleSchema
+      ? `La base de datos tiene un esquema anterior al del código: hay migraciones sin aplicar. ${MIGRATIONS_PENDING}`
+      : code
+        ? (HINTS[code] ?? null)
+        : null,
   };
 }
 

@@ -227,3 +227,27 @@ describe("password encoding traps", () => {
     expect(target("Simple123").problem).toBeNull();
   });
 });
+
+describe("a schema older than the code", () => {
+  it("reads an unknown enum value as a pending migration", () => {
+    // The code ships a plan the database's enum was never told about.
+    const driver = Object.assign(
+      new Error(`invalid input value for enum plan: "unlimited"`),
+      { code: "22P02" },
+    );
+    const { hint } = describeDatabaseFailure(
+      new Error("Failed query: select …", { cause: driver }),
+    );
+    expect(hint).toMatch(/migraciones sin aplicar/);
+    expect(hint).toMatch(/Migrate database/);
+  });
+
+  it("does not blame migrations for other 22P02 errors", () => {
+    // Same code, ordinary bad input: a malformed uuid from a request.
+    const e = Object.assign(
+      new Error('invalid input syntax for type uuid: "not-a-uuid"'),
+      { code: "22P02" },
+    );
+    expect(describeDatabaseFailure(e).hint).toBeNull();
+  });
+});
