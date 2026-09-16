@@ -8,6 +8,7 @@ import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { getSession } from "@/lib/auth/server";
 import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
+import { saveDocument } from "@/lib/documents/store";
 import { hashIp } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { aiToolRequestSchema, countWords } from "@/lib/security/validation";
@@ -184,6 +185,18 @@ async function handle(
         wordsOut: countWords(outText),
         costCents: estimateCostCents(final.model, final.usage),
       });
+      // The plan decides whether this is kept; saveDocument holds that
+      // gate, so free and anonymous text never reaches the table.
+      if (user) {
+        await saveDocument({
+          userId: user.id,
+          plan,
+          tool: tool as ToolId,
+          mode,
+          inputText: text,
+          outputText: outText,
+        });
+      }
     } catch {
       // finalMessage rejects when the stream errored/aborted; already reported.
     }
