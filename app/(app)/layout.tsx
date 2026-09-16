@@ -51,7 +51,10 @@ export default async function AppLayout({
                 />
               </>
             )}
-            <Link href="/app/cuenta" className="ml-auto hover:underline">
+            <Link href="/app/historial" className="ml-auto hover:underline">
+              Historial
+            </Link>
+            <Link href="/app/cuenta" className="hover:underline">
               Mi cuenta
             </Link>
             {isAdmin(user.email) && (

@@ -149,3 +149,14 @@ test("a Stripe configuration refusal names itself instead of reading as an outag
   await expect(error).toContainText("configuración nuestro");
   await expect(error).not.toContainText("Vuelve a intentarlo");
 });
+
+test("the history is behind a session and announces its plan gate", async ({
+  page,
+}) => {
+  // The history holds user text, so the route must not be reachable without
+  // a session. What a free account sees once signed in is the upsell, which
+  // needs credentials and is covered by the gated test above.
+  await page.goto("/app/historial");
+  await page.waitForURL(/\/login/);
+  await expect(page.getByText("Inicia sesión")).toBeVisible();
+});
