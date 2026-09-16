@@ -76,6 +76,9 @@ export async function POST(request: NextRequest) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = request.headers.get("stripe-signature");
   if (!secret || !signature) {
+    console.error(
+      `[webhook] rejected: ${secret ? "request carried no stripe-signature header" : "STRIPE_WEBHOOK_SECRET is not set"}`,
+    );
     return NextResponse.json({ error: "not_configured" }, { status: 503 });
   }
 
@@ -87,6 +90,11 @@ export async function POST(request: NextRequest) {
       secret,
     );
   } catch {
+    // Almost always the wrong secret: each endpoint in Stripe has its own,
+    // and test and live endpoints never share one.
+    console.error(
+      "[webhook] signature verification failed. STRIPE_WEBHOOK_SECRET must be the signing secret of this exact endpoint, in this exact mode.",
+    );
     return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
@@ -109,7 +117,21 @@ export async function POST(request: NextRequest) {
         const session = event.data.object;
         const userId = session.client_reference_id;
         const email = session.customer_details?.email;
-        if (!userId) break;
+        if (!userId) {
+          // Someone paid and we cannot say who: the session did not come
+          // from our checkout route, which is the only thing that sets
+          // client_reference_id. Answering 200 is right -- a retry would
+          // carry the same missing field -- but doing it silently leaves a
+          // paying customer on the free plan with nothing to find them by.
+          console.error(
+            `[webhook] unattributed payment: session=${session.id} email=${email ?? "unknown"}`,
+          );
+          Sentry.captureMessage("stripe.checkout.unattributed", {
+            level: "error",
+            extra: { eventId: event.id, sessionId: session.id },
+          });
+          break;
+        }
 
         if (email) {
           await db
@@ -268,6 +290,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Let Stripe retry: remove the idempotency mark before failing.
     await db.delete(stripeEvents).where(eq(stripeEvents.id, event.id));
+    console.error(
+      `[webhook] ${event.type} failed, Stripe will retry: ${error instanceof Error ? error.message : String(error)}`,
+    );
     Sentry.captureException(error);
     return NextResponse.json({ error: "handler_failed" }, { status: 500 });
   }
