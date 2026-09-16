@@ -200,3 +200,65 @@ export function databaseTarget(): DatabaseTarget {
 
   return { endpoint, problem: null };
 }
+
+/** Why a database query failed, in terms the operator can act on. */
+export interface DatabaseFailure {
+  /** The driver's own complaint, with any credentials stripped. */
+  detail: string;
+  /** What to do about it, when the Postgres error code says plainly enough. */
+  hint: string | null;
+}
+
+// Postgres answers a misconfiguration with a code before it answers with
+// prose, and the code is the part that maps to an action. Only the ones a
+// fresh deployment actually hits are listed; anything else falls through
+// to the driver's own words.
+const HINTS: Record<string, string> = {
+  "42P01":
+    "La tabla no existe: las migraciones no se han aplicado a esta base de datos. Lánzalas desde GitHub → Actions → «Migrate database» → Run workflow.",
+  "42501":
+    "El usuario de la cadena no tiene permiso sobre la tabla. Usa el usuario postgres del proyecto.",
+  "28P01":
+    "Contraseña incorrecta. Resetéala en Supabase → Settings → Database y actualízala aquí y en el secret DATABASE_URL de GitHub Actions.",
+  "28000":
+    "Usuario rechazado. En el pooler el usuario es postgres.<ref-del-proyecto>, no solo postgres.",
+  "3D000":
+    "La base de datos del final de la cadena no existe. Debe terminar en /postgres.",
+  XX000:
+    "El pooler rechaza la conexión. Suele ser el usuario: en el pooler es postgres.<ref-del-proyecto>, no solo postgres.",
+  ENOTFOUND: "El host no resuelve. Revisa que esté bien escrito.",
+  ECONNREFUSED: "El host resuelve pero rechaza la conexión. Revisa el puerto.",
+  ETIMEDOUT:
+    "La conexión expira sin respuesta. Es lo que ocurre con la conexión directa de Supabase, que solo resuelve en IPv6.",
+};
+
+/**
+ * Drizzle wraps the driver's error and its own message is just the SQL it
+ * tried, which says nothing about why. The reason — the Postgres code and
+ * complaint — is in `cause`, so unwrap to the innermost error before
+ * reporting. Without this the panel shows a query and no diagnosis.
+ */
+export function describeDatabaseFailure(error: unknown): DatabaseFailure {
+  let inner: unknown = error;
+  // Bounded: an error chain should be short, and cause can be cyclic.
+  for (let depth = 0; depth < 5; depth++) {
+    const next = inner instanceof Error ? inner.cause : undefined;
+    if (!next || next === inner) break;
+    inner = next;
+  }
+
+  const message = inner instanceof Error ? inner.message : String(inner);
+  const raw = (inner as { code?: unknown })?.code;
+  const code = typeof raw === "string" ? raw : null;
+
+  return {
+    detail: redactCredentials(code ? `${code}: ${message}` : message),
+    hint: code ? (HINTS[code] ?? null) : null,
+  };
+}
+
+// Driver errors are not supposed to quote the connection string, but this
+// text is rendered on a page, so do not depend on that.
+function redactCredentials(message: string): string {
+  return message.replace(/\/\/[^/@\s]*@/g, "//…@");
+}
