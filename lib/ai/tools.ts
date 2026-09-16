@@ -78,3 +78,20 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
 export function getTool(id: string): ToolDefinition | undefined {
   return TOOLS[id as ToolId];
 }
+
+/**
+ * The mode that applies to a tool, given whatever the user last picked.
+ *
+ * The editor keeps one mode across tools -- switching tool inside /app is a
+ * query-param navigation, so the component is reused and its state survives.
+ * A mode from the previous tool is not valid for the new one, and the server
+ * rejects the request as malformed, which reads as "Petición no válida" for
+ * a tool the user has not configured at all. Resolving here means an
+ * impossible mode cannot be sent whatever the state history, and the editor
+ * and the server agree on the default because both come from this registry.
+ */
+export function resolveMode(id: ToolId, chosen?: string): string | undefined {
+  const { modes, defaultMode } = TOOLS[id];
+  if (chosen && (modes as readonly string[]).includes(chosen)) return chosen;
+  return defaultMode ?? modes[0];
+}

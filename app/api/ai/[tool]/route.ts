@@ -36,6 +36,11 @@ export async function POST(
   try {
     return await handle(request, context);
   } catch (e) {
+    // The anti-abuse layer throws by name when a secret is missing, and
+    // that name is the whole diagnosis: "Upstash Redis is not configured"
+    // and "ANTHROPIC_API_KEY is not set" are one variable apart and look
+    // identical from the browser.
+    console.error(`[ai] ${e instanceof Error ? e.message : String(e)}`);
     Sentry.captureException(e);
     return error(
       500,
