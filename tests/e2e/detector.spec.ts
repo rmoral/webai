@@ -3,35 +3,72 @@ import { expect, test, type Page } from "@playwright/test";
 // The detector runs entirely on our own server with no model call, so unlike
 // the other tools this whole flow is exercisable in CI without any API key.
 
-const FORMULAIC = `Es importante destacar que la lectura desempeña un papel
-fundamental en el desarrollo personal. Además, la lectura permite ampliar el
-vocabulario de forma significativa. Por otro lado, la lectura mejora la
-capacidad de concentración de las personas. En este sentido, la lectura
-resulta esencial para el crecimiento intelectual. Asimismo, la lectura
-contribuye a desarrollar el pensamiento crítico de forma notable. Cabe
-destacar que la lectura favorece la empatía entre las personas. Por lo tanto,
-la lectura constituye una herramienta muy valiosa. En este sentido, la lectura
-amplía la perspectiva cultural de quien la practica. De esta manera, la
-lectura enriquece la vida cotidiana de forma constante. Cabe mencionar que la
-lectura estimula la imaginación de manera considerable. En conclusión, la
-lectura es fundamental para el desarrollo humano completo.`;
+// Pasted straight out of a chat: assistant register, Markdown heading, spaced
+// em dash. Above the 200-word floor, because below it the engine refuses.
+const GENERADO = `**La transformación digital en las organizaciones**
 
-// Generated prose in a careful academic register. Every signal here reads
-// human, so it lands in "bajo" -- which is exactly the case the result has
-// to explain rather than let the reader misread.
-const MACHINE_WELL_WRITTEN = `El debate sobre la periodización del
-Renacimiento español ha estado condicionado por una tensión historiográfica
-persistente. Menéndez Pelayo situó su inicio en la década de 1520,
-vinculándolo a la difusión del erasmismo; Bataillon, medio siglo después,
-matizó esa lectura al mostrar que la recepción de Erasmo fue más tardía y más
-conflictiva de lo supuesto. La discusión no es meramente cronológica. Aceptar
-una u otra fecha implica asumir qué se considera "renacentista": ¿la
-circulación de textos clásicos, la reforma de la piedad, un determinado gusto
-formal? Los estudios recientes sobre bibliotecas privadas sevillanas
-complican aún más el cuadro, pues documentan la presencia de autores
-italianos décadas antes de lo que admitía el consenso. Quizá el problema
-resida en la propia categoría del Renacimiento, heredada de una tradición
-crítica que buscaba en España un reflejo del modelo italiano.`;
+La inteligencia artificial ha transformado profundamente la manera en que las
+organizaciones abordan sus procesos internos. En la actualidad, resulta
+fundamental comprender cómo estas herramientas pueden integrarse de forma
+efectiva en los flujos de trabajo existentes. Las empresas que han iniciado
+este camino reportan mejoras sustanciales en su productividad operativa.
+
+Por otro lado, es importante destacar que la adopción tecnológica no depende
+únicamente de la infraestructura disponible. En este sentido, la formación del
+personal desempeña un papel crucial en el éxito de cualquier iniciativa.
+Además, cabe señalar que las empresas que invierten en capacitación obtienen
+mejores resultados a largo plazo. Este hallazgo se repite en los principales
+estudios sectoriales de los últimos años.
+
+Asimismo, la cultura organizacional influye de manera significativa en la
+aceptación de nuevas herramientas. Es esencial que los responsables comprendan
+las expectativas de sus equipos antes de iniciar cualquier despliegue. Por lo
+tanto, la comunicación interna se convierte en un aspecto clave del proceso de
+adopción tecnológica. Resulta igualmente relevante establecer indicadores
+claros desde el primer momento.
+
+Cabe destacar que la resistencia al cambio constituye uno de los obstáculos
+más frecuentes. Las organizaciones deben abordar esta cuestión con estrategias
+específicas de acompañamiento. De esta manera, se facilita una transición
+ordenada hacia los nuevos modelos de trabajo. La experiencia demuestra que los
+proyectos acompañados obtienen tasas de adopción notablemente superiores.
+
+En conclusión, la transformación digital requiere un enfoque integral que
+combine tecnología, personas y procesos de manera equilibrada. Las
+organizaciones que lo entiendan así obtendrán una ventaja competitiva
+sostenible en el tiempo — y esa ventaja será difícil de replicar por parte de
+sus competidores directos.`;
+
+// Formal academic Spanish: the false positive this tool must not produce.
+// Pinned here as well as in tests/detector.test.ts because the engine landing
+// it in verde and the result page saying what verde does not mean are two
+// separate promises, and both have to hold in the browser.
+const ACADEMICO = `El debate sobre la periodización del Renacimiento español
+ha estado condicionado por una tensión historiográfica persistente. Menéndez
+Pelayo situó su inicio en la década de 1520, vinculándolo a la difusión del
+erasmismo; Bataillon, medio siglo después, matizó esa lectura al mostrar que
+la recepción de Erasmo fue más tardía y más conflictiva de lo supuesto.
+
+La discusión no es meramente cronológica. Aceptar una u otra fecha implica
+asumir qué se considera "renacentista": ¿la circulación de textos clásicos, la
+reforma de la piedad, un determinado gusto formal? Los estudios recientes
+sobre bibliotecas privadas sevillanas complican aún más el cuadro, pues
+documentan la presencia de autores italianos décadas antes de lo que admitía
+el consenso.
+
+Quizá el problema resida en la propia categoría, heredada de una tradición
+crítica que buscaba en España un reflejo del modelo italiano. Si abandonamos
+esa expectativa, la pregunta por la fecha pierde buena parte de su urgencia.
+Lo que queda es una historia de recepciones desiguales, de lecturas parciales,
+de apropiaciones locales que no se dejan ordenar en un esquema único. Así lo
+han señalado, con matices distintos, Rico y Gómez Moreno.
+
+Conviene añadir una cautela. La documentación conservada privilegia a los
+lectores acomodados, que son quienes dejaban inventarios; de la lectura
+popular sabemos poco y lo poco que sabemos procede de fuentes indirectas, casi
+siempre judiciales. Cualquier periodización construida sobre ese material
+hereda ese sesgo. No es un argumento para renunciar a periodizar, pero sí para
+hacerlo con menos confianza de la que suele exhibirse en los manuales al uso.`;
 
 /** Runs the tool and returns the result panel, scoped so page prose that
  *  happens to use the same words cannot satisfy an assertion. */
@@ -44,24 +81,24 @@ async function analyse(page: Page, text: string) {
   return result;
 }
 
-test("analyses a pasted text and shows the four signals", async ({ page }) => {
-  const result = await analyse(page, FORMULAIC);
+test("puts an unedited generated text in the top band and names the evidence", async ({
+  page,
+}) => {
+  const result = await analyse(page, GENERADO);
 
   await expect(
-    result.getByText(
-      /Indicios (altos|moderados|bajos) de escritura automática/,
-    ),
+    result.getByText("Hay indicios claros de escritura automática"),
   ).toBeVisible();
 
-  // Every signal is named, because the breakdown is the product.
-  for (const label of [
-    "Ritmo de las frases",
-    "Conectores de relleno",
-    "Repetición de estructuras",
-    "Variedad de puntuación",
-  ]) {
-    await expect(result.getByText(label, { exact: true })).toBeVisible();
-  }
+  // The evidence list is the product: a band with nothing under it is an
+  // accusation without a reason.
+  await expect(result.getByText("Qué hemos medido")).toBeVisible();
+  // The rhythm signal carries most of the weight, and the em dash is the
+  // artefact a paste from a chat leaves behind: both have to be named.
+  await expect(
+    result.getByText("Variación de longitud de frase"),
+  ).toBeVisible();
+  await expect(result.getByText("Restos de Markdown")).toBeVisible();
 });
 
 test("never presents the result as a probability or as proof", async ({
@@ -69,29 +106,32 @@ test("never presents the result as a probability or as proof", async ({
 }) => {
   // This is the guarantee the landing page makes and the one that matters
   // most: the tool gets pointed at students.
-  const result = await analyse(page, FORMULAIC);
+  const result = await analyse(page, GENERADO);
 
-  await expect(result.getByText(/no una probabilidad/)).toBeVisible();
   await expect(
     result.getByText(/sirve como prueba para acusar a nadie/),
   ).toBeVisible();
-  // No "NN% generado por IA" claim in the result itself. The page prose
-  // does quote that phrasing, on purpose, to argue against it.
-  await expect(result.getByText(/\d+\s*%\s*(generado|de IA)/)).toHaveCount(0);
-  // The disclaimer used to sit under a ring filled to the index, which is
-  // the shape of a percentage gauge and outargued the caption. The finding
-  // is the band; nothing in the result may be drawn as a 0-100 fill.
+  await expect(result.getByText(/No damos un porcentaje/)).toBeVisible();
+
+  // No number on a 0-100 scale anywhere in the result, in any shape. It used
+  // to be a ring filled to the index, then an "índice interno NN/100"; both
+  // read as a percentage whatever the caption said.
   await expect(result.locator('[style*="conic-gradient"]')).toHaveCount(0);
+  await expect(result.getByText(/\d+\s*\/\s*100/)).toHaveCount(0);
+  await expect(result.getByText(/\d+\s*%\s*(generado|de IA)/)).toHaveCount(0);
 });
 
-test("says what a low band does not mean", async ({ page }) => {
-  // Measured: generation outside the assistant register trips none of these
-  // signals and lands in "bajo". Reading that as "written by a person" is
-  // the mistake the result has to head off, because it is the one a user
-  // makes before concluding the tool is broken.
-  const result = await analyse(page, MACHINE_WELL_WRITTEN);
+test("leaves formal academic prose in the bottom band and says what that does not mean", async ({
+  page,
+}) => {
+  // The expensive error. Reading "sin indicios" as "written by a person" is
+  // the other mistake the result has to head off, because it is the one a
+  // user makes just before concluding the tool is broken.
+  const result = await analyse(page, ACADEMICO);
 
-  await expect(result.getByText(/Indicios bajos de escritura/)).toBeVisible();
+  await expect(
+    result.getByText("No hay indicios de escritura automática"),
+  ).toBeVisible();
   await expect(
     result.getByText(/no significa «lo escribió una persona»/),
   ).toBeVisible();
@@ -105,19 +145,19 @@ test("refuses to score a sample too short to mean anything", async ({
   await expect(
     result.getByText("Texto demasiado corto para analizarlo"),
   ).toBeVisible();
-  await expect(result.getByText(/Indicios .* de escritura/)).toHaveCount(0);
+  await expect(
+    result.getByText(/indicios de escritura automática/),
+  ).toHaveCount(0);
 });
 
-test("gates the per-sentence breakdown behind the paid plans", async ({
-  page,
-}) => {
-  const result = await analyse(page, FORMULAIC);
+test("gates the passage breakdown behind the paid plans", async ({ page }) => {
+  const result = await analyse(page, GENERADO);
 
   await expect(
-    result.getByText(/desglose frase por frase está disponible/),
+    result.getByText(/desglose por pasajes está disponible/),
   ).toBeVisible();
   await expect(
-    result.getByText("Frase por frase", { exact: true }),
+    result.getByText("Dónde se concentran los indicios", { exact: true }),
   ).toHaveCount(0);
 });
 

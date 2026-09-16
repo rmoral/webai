@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse, after } from "next/server";
 
-import { analyze } from "@/lib/ai/detector/features";
+import { analyze } from "@/lib/ai/detector/pipeline";
 import { PROMPTS } from "@/lib/ai/prompts";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
@@ -130,9 +130,13 @@ async function handle(
   }
 
   if (tool === "detect") {
-    const result = analyze(text, {
-      withSentences: plan.limits.sentenceHighlight,
-    });
+    const analysis = analyze(text);
+    // The per-window breakdown is the paid half of the detector
+    // (PlanLimits.sentenceHighlight): it is what locates a generated block
+    // inside a written text. Everyone gets the band and the evidence.
+    const result = plan.limits.sentenceHighlight
+      ? analysis
+      : { ...analysis, windows: [] };
     after(() =>
       recordUsage({
         subjectKey: subject,

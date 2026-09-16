@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
-import type { DetectorResult } from "@/lib/ai/detector/features";
+import type { DetectorAnalysis } from "@/lib/ai/detector/types";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { countWords } from "@/lib/security/validation";
 
@@ -61,7 +61,13 @@ export function ToolEditor({
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [parts, setParts] = useState<Change[] | null>(null);
-  const [report, setReport] = useState<DetectorResult | null>(null);
+  // Analysis and the exact text it describes, kept together: the window
+  // ranges are indices into that text's sentences, so a report paired with a
+  // later edit of the box would quote the wrong passages.
+  const [report, setReport] = useState<{
+    analysis: DetectorAnalysis;
+    text: string;
+  } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [upsell, setUpsell] = useState(false);
@@ -141,7 +147,10 @@ export function ToolEditor({
       if (remainingHeader !== null) setRemaining(Number(remainingHeader));
 
       if (measures) {
-        setReport((await res.json()) as DetectorResult);
+        setReport({
+          analysis: (await res.json()) as DetectorAnalysis,
+          text: sent,
+        });
         setStatus("done");
         posthog?.capture("tool_used", { tool, words });
         return;
@@ -220,7 +229,8 @@ export function ToolEditor({
           <div className="flex min-h-44 flex-col border-t md:min-h-64 md:border-t-0">
             {measures && report ? (
               <DetectorResultView
-                result={report}
+                result={report.analysis}
+                text={report.text}
                 canSeeSentences={PLANS[plan].limits.sentenceHighlight}
               />
             ) : (
