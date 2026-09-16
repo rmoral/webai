@@ -190,6 +190,21 @@ export function databaseTarget(): DatabaseTarget {
     };
   }
 
+  if (parsed.hostname.endsWith(".pooler.supabase.com")) {
+    // The pooler routes by the project ref carried in the username. With a
+    // bare `postgres` it has no tenant to route to and refuses the
+    // connection, which it reports as an SSL problem rather than a naming
+    // one. Easy to hit by swapping only the host of the direct string.
+    const expected = expectedPoolerUser();
+    const actual = decodeURIComponent(parsed.username);
+    if (expected && actual !== expected) {
+      return {
+        endpoint,
+        problem: `El usuario debe ser ${expected}, no ${actual}. El pooler enruta por el ref del proyecto que va en el usuario; sin él no sabe a qué base de datos conectar.`,
+      };
+    }
+  }
+
   if (parsed.hostname.endsWith(".pooler.supabase.com") && port === "6543") {
     return {
       endpoint,
@@ -199,6 +214,18 @@ export function databaseTarget(): DatabaseTarget {
   }
 
   return { endpoint, problem: null };
+}
+
+/** The pooler username this project should be using, from its Supabase URL. */
+function expectedPoolerUser(): string | null {
+  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabase) return null;
+  try {
+    const ref = new URL(supabase).hostname.split(".")[0];
+    return ref ? `postgres.${ref}` : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Why a database query failed, in terms the operator can act on. */
@@ -225,7 +252,7 @@ const HINTS: Record<string, string> = {
   "3D000":
     "La base de datos del final de la cadena no existe. Debe terminar en /postgres.",
   XX000:
-    "El pooler rechaza la conexión. Suele ser el usuario: en el pooler es postgres.<ref-del-proyecto>, no solo postgres.",
+    "El pooler rechaza la conexión. Casi siempre es el usuario: debe ser postgres.<ref-del-proyecto>, no solo postgres. El pooler lo comunica como un problema de SSL, pero lo que le falta es saber a qué proyecto conectar.",
   ENOTFOUND: "El host no resuelve. Revisa que esté bien escrito.",
   ECONNREFUSED: "El host resuelve pero rechaza la conexión. Revisa el puerto.",
   ETIMEDOUT:
