@@ -138,10 +138,33 @@ describe("describeCheckoutRejection", () => {
   });
 
   it("classifies from the message when param is absent", () => {
-    // Older API versions omit param on some errors.
+    // Stripe does not always set param.
     const e = {
       type: "StripeInvalidRequestError",
       message: "automatic_tax requires an origin address",
+    };
+    expect(describeCheckoutRejection(e).code).toBe("tax_not_configured");
+  });
+
+  it("recognises the terms refusal Stripe actually sends", () => {
+    // Verbatim from production. It names neither the parameter nor the
+    // field, so matching on `consent_collection` alone let the very error
+    // this was written for fall through to the generic code.
+    const e = {
+      type: "StripeInvalidRequestError",
+      message:
+        "You cannot collect consent to your terms of service unless a URL is set in the Stripe Dashboard. Update your public business details in the Dashboard https://dashboard.stripe.com/settings/public with a Terms of service URL to collect terms of service consent.",
+    };
+    const { code, fix } = describeCheckoutRejection(e);
+    expect(code).toBe("terms_url_missing");
+    expect(fix).toMatch(/Public details/);
+  });
+
+  it("recognises Stripe Tax refusals phrased without the parameter", () => {
+    const e = {
+      type: "StripeInvalidRequestError",
+      message:
+        "You cannot use automatic tax calculation until you activate Stripe Tax in the Dashboard.",
     };
     expect(describeCheckoutRejection(e).code).toBe("tax_not_configured");
   });

@@ -54,9 +54,12 @@ export interface CheckoutRejection {
  * route answered every refusal with `checkout_failed`, so a Dashboard
  * setting nobody turned on looked identical to an outage.
  *
- * Classification keys off `param`, which Stripe sets on an invalid request
- * and which does not change wording between API versions the way the
- * message does. The message is only a fallback.
+ * Classification reads `param` and the message together. `param` is the
+ * stabler of the two, but Stripe does not always set it: the terms-of-service
+ * refusal arrives as prose naming neither the parameter nor the field, which
+ * is why the first version of this fell through to the generic code on the
+ * very error it was written for. Each rule therefore carries the wording
+ * Stripe actually uses alongside the parameter name.
  */
 export function describeCheckoutRejection(error: unknown): CheckoutRejection {
   const e = error as { type?: string; param?: string; message?: string };
@@ -69,21 +72,21 @@ export function describeCheckoutRejection(error: unknown): CheckoutRejection {
     };
   }
 
-  if (where.includes("automatic_tax")) {
+  if (/automatic_tax|stripe tax|tax (registration|calculation)/i.test(where)) {
     return {
       code: "tax_not_configured",
       fix: "Stripe Tax no está activado. Actívalo en Stripe → Tax y define la dirección de origen de YBB Solutions, LLC. Sin eso Stripe rechaza cualquier sesión con automatic_tax.",
     };
   }
 
-  if (where.includes("consent_collection")) {
+  if (/consent_collection|terms of service/i.test(where)) {
     return {
       code: "terms_url_missing",
       fix: "Falta la URL de los términos en Stripe → Settings → Business → Public details. Es obligatoria para pedir la aceptación de términos en el checkout. Usa https://www.verbalyx.ai/legal/terminos.",
     };
   }
 
-  if (where.includes("customer_update")) {
+  if (/customer_update/i.test(where)) {
     return {
       code: "customer_update_invalid",
       fix: "Stripe rechaza customer_update porque la sesión no lleva un cliente asociado. Revisa el plan del usuario antes de abrir el pago.",
