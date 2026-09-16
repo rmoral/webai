@@ -43,3 +43,7 @@ next-env.d.ts
 # local env files
 .env.local
 .env*.local
+
+# Playwright artefacts. Regenerated on every run; one of them was tracked.
+test-results/
+playwright-report/

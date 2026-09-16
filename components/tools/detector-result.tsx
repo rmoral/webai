@@ -8,6 +8,13 @@ import { cn } from "@/lib/utils";
 // The number on screen is an index of measured style patterns, never a
 // probability, and never a verdict. The wording here is load-bearing: this
 // tool gets pointed at students.
+//
+// It used to be drawn as a filled ring, which is the shape of a percentage
+// gauge whatever the caption underneath says -- an index of 3 read as "3%
+// likely". The band is the finding; the number is supporting detail, and it
+// is shown as a position on a three-step scale rather than as a fill.
+
+const ORDER: Band[] = ["bajo", "medio", "alto"];
 
 const BANDS: Record<Band, { headline: string; ring: string; text: string }> = {
   bajo: {
@@ -55,28 +62,51 @@ export function DetectorResultView({
 
   return (
     <div className="flex flex-col gap-5 p-5" data-testid="detector-result">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3">
+        <p className={cn("font-semibold", band.text)}>{band.headline}</p>
         <div
-          className="grid size-16 shrink-0 place-items-center rounded-full"
-          style={{
-            background: `conic-gradient(${band.ring} 0 ${result.index}%, var(--border) ${result.index}% 100%)`,
-          }}
+          className="flex gap-1"
           role="img"
-          aria-label={`Índice de indicios: ${result.index} sobre 100`}
+          aria-label={`Indicios ${result.band}, sobre una escala de bajo, medio y alto`}
         >
-          <span className="bg-card grid size-12 place-items-center rounded-full text-sm font-semibold">
-            {result.index}
-          </span>
+          {ORDER.map((step) => (
+            <span
+              key={step}
+              className={cn(
+                "h-1.5 flex-1 rounded-full",
+                step === result.band ? "" : "bg-border",
+              )}
+              style={
+                step === result.band ? { background: band.ring } : undefined
+              }
+            />
+          ))}
         </div>
-        <div>
-          <p className={cn("font-semibold", band.text)}>{band.headline}</p>
-          <p className="text-muted-foreground text-sm">
-            Índice {result.index}/100 sobre{" "}
-            {result.words.toLocaleString("es-ES")} palabras. No es un porcentaje
-            de probabilidad.
-          </p>
+        <div className="text-muted-foreground flex justify-between text-xs">
+          {ORDER.map((step) => (
+            <span key={step} className={step === result.band ? band.text : ""}>
+              {step}
+            </span>
+          ))}
         </div>
+        <p className="text-muted-foreground text-sm">
+          Índice interno {result.index}/100 sobre{" "}
+          {result.words.toLocaleString("es-ES")} palabras. Es la suma de las
+          señales de abajo, no una probabilidad.
+        </p>
       </div>
+
+      {result.band === "bajo" && (
+        <p className="border-brand-line bg-brand-soft text-brand-ink rounded-lg border px-4 py-3 text-xs leading-relaxed">
+          <b className="font-semibold">
+            Indicios bajos no significa «lo escribió una persona».
+          </b>{" "}
+          Estas señales reconocen el estilo formulario típico de un chatbot. Un
+          texto generado en registro narrativo, comercial o académico cuidado
+          puede no activar ninguna y salir aquí igual que uno humano. Lo que
+          puedes concluir es que no hay indicios, no que no haya IA.
+        </p>
+      )}
 
       <dl className="flex flex-col gap-3">
         {result.signals.map((signal) => (
@@ -132,12 +162,13 @@ export function DetectorResultView({
         </p>
       )}
 
-      {/* Non-negotiable per the design system: the gauge always reads as
+      {/* Non-negotiable per the design system: the result always reads as
           orientation, never as proof. */}
       <p className="text-muted-foreground border-t pt-4 text-xs leading-relaxed">
         Esto mide patrones de estilo, no autoría. Un texto humano muy formal
-        puede puntuar alto y un texto de IA editado puede puntuar bajo. Ningún
-        detector, el nuestro incluido, sirve como prueba para acusar a nadie.
+        puede puntuar alto y un texto generado con buen estilo puede puntuar
+        bajo. Ningún detector, el nuestro incluido, sirve como prueba para
+        acusar a nadie.
       </p>
     </div>
   );

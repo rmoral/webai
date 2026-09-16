@@ -16,6 +16,23 @@ lectura enriquece la vida cotidiana de forma constante. Cabe mencionar que la
 lectura estimula la imaginación de manera considerable. En conclusión, la
 lectura es fundamental para el desarrollo humano completo.`;
 
+// Generated prose in a careful academic register. Every signal here reads
+// human, so it lands in "bajo" -- which is exactly the case the result has
+// to explain rather than let the reader misread.
+const MACHINE_WELL_WRITTEN = `El debate sobre la periodización del
+Renacimiento español ha estado condicionado por una tensión historiográfica
+persistente. Menéndez Pelayo situó su inicio en la década de 1520,
+vinculándolo a la difusión del erasmismo; Bataillon, medio siglo después,
+matizó esa lectura al mostrar que la recepción de Erasmo fue más tardía y más
+conflictiva de lo supuesto. La discusión no es meramente cronológica. Aceptar
+una u otra fecha implica asumir qué se considera "renacentista": ¿la
+circulación de textos clásicos, la reforma de la piedad, un determinado gusto
+formal? Los estudios recientes sobre bibliotecas privadas sevillanas
+complican aún más el cuadro, pues documentan la presencia de autores
+italianos décadas antes de lo que admitía el consenso. Quizá el problema
+resida en la propia categoría del Renacimiento, heredada de una tradición
+crítica que buscaba en España un reflejo del modelo italiano.`;
+
 /** Runs the tool and returns the result panel, scoped so page prose that
  *  happens to use the same words cannot satisfy an assertion. */
 async function analyse(page: Page, text: string) {
@@ -54,15 +71,30 @@ test("never presents the result as a probability or as proof", async ({
   // most: the tool gets pointed at students.
   const result = await analyse(page, FORMULAIC);
 
-  await expect(
-    result.getByText(/No es un porcentaje de probabilidad/),
-  ).toBeVisible();
+  await expect(result.getByText(/no una probabilidad/)).toBeVisible();
   await expect(
     result.getByText(/sirve como prueba para acusar a nadie/),
   ).toBeVisible();
   // No "NN% generado por IA" claim in the result itself. The page prose
   // does quote that phrasing, on purpose, to argue against it.
   await expect(result.getByText(/\d+\s*%\s*(generado|de IA)/)).toHaveCount(0);
+  // The disclaimer used to sit under a ring filled to the index, which is
+  // the shape of a percentage gauge and outargued the caption. The finding
+  // is the band; nothing in the result may be drawn as a 0-100 fill.
+  await expect(result.locator('[style*="conic-gradient"]')).toHaveCount(0);
+});
+
+test("says what a low band does not mean", async ({ page }) => {
+  // Measured: generation outside the assistant register trips none of these
+  // signals and lands in "bajo". Reading that as "written by a person" is
+  // the mistake the result has to head off, because it is the one a user
+  // makes before concluding the tool is broken.
+  const result = await analyse(page, MACHINE_WELL_WRITTEN);
+
+  await expect(result.getByText(/Indicios bajos de escritura/)).toBeVisible();
+  await expect(
+    result.getByText(/no significa «lo escribió una persona»/),
+  ).toBeVisible();
 });
 
 test("refuses to score a sample too short to mean anything", async ({

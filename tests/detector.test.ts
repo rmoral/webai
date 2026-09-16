@@ -114,3 +114,45 @@ describe("analyze", () => {
     }
   });
 });
+
+// Generated prose that does not use the assistant register: a careful
+// academic voice, with varied sentence lengths and rich punctuation. Every
+// signal this engine measures reads human here.
+const MACHINE_WELL_WRITTEN = `El debate sobre la periodización del
+Renacimiento español ha estado condicionado por una tensión historiográfica
+persistente. Menéndez Pelayo situó su inicio en la década de 1520,
+vinculándolo a la difusión del erasmismo; Bataillon, medio siglo después,
+matizó esa lectura al mostrar que la recepción de Erasmo fue más tardía y más
+conflictiva de lo supuesto. La discusión no es meramente cronológica. Aceptar
+una u otra fecha implica asumir qué se considera "renacentista": ¿la
+circulación de textos clásicos, la reforma de la piedad, un determinado gusto
+formal? Los estudios recientes sobre bibliotecas privadas sevillanas
+complican aún más el cuadro, pues documentan la presencia de autores
+italianos décadas antes de lo que admitía el consenso. Quizá el problema
+resida en la propia categoría del Renacimiento, heredada de una tradición
+crítica que buscaba en España un reflejo del modelo italiano.`;
+
+describe("what these signals cannot see", () => {
+  it("reads generated prose outside the assistant register as human", () => {
+    // Measured, not assumed: this text is generated, and the engine puts it
+    // in "bajo". It is here so the limitation is a fact in the suite rather
+    // than a surprise in production, and so that raising sensitivity has to
+    // be a deliberate decision that updates this test.
+    //
+    // The signals recognise the formulaic chatbot voice. Narrative,
+    // commercial and careful academic generation do not trip them: the
+    // rhythm varies, the filler connectives are absent and the punctuation
+    // is rich. Closing this gap needs a different method, not new thresholds.
+    const result = analyze(MACHINE_WELL_WRITTEN);
+    expect(result.reliable).toBe(true);
+    expect(result.band).toBe("bajo");
+  });
+
+  it("still separates the register it was built for", () => {
+    // The engine is not broken; its coverage is narrow. Keeping both facts
+    // pinned stops a fix for one from quietly undoing the other.
+    expect(analyze(MACHINE).index).toBeGreaterThan(
+      analyze(MACHINE_WELL_WRITTEN).index + 40,
+    );
+  });
+});
