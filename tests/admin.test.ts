@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { isAdmin } from "@/lib/auth/admin";
+import { sslFor } from "@/lib/db/client";
 import { databaseTarget, describeDatabaseFailure } from "@/lib/config/health";
 
 afterEach(() => {
@@ -126,5 +127,68 @@ describe("describeDatabaseFailure", () => {
     a.cause = a;
     expect(describeDatabaseFailure(a).detail).toBe("a");
     expect(describeDatabaseFailure("plain string").detail).toBe("plain string");
+  });
+});
+
+describe("pooler username", () => {
+  const originalUrl = process.env.DATABASE_URL;
+  const originalSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  afterEach(() => {
+    if (originalUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = originalUrl;
+    if (originalSupabase === undefined)
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    else process.env.NEXT_PUBLIC_SUPABASE_URL = originalSupabase;
+  });
+
+  function target(user: string) {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://abcdef.supabase.co";
+    process.env.DATABASE_URL = `postgresql://${user}:s3cret@aws-0-us-east-1.pooler.supabase.com:5432/postgres`;
+    return databaseTarget();
+  }
+
+  it("catches the bare postgres user the pooler cannot route", () => {
+    // This is what "SSL connection is required for user: postgres" really
+    // means: no project ref, so no tenant to route to.
+    expect(target("postgres").problem).toMatch(/postgres\.abcdef/);
+  });
+
+  it("accepts the username that carries the project ref", () => {
+    expect(target("postgres.abcdef").problem).toBeNull();
+  });
+
+  it("says nothing when the Supabase URL is unknown", () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.DATABASE_URL =
+      "postgresql://postgres:s3cret@aws-0-us-east-1.pooler.supabase.com:5432/postgres";
+    expect(databaseTarget().problem).toBeNull();
+  });
+});
+
+describe("sslFor", () => {
+  it("requires TLS for a remote database", () => {
+    expect(
+      sslFor(
+        "postgresql://u:p@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+      ),
+    ).toEqual({ ssl: "require" });
+  });
+
+  it("leaves a local database alone", () => {
+    expect(sslFor("postgresql://u:p@localhost:5432/verbalyx")).toEqual({});
+    expect(sslFor("postgresql://u:p@127.0.0.1:5432/verbalyx")).toEqual({});
+  });
+
+  it("never downgrades an explicit sslmode", () => {
+    expect(
+      sslFor(
+        "postgresql://u:p@db.example.com:5432/postgres?sslmode=verify-full",
+      ),
+    ).toEqual({});
+  });
+
+  it("defers to the driver when the string will not parse", () => {
+    expect(sslFor("not a url")).toEqual({});
   });
 });
