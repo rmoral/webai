@@ -1,10 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
+import { getTranslations } from "next-intl/server";
 import { NextRequest, NextResponse, after } from "next/server";
 
 import { analyze } from "@/lib/ai/detector/pipeline";
-import { PROMPTS } from "@/lib/ai/prompts";
+import { promptFor } from "@/lib/ai/prompts";
+import type { ToolId } from "@/lib/ai/tools";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
-import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { getSession } from "@/lib/auth/server";
 import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
@@ -12,6 +13,7 @@ import { saveDocument } from "@/lib/documents/store";
 import { hashIp } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { aiToolRequestSchema, countWords } from "@/lib/security/validation";
+import { routing, splitLocale } from "@/lib/i18n/routing";
 import { checkBurstLimit, consumeWords } from "@/lib/usage/quotas";
 import { recordUsage } from "@/lib/usage/tracking";
 
@@ -19,6 +21,22 @@ export const maxDuration = 120;
 
 function error(status: number, code: string, message: string) {
   return NextResponse.json({ error: code, message }, { status });
+}
+
+/**
+ * Best-effort locale for the boundary catch below, from the page the request
+ * came from. The body carries the locale for every other answer, but by the
+ * time something throws it has already been read, and re-reading it to pick
+ * a language for a 500 is not worth a second JSON parse on every request.
+ */
+function localeFromReferer(request: NextRequest) {
+  const referer = request.headers.get("referer");
+  if (!referer) return routing.defaultLocale;
+  try {
+    return splitLocale(new URL(referer).pathname).locale;
+  } catch {
+    return routing.defaultLocale;
+  }
 }
 
 /**
@@ -42,11 +60,11 @@ export async function POST(
     // identical from the browser.
     console.error(`[ai] ${e instanceof Error ? e.message : String(e)}`);
     Sentry.captureException(e);
-    return error(
-      500,
-      "server_error",
-      "No hemos podido procesar tu texto. Vuelve a intentarlo en unos minutos.",
-    );
+    const t = await getTranslations({
+      locale: localeFromReferer(request),
+      namespace: "errors",
+    });
+    return error(500, "server_error", t("server_error"));
   }
 }
 
@@ -59,14 +77,26 @@ async function handle(
     ...body,
     tool: (await params).tool,
   });
+
+  // Answers are written in the language the visitor is browsing, which the
+  // client states in the body. An unparseable body has no locale to read,
+  // so that one case falls back to the default.
+  const locale = parsed.success
+    ? (parsed.data.locale ?? routing.defaultLocale)
+    : routing.defaultLocale;
+  const t = await getTranslations({ locale, namespace: "errors" });
+  const names = await getTranslations({ locale, namespace: "tools" });
+
   if (!parsed.success) {
-    return error(400, "invalid_request", "Petición no válida.");
+    return error(400, "invalid_request", t("invalid_request"));
   }
   const { tool, text, mode, turnstileToken } = parsed.data;
 
-  const prompt = PROMPTS[tool];
+  // The prompt is chosen by the language the visitor is reading, not by
+  // detecting the language of the text (see lib/ai/prompts/types.ts).
+  const prompt = promptFor(tool, locale);
   if (!prompt && tool !== "detect") {
-    return error(501, "tool_not_available", "Esta herramienta llegará pronto.");
+    return error(501, "tool_not_available", t("tool_not_available"));
   }
 
   const user = await getSession();
@@ -75,16 +105,12 @@ async function handle(
   const subject = user ? `user:${user.id}` : `ip:${hashIp(ip)}`;
 
   if (!user && !(await verifyTurnstile(turnstileToken, ip))) {
-    return error(403, "captcha_failed", "Verificación anti-bot fallida.");
+    return error(403, "captcha_failed", t("captcha_failed"));
   }
 
   const burst = await checkBurstLimit(subject);
   if (!burst.allowed) {
-    return error(
-      429,
-      "rate_limited",
-      "Demasiadas peticiones. Espera un momento.",
-    );
+    return error(429, "rate_limited", t("rate_limited"));
   }
 
   let subscriber = {
@@ -107,14 +133,16 @@ async function handle(
   const entitlement = checkEntitlement(plan, tool, wordsIn);
   if (!entitlement.allowed) {
     const messages: Record<string, string> = {
-      unknown_tool: "Esta herramienta no existe.",
-      tool_not_in_plan: `${TOOLS[tool].name} está disponible en los planes de pago.`,
-      request_too_long: `Tu plan admite hasta ${plan.limits.maxWordsPerRequest.toLocaleString("es-ES")} palabras por petición.`,
+      unknown_tool: t("unknown_tool"),
+      tool_not_in_plan: t("tool_not_in_plan", { tool: names(`${tool}.name`) }),
+      request_too_long: t("request_too_long", {
+        words: plan.limits.maxWordsPerRequest,
+      }),
     };
     return error(
       entitlement.reason === "request_too_long" ? 413 : 403,
       entitlement.reason ?? "forbidden",
-      messages[entitlement.reason ?? ""] ?? "No disponible en tu plan.",
+      messages[entitlement.reason ?? ""] ?? t("forbidden"),
     );
   }
 
@@ -123,9 +151,7 @@ async function handle(
     return error(
       429,
       "quota_exceeded",
-      plan.limits.wordsPerDay !== null
-        ? "Has agotado tus palabras de hoy. Prueba Ilimitado 3 días gratis."
-        : "Has agotado las palabras de tu plan este mes. Puedes comprar una recarga.",
+      plan.limits.wordsPerDay !== null ? t("quota_daily") : t("quota_monthly"),
     );
   }
 

@@ -2,6 +2,8 @@
 
 import type { Change } from "diff";
 
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 // Marks what the tool changed. The comparison runs in the browser over the
@@ -55,6 +57,7 @@ export function DiffMarks({
 }
 
 export function HighlightLegend({ kind }: { kind: "rewritten" | "added" }) {
+  const t = useTranslations("highlight");
   return (
     <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
       <span
@@ -64,7 +67,7 @@ export function HighlightLegend({ kind }: { kind: "rewritten" | "added" }) {
           kind === "added" && MARK_ADDED,
         )}
       />
-      {kind === "added" ? "Añadido" : "Reescrito"}
+      {t(kind)}
     </span>
   );
 }

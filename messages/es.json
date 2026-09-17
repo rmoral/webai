@@ -1,0 +1,650 @@
+{
+  "site": {
+    "title": "Verbalyx — Escribe mejor con IA, en español",
+    "description": "Humaniza, detecta, parafrasea y corrige textos con IA. Hecho para el español de España y LATAM."
+  },
+  "nav": {
+    "pricing": "Precios",
+    "login": "Entrar",
+    "signup": "Crear cuenta gratis",
+    "account": "Mi cuenta",
+    "language": "Idioma",
+    "soon": "Muy pronto"
+  },
+  "footer": {
+    "tools": "Herramientas",
+    "product": "Producto",
+    "legal": "Legal",
+    "soon": "muy pronto",
+    "rights": "© {year} YBB Solutions, LLC — Verbalyx",
+    "market": "Español de España y LATAM",
+    "privacyNote": "No guardamos los textos de los planes gratuitos.",
+    "legalNotice": "Información legal",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "cookies": "Cookies"
+  },
+  "tools": {
+    "humanize": {
+      "name": "Humanizador"
+    },
+    "detect": {
+      "name": "Detector de IA"
+    },
+    "paraphrase": {
+      "name": "Parafraseador"
+    },
+    "correct": {
+      "name": "Corrector"
+    }
+  },
+  "modes": {
+    "academico": "Académico",
+    "neutro": "Neutro",
+    "informal": "Informal",
+    "estandar": "Estándar",
+    "fluido": "Fluido",
+    "formal": "Formal",
+    "simple": "Simple",
+    "creativo": "Creativo",
+    "general": "General"
+  },
+  "home": {
+    "badge": "Sin registro · {words} palabras al día",
+    "h1": "Escribe mejor con IA, en español",
+    "intro": "Humaniza, detecta, parafrasea y corrige tus textos. Hecho para el español de España y LATAM, no traducido de una herramienta inglesa.",
+    "more": "¿Necesitas más palabras al día?",
+    "morePricing": "Consulta los planes"
+  },
+  "landing": {
+    "faqTitle": "Preguntas frecuentes",
+    "humanize": {
+      "metaTitle": "Humanizador de texto IA gratis en español",
+      "metaDescription": "Reescribe texto generado por IA para que suene escrito por una persona, conservando el significado. Tres registros, gratis y en español.",
+      "h1": "Humanizador de texto IA",
+      "intro": "Pega un texto generado y recupéralo con ritmo humano: frases de longitud variada, sin las muletillas de siempre y con el significado intacto. Gratis y sin registro.",
+      "signalsTitle": "Qué cambia el humanizador",
+      "signals": [
+        {
+          "term": "El ritmo",
+          "description": "Los modelos escriben frases de una longitud sospechosamente parecida. Alternamos largas y cortas como lo hace una persona."
+        },
+        {
+          "term": "Las muletillas",
+          "description": "«Es importante destacar», «cabe señalar», «en el mundo actual», «juega un papel fundamental». Fuera."
+        },
+        {
+          "term": "La voz",
+          "description": "Voz activa, contracciones habituales y giros propios del español, en lugar del castellano de manual de instrucciones."
+        },
+        {
+          "term": "Lo que no toca",
+          "description": "Cifras, nombres, citas y terminología técnica se quedan exactamente como estaban. No añade información ni opiniones."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Tres registros, no uno",
+          "body": "El registro académico usa los conectores propios de un trabajo universitario y trato impersonal, sin caer en las fórmulas que delatan a un modelo. El neutro es español claro y directo, válido a los dos lados del Atlántico. El informal es cercano y conversacional, sin vulgarismos. El registro se elige antes de ejecutar y cambia el resultado de verdad, no solo el tono de una frase suelta."
+        },
+        {
+          "title": "Qué esperar y qué no",
+          "body": "Humanizar no es un pase mágico por un detector. Lo que hace es corregir lo que de verdad delata a un texto generado: el compás plano y el relleno. Si el texto original dice poco, seguirá diciendo poco después, y eso ningún reescritor lo arregla. Tampoco lo usamos para falsificar autoría: sirve para que un borrador generado suene a ti antes de que lo reescribas."
+        }
+      ],
+      "faq": [
+        {
+          "q": "¿Cambia el significado de mi texto?",
+          "a": "No debería. La instrucción es explícita: conservar el significado, la información y una longitud aproximada. Cifras, nombres propios, citas y terminología técnica se mantienen literales. Aun así, léelo antes de entregarlo: ninguna reescritura automática está libre de deslizar un matiz."
+        },
+        {
+          "q": "¿Pasa los detectores de IA?",
+          "a": "No lo prometemos, y desconfía de quien lo haga. Corregimos los patrones que los detectores miden —ritmo plano, conectores de relleno, puntuación pobre—, lo cual baja los indicios de forma medible. Pero los detectores cambian, y garantizar un resultado sobre una herramienta de terceros sería venderte humo."
+        },
+        {
+          "q": "¿Cuántas palabras puedo procesar?",
+          "a": "Sin registrarte, {anonWords} palabras al día y hasta {anonRequest} por petición. Con cuenta gratuita, {freeWords} al día. Los planes de pago suben el límite mensual y el tamaño por petición."
+        },
+        {
+          "q": "¿Guardáis mis textos?",
+          "a": "Solo en los planes de pago, y cifrados, para que tengas historial. En los planes gratuitos no se almacena el texto: únicamente el recuento de palabras necesario para aplicar los límites."
+        }
+      ],
+      "outro": {
+        "lead": "¿Quieres comprobar antes cuánto suena a IA?",
+        "tool": "Pasa el detector",
+        "pricing": "consulta los planes"
+      }
+    },
+    "detect": {
+      "metaTitle": "Detector de IA gratis en español",
+      "metaDescription": "Analiza si un texto muestra los rastros de la escritura generada por IA. Te damos la evidencia concreta, no un porcentaje inventado. Gratis y en español.",
+      "h1": "Detector de IA en español",
+      "intro": "Pega un texto y te decimos qué hemos encontrado: el ritmo de las frases y los rastros que deja un copiar y pegar desde un chat. Sin porcentaje, con la evidencia delante. Gratis y sin registro.",
+      "signalsTitle": "Qué medimos",
+      "signals": [
+        {
+          "term": "El ritmo de las frases",
+          "description": "Las personas alternamos frases largas y cortas de forma irregular; los modelos tienden a un compás plano. Es el hallazgo más sólido del campo y el que mejor sobrevive a una reescritura."
+        },
+        {
+          "term": "Los extremos",
+          "description": "Al escribir salen frases de cuatro palabras y frases de cuarenta. La escritura automática se concentra entre quince y veinticinco."
+        },
+        {
+          "term": "Los rastros del pegado",
+          "description": "La raya con espacios a los lados, los caracteres invisibles, las comillas tipográficas, el Markdown que sobrevivió al copiar. Un texto escrito a mano no los tiene."
+        },
+        {
+          "term": "Los deslices que faltan",
+          "description": "Un espaciado impecable en dos mil palabras, sin una sola corrección fósil, dice algo. Solo lo contamos en textos largos, donde significa algo."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Por qué no verás un porcentaje",
+          "body": "Las herramientas que anuncian «92 % generado por IA» no tienen cómo respaldar esa cifra: no existe un modelo calibrado que convierta estas señales en una probabilidad real para el español, y presentarla como tal invita a tomar decisiones graves sobre una medida frágil. Te damos una banda —sin indicios, algunos indicios, indicios claros— y debajo la lista de lo que hemos encontrado, con ejemplos. Es menos vistoso y es más honesto."
+        },
+        {
+          "title": "El error que no queremos cometer",
+          "body": "Esta herramienta acaba apuntando a estudiantes. Entre dejar pasar un texto generado y señalar a alguien que escribió su trabajo, los dos errores no cuestan lo mismo, así que los umbrales están puestos deliberadamente altos. Un texto académico humano, con terminología fija y estructura pautada, se parece estadísticamente al texto generado: está calibrado para que caiga en «sin indicios» de todos modos."
+        },
+        {
+          "title": "Por debajo de doscientas palabras no decimos nada",
+          "body": "Las medidas de variación necesitan muestra. Con menos de doscientas palabras u ocho frases, el resultado sería ruido con aspecto de dato, así que respondemos en gris y te lo explicamos. Los rastros del pegado sí se reportan a cualquier longitud: un carácter invisible lo es en veinte palabras igual que en dos mil."
+        }
+      ],
+      "faq": [
+        {
+          "q": "¿Cómo funciona este detector de IA?",
+          "a": "Mide dos cosas. El ritmo del texto: cuánto varía la longitud de las frases, cuántas caen en los extremos, si cada frase repite la longitud de la anterior, cómo de regulares son los párrafos. Y los rastros materiales de un copiar y pegar desde un chat: rayas espaciadas, caracteres invisibles, restos de Markdown, comillas tipográficas. Puntuamos por ventanas de cuatro frases, no sobre el texto entero, para que un párrafo generado dentro de un texto escrito no se diluya en la media."
+        },
+        {
+          "q": "¿Es fiable? ¿Puedo usarlo para acusar a alguien?",
+          "a": "No. Ningún detector de IA, el nuestro incluido, sirve como prueba. Todos producen falsos positivos y falsos negativos: un texto humano muy formal puede dar indicios, y un texto generado y luego reescrito a mano puede no dar ninguno. El resultado es una orientación sobre el estilo, nunca un dictamen sobre la autoría."
+        },
+        {
+          "q": "¿Por qué no me dais un porcentaje como otras herramientas?",
+          "a": "Porque sería inventado. Un «87 % generado por IA» sugiere una precisión estadística que ninguna técnica actual tiene en español. Te damos una banda cualitativa y, debajo, exactamente qué la sostiene, para que puedas mirar las frases concretas y juzgar tú."
+        },
+        {
+          "q": "¿Funciona con el español de América?",
+          "a": "Sí, y está comprobado. El corpus con el que se calibra incluye español de México y de Argentina, con voseo y léxico local, y forma parte de las pruebas automáticas: si un cambio empezara a marcar esos textos, la suite falla antes de llegar a producción."
+        },
+        {
+          "q": "¿Cuántas palabras necesita?",
+          "a": "Al menos doscientas palabras y ocho frases. Por debajo de ahí respondemos en gris en vez de darte un número sin valor. Puedes analizar hasta {anonWords} palabras al día sin registrarte."
+        },
+        {
+          "q": "¿Guardáis los textos que analizo?",
+          "a": "No. El análisis se ejecuta en nuestro servidor sobre el texto que envías y no se almacena: solo registramos el recuento de palabras para aplicar los límites del plan."
+        }
+      ],
+      "outro": {
+        "lead": "¿Tu texto suena a IA y quieres arreglarlo?",
+        "tool": "Prueba el humanizador",
+        "pricing": "consulta los planes"
+      }
+    },
+    "paraphrase": {
+      "metaTitle": "Parafrasear texto online en español",
+      "metaDescription": "Reescribe cualquier texto en seis registros conservando el significado: estándar, fluido, formal, simple, creativo y académico.",
+      "h1": "Parafrasear texto en español",
+      "intro": "Reescribe un texto con otras palabras sin perder lo que dice. Seis registros, del académico al creativo, y el resultado marcado para que veas qué ha cambiado.",
+      "signalsTitle": "Los seis registros",
+      "signals": [
+        {
+          "term": "Estándar",
+          "description": "Reescritura equilibrada: cambia la formulación sin alejarse del original. El punto de partida razonable."
+        },
+        {
+          "term": "Fluido",
+          "description": "Prioriza que se lea bien en voz alta. Deshace las subordinadas pesadas y las frases que hacen tropezar."
+        },
+        {
+          "term": "Formal y académico",
+          "description": "Trato impersonal, léxico preciso y conectores propios de un trabajo o un informe. El académico además respeta la convención de la cita."
+        },
+        {
+          "term": "Simple y creativo",
+          "description": "Simple baja el registro hasta donde lo entienda cualquiera. Creativo se permite imágenes y giros que el original no tenía, con el mismo contenido."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Parafrasear no es sustituir sinónimos",
+          "body": "Cambiar cada palabra por otra del diccionario produce texto que suena raro y que, encima, sigue teniendo la misma estructura sintáctica: un profesor lo reconoce a la primera y un detector de plagio también. Lo que hace falta es reconstruir la frase. Por eso el resultado puede tener otro número de oraciones que el original, y por eso se marca lo que ha cambiado: para que revises, no para que copies a ciegas."
+        },
+        {
+          "title": "Sobre el plagio",
+          "body": "Parafrasear una fuente sin citarla sigue siendo plagio, por bien reescrita que esté. Esta herramienta sirve para expresar mejor lo que ya has entendido y vas a atribuir, no para esquivar una atribución. Si el texto de partida es de otra persona, la cita sigue haciendo falta."
+        }
+      ],
+      "faq": [
+        {
+          "q": "¿Conserva el significado?",
+          "a": "Ese es el objetivo declarado, y las cifras, los nombres y las citas se mantienen literales. En el registro creativo la distancia con el original es mayor por definición, así que revísalo con más atención que los demás."
+        },
+        {
+          "q": "¿Sirve para evitar el plagio?",
+          "a": "No. Parafrasear una fuente sin citarla es plagio igualmente. Sirve para escribir con tus palabras algo que vas a atribuir correctamente."
+        },
+        {
+          "q": "¿Está incluido en el plan gratuito?",
+          "a": "No. El parafraseador está en los planes de pago. El humanizador y el detector sí funcionan sin cuenta, con {anonWords} palabras al día."
+        },
+        {
+          "q": "¿Puedo ver qué ha cambiado?",
+          "a": "Sí. El resultado llega con las diferencias marcadas sobre el original, para que revises frase a frase en vez de comparar dos bloques de texto a ojo."
+        }
+      ],
+      "outro": {
+        "lead": "¿Prefieres corregir en lugar de reescribir?",
+        "tool": "Usa el corrector",
+        "pricing": "consulta los planes"
+      }
+    },
+    "correct": {
+      "metaTitle": "Corrector ortográfico y gramatical en español",
+      "metaDescription": "Corrige ortografía, gramática, puntuación y concordancia en español, con las diferencias marcadas para que revises cada cambio.",
+      "h1": "Corrector ortográfico y gramatical",
+      "intro": "Ortografía, gramática, puntuación y concordancia, con cada cambio marcado sobre tu texto. Corrige lo que está mal sin reescribir lo que está bien.",
+      "signalsTitle": "Qué corrige",
+      "signals": [
+        {
+          "term": "Ortografía y tildes",
+          "description": "Incluidas las tildes diacríticas, que son donde más se falla: «más» y «mas», «sé» y «se», «aún» y «aun»."
+        },
+        {
+          "term": "Gramática y concordancia",
+          "description": "Concordancia de género y número, régimen preposicional, uso del gerundio, queísmo y dequeísmo."
+        },
+        {
+          "term": "Puntuación",
+          "description": "Comas que separan sujeto y verbo, comillas sin cerrar, signos de apertura olvidados, rayas de diálogo."
+        },
+        {
+          "term": "Lo que deja en paz",
+          "description": "Tu voz. No reescribe frases correctas por gusto ni te cambia el registro: si está bien, se queda."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Dos modos, distinta ambición",
+          "body": "El modo general corrige lo que está mal y no toca lo demás. El académico va algo más allá: además de corregir, señala construcciones válidas pero impropias del registro —coloquialismos, muletillas orales, abuso de la voz pasiva— porque en un trabajo universitario eso también se penaliza. Si lo que quieres es solo lo incorrecto, quédate en general."
+        },
+        {
+          "title": "Por qué verás las diferencias",
+          "body": "Un corrector que te devuelve un bloque de texto limpio te obliga a confiar a ciegas o a comparar palabra por palabra. Aquí llega marcado: cada cambio se ve sobre el original. Es más trabajo de leer y es la única forma de aprender del error en vez de repetirlo el mes que viene."
+        }
+      ],
+      "faq": [
+        {
+          "q": "¿Corrige el español de América?",
+          "a": "Sí. No marcamos como error el voseo, el uso de «ustedes» como única segunda persona del plural ni el léxico regional. Lo que se corrige es lo que está mal en cualquier variedad del español."
+        },
+        {
+          "q": "¿En qué se diferencia del corrector de mi procesador de textos?",
+          "a": "Un corrector clásico compara palabra por palabra contra un diccionario y acierta poco fuera de la ortografía. Este lee la frase entera, así que ve la concordancia, el régimen preposicional y la puntuación, que es donde están casi todos los errores reales."
+        },
+        {
+          "q": "¿Está incluido en el plan gratuito?",
+          "a": "No. El corrector está en los planes de pago. El humanizador y el detector funcionan sin cuenta."
+        },
+        {
+          "q": "¿Me cambia el estilo?",
+          "a": "En modo general, no: corrige errores y deja en paz lo correcto. En modo académico sí señala construcciones válidas pero impropias del registro, que es justamente para lo que sirve ese modo."
+        }
+      ],
+      "outro": {
+        "lead": "¿Lo que necesitas es reformular, no corregir?",
+        "tool": "Usa el parafraseador",
+        "pricing": "consulta los planes"
+      }
+    }
+  },
+  "pricing": {
+    "metaTitle": "Precios",
+    "metaDescription": "Planes de Verbalyx: gratis para empezar, Pro e Ilimitado para escribir sin frenos. Prueba Ilimitado {days} días.",
+    "h1": "Precios",
+    "intro": "Empieza gratis. Prueba Ilimitado {days} días y decide después.",
+    "perMonth": "/mes",
+    "yearlyLine": "{yearly} al año — ahorras {saving}. Mensual: {monthly}",
+    "wordsPerDay": "{words} palabras al día",
+    "wordsPerMonth": "{words} palabras al mes",
+    "perRequest": "Hasta {words} por petición",
+    "freeTools": "Humanizador y detector (banda y evidencia)",
+    "proTools": "Todas las herramientas, historial y desglose por pasajes",
+    "priority": "Prioridad de cola",
+    "trialBadge": "Prueba {days} días",
+    "signup": "Crear cuenta gratis",
+    "choosePro": "Elegir Pro anual",
+    "proMonthly": "Pro mensual",
+    "tryFree": "Probar {days} días gratis",
+    "unlimitedYearly": "Ilimitado anual",
+    "topupTitle": "Recarga de palabras",
+    "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
+    "topupCta": "Comprar recarga",
+    "taxNote": "Precios en dólares estadounidenses, sin impuestos incluidos; los impuestos aplicables —incluido el impuesto sobre ventas de EE. UU. o el IVA de tu país cuando corresponda— se calculan en el pago. La renovación es automática y puedes cancelar en línea, en cualquier momento, desde tu cuenta. Consulta los",
+    "taxNoteLink": "términos del servicio"
+  },
+  "plans": {
+    "anonymous": "Anónimo",
+    "free": "Gratis",
+    "pro": "Pro",
+    "unlimited": "Ilimitado"
+  },
+  "editor": {
+    "inputLabel": "Texto de entrada",
+    "placeholder": "Pega aquí tu texto…",
+    "words": "{words} palabras",
+    "remaining": " · te quedan {words}",
+    "resultHere": "El resultado aparecerá aquí",
+    "analysisHere": "El análisis aparecerá aquí",
+    "writing": "Escribiendo…",
+    "analyzing": "Analizando…",
+    "paywall": "{tool} está en los planes de pago.",
+    "paywallCta": "Requiere un plan de pago",
+    "freeNote": "Puedes probar gratis el humanizador y el detector de IA sin crear cuenta.",
+    "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
+    "processing": "Procesando…",
+    "copyResult": "Copiar resultado",
+    "connectionError": "Error de conexión. Inténtalo de nuevo.",
+    "seePlans": "Ver planes",
+    "quotaTitle": "Has agotado tu límite.",
+    "quotaBody": "Sigue escribiendo hoy mismo con Ilimitado: {days} días gratis y cancelas cuando quieras.",
+    "longerTitle": "¿Textos más largos?",
+    "longerBody": "Los planes de pago amplían el límite por petición, guardan tu historial y desbloquean todas las herramientas."
+  },
+  "detector": {
+    "bands": {
+      "verde": {
+        "headline": "No hay indicios de escritura automática",
+        "step": "sin indicios"
+      },
+      "amarillo": {
+        "headline": "Hay algunos indicios de escritura automática",
+        "step": "algunos indicios"
+      },
+      "rojo": {
+        "headline": "Hay indicios claros de escritura automática",
+        "step": "indicios claros"
+      }
+    },
+    "scaleLabel": "{step}, sobre una escala de sin indicios, algunos indicios e indicios claros",
+    "tooShortTitle": "Texto demasiado corto para analizarlo",
+    "tooShortBody": "Con {words} en {sentences}, las medidas de ritmo son ruido. Hacen falta al menos {minWords} palabras y {minSentences} frases para que el resultado signifique algo. Preferimos decírtelo a darte un número inventado.",
+    "wordsCount": "{count, plural, one {# palabra} other {# palabras}}",
+    "sentencesCount": "{count, plural, one {# frase} other {# frases}}",
+    "over": "Sobre {words} palabras. No damos un porcentaje porque no existe ninguno que sea de fiar: lo que puedes leer es qué hemos encontrado.",
+    "greenNoticeTitle": "Sin indicios no significa «lo escribió una persona».",
+    "greenNoticeBody": "Medimos el ritmo del texto y los rastros que deja un copiar y pegar. Un texto generado y luego reescrito a mano, o generado en un registro narrativo o académico cuidado, puede no dejar ninguno. Lo que puedes concluir es que no hay indicios, no que no haya IA.",
+    "evidenceTitle": "Qué hemos medido",
+    "forExample": "Por ejemplo:",
+    "windowsTitle": "Dónde se concentran los indicios",
+    "sentenceRange": "Frases {from}–{to}",
+    "gated": "El desglose por pasajes está disponible en los planes de pago.",
+    "gatedCta": "Ver planes",
+    "disclaimer": "Esto mide patrones de estilo, no autoría. Un texto humano muy formal puede dar indicios y un texto generado con buen estilo puede no dar ninguno. Ningún detector, el nuestro incluido, sirve como prueba para acusar a nadie."
+  },
+  "errors": {
+    "server_error": "No hemos podido procesar tu texto. Vuelve a intentarlo en unos minutos.",
+    "invalid_request": "Petición no válida.",
+    "tool_not_available": "Esta herramienta llegará pronto.",
+    "captcha_failed": "Verificación anti-bot fallida.",
+    "rate_limited": "Demasiadas peticiones. Espera un momento.",
+    "unknown_tool": "Esta herramienta no existe.",
+    "tool_not_in_plan": "{tool} está disponible en los planes de pago.",
+    "request_too_long": "Tu plan admite hasta {words} palabras por petición.",
+    "forbidden": "No disponible en tu plan.",
+    "quota_daily": "Has agotado tus palabras de hoy. Prueba Ilimitado 3 días gratis.",
+    "quota_monthly": "Has agotado las palabras de tu plan este mes. Puedes comprar una recarga.",
+    "notFoundTitle": "Esta página no existe",
+    "notFoundBody": "El enlace que has seguido no lleva a ninguna parte. Puede que la página haya cambiado de dirección.",
+    "notFoundCta": "Ir al inicio"
+  },
+  "app": {
+    "history": "Historial",
+    "account": "Mi cuenta",
+    "admin": "Admin",
+    "signOut": "Salir",
+    "wordsToday": "palabras hoy",
+    "wordsMonth": "palabras este mes",
+    "topup": "Tienes {words} palabras de recarga disponibles.",
+    "planBadge": "Plan {plan}"
+  },
+  "history": {
+    "title": "Historial",
+    "docTitle": "Documento",
+    "gatedTitle": "El historial está en los planes de pago.",
+    "gatedBody": "En los planes gratuitos no guardamos tus textos: se procesan y se descartan. Con Pro o Ilimitado cada resultado queda guardado y cifrado, y puedes volver a él cuando quieras.",
+    "intro": "Tus textos se guardan cifrados. Solo tú puedes leerlos, y puedes borrarlos uno a uno.",
+    "empty": "Todavía no hay nada aquí. Lo que proceses a partir de ahora aparecerá en esta lista.",
+    "back": "Volver al historial",
+    "input": "Tu texto",
+    "output": "Resultado",
+    "delete": "Borrar",
+    "deleting": "Borrando…",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
+  "login": {
+    "title": "Inicia sesión",
+    "description": "Con Google o con un enlace mágico a tu correo. Sin contraseñas.",
+    "google": "Continuar con Google",
+    "or": "o",
+    "emailPlaceholder": "tu@correo.com",
+    "send": "Enviarme el enlace",
+    "sending": "Enviando…",
+    "sent": "Revisa tu correo: te hemos enviado un enlace para entrar.",
+    "error": "No se pudo enviar el enlace. Inténtalo de nuevo.",
+    "finishing": "Entrando…",
+    "finishFailed": "No hemos podido completar el acceso.",
+    "finishRetry": "Inténtalo de nuevo"
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "data": "Datos",
+    "created": "Cuenta creada el {date}",
+    "subscription": "Suscripción",
+    "plan": "Plan {plan}",
+    "limitsPaid": "{month} palabras al mes · hasta {request} por petición.",
+    "limitsFree": "{day} palabras al día · hasta {request} por petición.",
+    "topups": " Recargas disponibles: {words} palabras.",
+    "manage": "Gestionar o cancelar suscripción",
+    "cancelNote": "Puedes cancelar en línea y en cualquier momento. Conservas el acceso hasta el final del periodo ya pagado.",
+    "usage": "Uso este mes",
+    "today": "Hoy",
+    "month": "Este mes",
+    "requests": "Peticiones",
+    "deleteTitle": "Eliminar mi cuenta y datos",
+    "deleteBody": "Borra tu cuenta, tu suscripción y todos tus datos de forma permanente. No se puede deshacer.",
+    "deleteCta": "Eliminar mi cuenta",
+    "deleteConfirm": "¿Seguro? Se borrarán tu cuenta, tu historial y tu suscripción.",
+    "deleteYes": "Sí, eliminar",
+    "deleting": "Eliminando…",
+    "cancel": "Cancelar",
+    "deleteError": "No se pudo eliminar la cuenta. Inténtalo de nuevo."
+  },
+  "highlight": {
+    "added": "Añadido",
+    "rewritten": "Reescrito"
+  },
+  "checkout": {
+    "opening": "Abriendo el pago…",
+    "needSubscription": "Necesitas una suscripción activa para comprar una recarga.",
+    "configProblem": "El pago no está disponible ahora mismo por un problema de configuración nuestro. Ya estamos en ello.",
+    "stripe_unavailable": "No hemos podido contactar con el proveedor de pagos. Vuelve a intentarlo en unos minutos.",
+    "database_unavailable": "No hemos podido leer tu plan. Vuelve a intentarlo en unos minutos.",
+    "price_not_configured": "Este plan todavía no está disponible para comprar. Estamos en ello.",
+    "checkout_failed": "Nuestro proveedor de pagos ha rechazado la solicitud. Vuelve a intentarlo en unos minutos.",
+    "server_error": "No hemos podido abrir el pago por un problema nuestro. Vuelve a intentarlo en unos minutos.",
+    "invalid_request": "La solicitud no era válida. Recarga la página.",
+    "default": "No se pudo abrir el pago. Inténtalo de nuevo.",
+    "reference": "{message} (ref: {code})",
+    "disclosure": "Hoy no se te cobra nada. El {date}, al terminar los {days} días de prueba, se te cobrarán {unlimited}/mes salvo que canceles antes. Puedes cancelar o cambiar a Pro ({pro}/mes) en dos clics desde tu cuenta."
+  },
+  "legal": {
+    "updated": "Última actualización: 17 de septiembre de 2026.",
+    "legalNotice": {
+      "title": "Información legal",
+      "sections": [
+        {
+          "heading": "Titular del servicio",
+          "body": "verbalyx.ai es un servicio operado por {company}, {jurisdiction}, con domicilio en {address}. Para cualquier asunto legal puedes escribir a {legalEmail}; para consultas generales y soporte, a {contactEmail}."
+        },
+        {
+          "heading": "Objeto",
+          "body": "Verbalyx es un servicio de asistencia a la escritura mediante inteligencia artificial: humanización, detección, paráfrasis y corrección de textos. Se presta en línea, bajo suscripción o en modalidad gratuita con límites de uso."
+        },
+        {
+          "heading": "Propiedad intelectual",
+          "body": "El diseño, el código, la marca y los contenidos del sitio pertenecen a la empresa titular. Los textos que introduces y los resultados generados a partir de ellos son tuyos: no reclamamos ningún derecho sobre ellos."
+        },
+        {
+          "heading": "Reclamaciones por derechos de autor",
+          "body": "Si consideras que un contenido accesible a través del servicio infringe tus derechos de autor, envía una notificación a {legalEmail} identificando la obra, el material presuntamente infractor y tus datos de contacto, con una declaración de buena fe y de exactitud bajo pena de perjurio, conforme a la Digital Millennium Copyright Act (17 U.S.C. § 512)."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Términos del servicio",
+      "sections": [
+        {
+          "heading": "Quién presta el servicio",
+          "body": "El servicio lo presta {company}, {jurisdiction}, con domicilio en {address}. Al crear una cuenta o contratar una suscripción aceptas estos términos."
+        },
+        {
+          "heading": "El servicio",
+          "body": "Verbalyx ofrece herramientas de escritura con IA en modalidad gratuita, con límites diarios, y mediante suscripción de pago. Los límites vigentes de cada plan se muestran siempre en la página de precios y pueden cambiar con aviso previo razonable."
+        },
+        {
+          "heading": "Cuenta y edad mínima",
+          "body": "Debes tener al menos 18 años para contratar una suscripción. Si tienes entre 13 y 17 años puedes usar la modalidad gratuita con el consentimiento de tu madre, padre o tutor. Eres responsable de la seguridad de tus credenciales."
+        },
+        {
+          "heading": "Suscripción, prueba gratuita y renovación automática",
+          "body": "Los pagos se procesan a través de Stripe. El plan Ilimitado incluye un periodo de prueba de {trialDays} días que requiere método de pago. Antes de introducir tus datos de pago te mostramos, de forma clara y destacada, que hoy no se te cobra nada, la fecha exacta del primer cargo y su importe. Si no cancelas antes de que termine la prueba, la suscripción se activa y se cobra el plan elegido. Todas las suscripciones se renuevan automáticamente por periodos equivalentes al contratado hasta que las canceles."
+        },
+        {
+          "heading": "Cancelación",
+          "body": "Puedes cancelar en cualquier momento y en línea, desde «Mi cuenta», sin llamar por teléfono, sin escribir un correo y sin pasos adicionales: el mismo número de clics con el que contrataste. La cancelación surte efecto al final del periodo ya pagado y conservas el acceso hasta esa fecha. No se aplican penalizaciones por cancelar."
+        },
+        {
+          "heading": "Reembolsos",
+          "body": "Los importes ya cobrados por un periodo en curso no son reembolsables, salvo que la ley aplicable exija otra cosa o que el servicio no haya estado disponible por causas que nos sean imputables. Si crees que se te ha cobrado por error, escríbenos a {contactEmail} dentro de los 30 días siguientes al cargo y lo revisamos."
+        },
+        {
+          "heading": "Precios e impuestos",
+          "body": "Los precios se expresan en dólares estadounidenses y no incluyen impuestos. Los impuestos aplicables —incluido el impuesto sobre ventas de los estados de EE. UU. que lo exijan, o el IVA/IGV de tu país cuando corresponda— se calculan y se muestran en el momento del pago."
+        },
+        {
+          "heading": "Consumidores en la UE, el EEE y Reino Unido",
+          "body": "Dirigimos el servicio a países de habla hispana e inglesa, incluida España. Si eres consumidor y resides en la Unión Europea, el EEE o Reino Unido, nada en estos términos te priva de los derechos imperativos que te otorgue la ley de tu país de residencia. En particular: al contratar consientes expresamente el acceso inmediato al contenido digital y reconoces que, una vez iniciada la prestación, decae el derecho de desistimiento de 14 días, sin perjuicio del periodo de prueba gratuito y de tu derecho a cancelar en cualquier momento."
+        },
+        {
+          "heading": "Uso aceptable",
+          "body": "No está permitido usar el servicio para actividades ilícitas, para infringir derechos de terceros, para generar contenido engañoso o difamatorio, ni para eludir sistemas de evaluación académica cuando ello contravenga las normas de tu centro. El detector de IA ofrece resultados orientativos, de naturaleza estadística, y no debe usarse como prueba única para acusar a nadie."
+        },
+        {
+          "heading": "Garantías",
+          "body": "Los resultados se generan mediante modelos de inteligencia artificial y pueden contener errores, imprecisiones u omisiones; revísalos antes de usarlos. El servicio se presta «tal cual» y «según disponibilidad», sin garantías de ningún tipo, expresas o implícitas, incluidas las de comerciabilidad, idoneidad para un fin concreto y no infracción, en la máxima medida permitida por la ley. No garantizamos que el texto producido supere ningún detector de IA de terceros."
+        },
+        {
+          "heading": "Limitación de responsabilidad",
+          "body": "En la máxima medida permitida por la ley, la responsabilidad total de la empresa frente a ti por cualquier reclamación relacionada con el servicio no excederá el importe que hayas pagado en los doce meses anteriores al hecho que la origine. No respondemos de daños indirectos, incidentales, especiales o consecuenciales, ni de lucro cesante o pérdida de datos. Algunas jurisdicciones no permiten estas exclusiones; en ese caso, se aplican en la medida en que la ley lo permita."
+        },
+        {
+          "heading": "Ley aplicable y jurisdicción",
+          "body": "Estos términos se rigen por las leyes del estado de Florida (Estados Unidos), sin atender a sus normas de conflicto de leyes. Los tribunales estatales y federales situados en el condado de Orange (Florida) serán competentes, salvo que seas consumidor y la ley de tu país de residencia te reconozca el derecho a acudir a los tribunales de tu domicilio, en cuyo caso ese derecho prevalece."
+        },
+        {
+          "heading": "Cambios y contacto",
+          "body": "Podemos modificar estos términos; si el cambio es sustancial te avisaremos por correo electrónico o dentro del servicio antes de que surta efecto, y podrás cancelar si no lo aceptas. Para cualquier cuestión sobre estos términos: {legalEmail}."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Política de privacidad",
+      "sections": [
+        {
+          "heading": "Responsable del tratamiento",
+          "body": "{company}, {jurisdiction}, con domicilio en {address}. Para ejercer tus derechos o preguntar cualquier cosa sobre esta política: {legalEmail}."
+        },
+        {
+          "heading": "Dónde se tratan tus datos",
+          "body": "La empresa está establecida en Estados Unidos y tus datos se tratan principalmente allí, así como en la infraestructura de nuestros proveedores. Si resides fuera de EE. UU., esto implica una transferencia internacional de datos; más abajo explicamos las garantías que aplicamos."
+        },
+        {
+          "heading": "Qué datos tratamos y para qué",
+          "body": "Datos de cuenta (correo electrónico y, si lo facilitas, nombre) para prestarte el servicio. Datos de facturación, gestionados íntegramente por Stripe: no almacenamos números de tarjeta. Métricas de uso (recuentos de palabras y de peticiones) para aplicar los límites de tu plan y detectar abuso; las direcciones IP se almacenan siempre seudonimizadas mediante hash con clave, nunca en claro. Analítica de producto con PostHog, que funciona sin cookies hasta que consientas."
+        },
+        {
+          "heading": "Tus textos",
+          "body": "Los textos de usuarios anónimos y del plan gratuito no se almacenan: solo guardamos el recuento de palabras. Para generar el resultado, el texto se envía a nuestro proveedor de IA (Anthropic) a través de su API y no se utiliza para entrenar modelos. El historial de documentos es una función opcional de los planes de pago y se guarda cifrado con AES-256-GCM; puedes desactivarlo o borrarlo cuando quieras."
+        },
+        {
+          "heading": "Proveedores",
+          "body": "Trabajamos con encargados de tratamiento sujetos a contrato: Supabase (base de datos y autenticación), Vercel (alojamiento), Stripe (pagos), Anthropic (procesamiento de IA), Resend (correo transaccional), PostHog (analítica) y Sentry (registro de errores). No vendemos tus datos personales ni los compartimos con terceros con fines publicitarios."
+        },
+        {
+          "heading": "Conservación",
+          "body": "Conservamos los datos de tu cuenta mientras esta exista. Al eliminar tu cuenta borramos tus datos personales y tus documentos; mantenemos únicamente los registros de facturación durante el plazo que exige la normativa fiscal y contable estadounidense, y métricas agregadas que no permiten identificarte."
+        },
+        {
+          "heading": "Tus derechos",
+          "body": "Puedes acceder a tus datos, corregirlos, exportarlos y eliminarlos. La forma más rápida es desde «Mi cuenta», que incluye la opción de eliminar tu cuenta y tus datos. También puedes escribirnos a {legalEmail}; responderemos en un plazo máximo de 30 días."
+        },
+        {
+          "heading": "Si resides en la UE, el EEE o Reino Unido",
+          "body": "Te aplica el RGPD. Las bases legales de nuestro tratamiento son: la ejecución del contrato (cuenta, prestación del servicio, límites de plan y facturación), el interés legítimo (seguridad y prevención del abuso) y tu consentimiento (analítica con cookies y comunicaciones comerciales). Tienes derecho de acceso, rectificación, supresión, oposición, limitación y portabilidad, y a retirar tu consentimiento en cualquier momento. Las transferencias de datos a Estados Unidos se amparan en las cláusulas contractuales tipo de la Comisión Europea suscritas con nuestros proveedores. Puedes presentar una reclamación ante la autoridad de control de tu país —en España, la Agencia Española de Protección de Datos (aepd.es)—. Para ejercer cualquiera de estos derechos: {legalEmail}."
+        },
+        {
+          "heading": "Si resides en California",
+          "body": "Te aplica la CCPA, modificada por la CPRA. Tienes derecho a saber qué categorías de información personal recogemos y con qué fin, a solicitar su eliminación, a corregirla, a limitar el uso de información personal sensible y a no sufrir trato discriminatorio por ejercer estos derechos. No vendemos ni compartimos tu información personal en el sentido que la CCPA da a esos términos, tampoco la de menores de 16 años. Para ejercer tus derechos: {legalEmail}."
+        },
+        {
+          "heading": "Menores",
+          "body": "El servicio no está dirigido a menores de 13 años y no recogemos conscientemente sus datos. Si detectamos una cuenta de un menor de 13 años, la eliminamos junto con sus datos. Si crees que un menor a tu cargo nos ha facilitado datos, escríbenos y lo resolvemos."
+        },
+        {
+          "heading": "Cambios",
+          "body": "Si modificamos esta política de forma sustancial te lo notificaremos por correo electrónico o dentro del servicio antes de que el cambio surta efecto."
+        }
+      ]
+    },
+    "cookies": {
+      "title": "Política de cookies",
+      "sections": [
+        {
+          "heading": "Cookies que usamos",
+          "body": "Cookies técnicas imprescindibles: sesión de autenticación (Supabase) y preferencias de la interfaz. Sin ellas el servicio no puede funcionar. Analítica (PostHog): funciona en modo sin cookies hasta que das tu consentimiento a través del banner; si consientes, se usan cookies de analítica. Publicidad (Google): solo con tu consentimiento, mediante Consent Mode v2."
+        },
+        {
+          "heading": "Cómo gestionar el consentimiento",
+          "body": "Puedes aceptar, rechazar o cambiar tu elección en cualquier momento desde el banner de cookies o desde la configuración de tu navegador. Rechazar la analítica y la publicidad no afecta al funcionamiento del servicio ni a los límites de tu plan."
+        },
+        {
+          "heading": "No vendemos ni compartimos tu información",
+          "body": "No usamos cookies para vender ni compartir información personal con fines de publicidad conductual entre contextos, en el sentido que la CCPA da a esos términos. Si resides en California y quieres ejercer tus derechos, escríbenos a {legalEmail}."
+        }
+      ]
+    },
+    "jurisdiction": "sociedad de responsabilidad limitada constituida en el estado de Florida (Estados Unidos)"
+  },
+  "emails": {
+    "welcomeSubject": "Tu prueba de Verbalyx ya está activa",
+    "welcomePreview": "Tu prueba de Verbalyx Ilimitado ya está activa",
+    "welcomeHeading": "¡Bienvenido a Verbalyx!",
+    "welcomeBody": "Tu periodo de prueba de {days} días ya está activo. Desde ahora puedes usar todas las herramientas sin límite diario y con hasta {words} palabras por petición.",
+    "welcomeCta": "Ir a mis herramientas →",
+    "welcomeNote": "Puedes cancelar en cualquier momento desde tu cuenta. Si cancelas antes de que termine la prueba, no se te cobrará nada.",
+    "trialSubject": "Tu prueba de Verbalyx termina mañana",
+    "trialPreview": "Tu prueba de Verbalyx termina mañana",
+    "trialHeading": "Tu prueba termina mañana",
+    "trialBody": "Mañana finaliza tu periodo de prueba y se activará tu suscripción. Si quieres seguir, no tienes que hacer nada.",
+    "trialCancelBefore": "Si prefieres cancelar, puedes hacerlo en un clic desde",
+    "trialAccount": "tu cuenta",
+    "trialCancelAfter": "y no se te cobrará nada."
+  }
+}

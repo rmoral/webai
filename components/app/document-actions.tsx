@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
 
-import { removeDocument } from "@/app/(app)/app/historial/actions";
+import { removeDocument } from "@/app/[locale]/(app)/app/history/actions";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -19,6 +20,7 @@ export function HistoryOpened({ count }: { count: number }) {
 }
 
 export function DeleteDocumentButton({ id }: { id: string }) {
+  const t = useTranslations("history");
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
   const posthog = usePostHog();
@@ -26,7 +28,7 @@ export function DeleteDocumentButton({ id }: { id: string }) {
   if (!confirming) {
     return (
       <Button variant="ghost" size="sm" onClick={() => setConfirming(true)}>
-        Eliminar
+        {t("delete")}
       </Button>
     );
   }
@@ -44,10 +46,10 @@ export function DeleteDocumentButton({ id }: { id: string }) {
           })
         }
       >
-        {pending ? "Eliminando…" : "Confirmar"}
+        {pending ? t("deleting") : t("confirm")}
       </Button>
       <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
-        Cancelar
+        {t("cancel")}
       </Button>
     </span>
   );

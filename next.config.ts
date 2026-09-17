@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
 
 // CSP must be extended when adding third-party scripts (GTM, Stripe.js…).
 // 'unsafe-inline' is required by Next.js hydration; 'unsafe-eval' only in dev.
@@ -40,8 +41,12 @@ const nextConfig: NextConfig = {
   },
 };
 
+// Points next-intl at lib/i18n/request.ts instead of the default location,
+// so everything about languages lives under lib/i18n.
+const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
+
 // Source-map upload only runs when SENTRY_AUTH_TOKEN is configured (CI/Vercel).
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withNextIntl(nextConfig), {
   silent: true,
   disableLogger: true,
 });

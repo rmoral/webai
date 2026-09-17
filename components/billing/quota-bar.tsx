@@ -1,25 +1,36 @@
+"use client";
+
+import { useFormatter, useTranslations } from "next-intl";
+
 import { cn } from "@/lib/utils";
 
 // Words consumed against the plan allowance. `limit` is null on unmetered
 // plans, where a bar would be meaningless: the count is shown as plain text.
 // Limits always arrive from lib/billing/plans.ts — never hardcoded here.
+//
+// `unit` is a caller-supplied string rather than a key: the caller is what
+// knows whether the allowance is daily or monthly, and it already has a
+// translator.
 export function QuotaBar({
   used,
   limit,
   plan,
-  unit = "palabras hoy",
+  unit,
   showPlan = true,
   className,
 }: {
   used: number;
   limit: number | null;
   plan?: string;
-  unit?: string;
+  unit: string;
   showPlan?: boolean;
   className?: string;
 }) {
-  const label = `${used.toLocaleString("es-ES")}${
-    limit === null ? "" : ` / ${limit.toLocaleString("es-ES")}`
+  const t = useTranslations("app");
+  const format = useFormatter();
+
+  const label = `${format.number(used)}${
+    limit === null ? "" : ` / ${format.number(limit)}`
   } ${unit}`;
 
   if (limit === null) {
@@ -28,7 +39,7 @@ export function QuotaBar({
         {label}
         {showPlan && plan && (
           <span className="text-muted-foreground ml-2 text-xs">
-            Plan {plan}
+            {t("planBadge", { plan })}
           </span>
         )}
       </p>
@@ -43,7 +54,7 @@ export function QuotaBar({
         <b className="font-medium whitespace-nowrap">{label}</b>
         {showPlan && plan && (
           <span className="text-muted-foreground text-xs whitespace-nowrap">
-            Plan {plan}
+            {t("planBadge", { plan })}
           </span>
         )}
       </div>

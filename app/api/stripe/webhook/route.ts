@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import { emailTranslator } from "@/emails/translator";
 import { TrialEndingEmail } from "@/emails/trial-ending";
 import { WelcomeEmail } from "@/emails/welcome";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
@@ -12,6 +13,7 @@ import { getStripe } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events, stripeEvents, subscriptions, users } from "@/lib/db/schema";
 import { sendEmail } from "@/lib/email";
+import { isLocale, routing, type Locale } from "@/lib/i18n/routing";
 import { addTopupWords } from "@/lib/usage/quotas";
 
 // The seven events of study §3.4. Idempotency is enforced by inserting the
@@ -154,6 +156,19 @@ export async function POST(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
 
+  /**
+   * The language this customer was reading when they paid, put into the
+   * Stripe metadata at checkout. Anything else -- a subscription created
+   * before this shipped, or through the Stripe dashboard -- falls back to
+   * the default rather than guessing.
+   */
+  const localeOf = (metadata?: Stripe.Metadata | null): Locale => {
+    const value = metadata?.locale;
+    return typeof value === "string" && isLocale(value)
+      ? value
+      : routing.defaultLocale;
+  };
+
   try {
     switch (event.type) {
       // 1. New subscription or word top-up.
@@ -192,10 +207,11 @@ export async function POST(request: NextRequest) {
           );
           await upsertSubscription(userId, sub);
           if (email) {
+            const locale = localeOf(sub.metadata);
             await sendEmail({
               to: email,
-              subject: "Tu prueba de Verbalyx ya está activa",
-              react: WelcomeEmail({ appUrl }),
+              subject: emailTranslator(locale)("welcomeSubject"),
+              react: WelcomeEmail({ appUrl, locale }),
             });
           }
         }
@@ -218,10 +234,11 @@ export async function POST(request: NextRequest) {
         const sub = event.data.object;
         const email = await customerEmail(sub.customer as string);
         if (email) {
+          const locale = localeOf(sub.metadata);
           await sendEmail({
             to: email,
-            subject: "Tu prueba de Verbalyx termina mañana",
-            react: TrialEndingEmail({ appUrl }),
+            subject: emailTranslator(locale)("trialSubject"),
+            react: TrialEndingEmail({ appUrl, locale }),
           });
         }
         break;

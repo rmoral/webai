@@ -9,25 +9,39 @@ import {
   Text,
 } from "@react-email/components";
 
-export function WelcomeEmail({ appUrl }: { appUrl: string }) {
+import { PLANS, TRIAL } from "@/lib/billing/plans";
+import { getPathname } from "@/lib/i18n/navigation";
+import { emailTranslator, HTML_LANG, type Locale } from "./translator";
+
+export function WelcomeEmail({
+  appUrl,
+  locale,
+}: {
+  appUrl: string;
+  locale: Locale;
+}) {
+  const t = emailTranslator(locale);
+  // The trial grants the Unlimited limits, so they are read from the plan
+  // rather than typed into the copy, where they would go stale silently.
+  const words = PLANS.unlimited.limits.maxWordsPerRequest.toLocaleString(
+    locale === "en" ? "en-US" : "es-ES",
+  );
+
   return (
-    <Html lang="es">
+    <Html lang={HTML_LANG[locale]}>
       <Head />
-      <Preview>Tu prueba de Verbalyx Pro ya está activa</Preview>
+      <Preview>{t("welcomePreview")}</Preview>
       <Body style={{ fontFamily: "sans-serif", backgroundColor: "#fafafa" }}>
         <Container style={{ padding: "32px", maxWidth: "480px" }}>
-          <Heading as="h2">¡Bienvenido a Verbalyx Pro!</Heading>
+          <Heading as="h2">{t("welcomeHeading")}</Heading>
+          <Text>{t("welcomeBody", { days: TRIAL.days, words })}</Text>
           <Text>
-            Tu periodo de prueba de 3 días ya está activo. Desde ahora puedes
-            usar todas las herramientas sin límite diario y con hasta 10.000
-            palabras por petición.
-          </Text>
-          <Text>
-            <Link href={`${appUrl}/app`}>Ir a mis herramientas →</Link>
+            <Link href={`${appUrl}${getPathname({ href: "/app", locale })}`}>
+              {t("welcomeCta")}
+            </Link>
           </Text>
           <Text style={{ color: "#666", fontSize: "12px" }}>
-            Puedes cancelar en cualquier momento desde tu cuenta. Si cancelas
-            antes de que termine la prueba, no se te cobrará nada.
+            {t("welcomeNote")}
           </Text>
         </Container>
       </Body>
