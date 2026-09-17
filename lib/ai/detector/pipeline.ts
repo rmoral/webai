@@ -1,8 +1,10 @@
+import type { Locale } from "@/lib/i18n/routing";
+
 import { forensicSignals } from "./forensic";
 import { rhythmSignals } from "./rhythm";
 import { aggregate, bandFor, scoreOf } from "./scoring";
 import { asRaw, normalize, splitSentences, words } from "./segment";
-import { RELIABILITY, WINDOW } from "./weights";
+import { BANDS, CORROBORATION, RELIABILITY, WINDOW } from "./weights";
 import type {
   AnalysisWindow,
   DetectorAnalysis,
@@ -24,8 +26,13 @@ import type {
 // Step 0 comes first and cannot be reordered by accident: forensicSignals
 // takes RawText, normalize is the only producer of NormalizedText, and the
 // rhythm functions take nothing else. Swapping the two lines is a type error.
+//
+// The locale is a parameter, not a detected property of the text: it is the
+// language the visitor is reading, and it selects a whole set of anchors.
+// Measuring English prose against Spanish anchors would flag it, which is
+// the failure this tool exists not to commit.
 
-export const DETECTOR_VERSION = "1.0.0";
+export const DETECTOR_VERSION = "2.0.0";
 
 /**
  * Sentences are cut from the raw text, so both levels index the same array.
@@ -47,19 +54,23 @@ function windowsOf(sentences: string[]): [number, number][] {
   return ranges;
 }
 
-function measure(raw: RawText, withParagraphs: boolean): SignalEvidence[] {
+function measure(
+  raw: RawText,
+  locale: Locale,
+  withParagraphs: boolean,
+): SignalEvidence[] {
   const normalized = normalize(raw);
   const wordCount = words(normalized).length;
   return [
-    ...forensicSignals(raw, wordCount),
-    ...rhythmSignals(normalized, { withParagraphs }),
+    ...forensicSignals(raw, wordCount, locale),
+    ...rhythmSignals(normalized, locale, { withParagraphs }),
   ];
 }
 
-export function analyze(text: string): DetectorAnalysis {
+export function analyze(text: string, locale: Locale = "es"): DetectorAnalysis {
   const raw = asRaw(text);
   const normalized = normalize(raw);
-  const sentences = splitSentences(raw);
+  const sentences = splitSentences(raw, locale);
   const wordCount = words(normalized).length;
   const paragraphCount = normalized
     .split(/\n\s*\n+/)
@@ -68,6 +79,7 @@ export function analyze(text: string): DetectorAnalysis {
   const base = {
     version: DETECTOR_VERSION,
     phase: 1 as const,
+    locale,
     words: wordCount,
     sentenceCount: sentences.length,
     paragraphCount,
@@ -91,27 +103,27 @@ export function analyze(text: string): DetectorAnalysis {
         wordCount < RELIABILITY.minWords
           ? "texto_corto"
           : "frases_insuficientes",
-      signals: forensicSignals(raw, wordCount).sort(
+      signals: forensicSignals(raw, wordCount, locale).sort(
         (a, b) => b.contribution - a.contribution,
       ),
       windows: [],
     };
   }
 
-  const documentSignals = measure(raw, true).sort(
+  const documentSignals = measure(raw, locale, true).sort(
     (a, b) => b.contribution - a.contribution,
   );
 
   const windows: AnalysisWindow[] = windowsOf(sentences).map(
     ([from, to], index) => {
       const slice = asRaw(sentences.slice(from, to + 1).join(" "));
-      const signals = measure(slice, false);
-      const score = scoreOf(signals);
+      const signals = measure(slice, locale, false);
+      const score = scoreOf(signals, locale);
       return {
         index,
         sentenceRange: [from, to] as [number, number],
         score,
-        band: bandFor(score),
+        band: bandFor(score, locale),
         signals: signals.sort((a, b) => b.contribution - a.contribution),
       };
     },
@@ -120,16 +132,30 @@ export function analyze(text: string): DetectorAnalysis {
   // The document reading is the floor; a run of four sentences that reads far
   // more machine-like raises it. Averaging alone would hide the mixed text
   // that is the normal case -- three paragraphs written, the fourth generated.
-  const score = Math.max(
-    scoreOf(documentSignals),
+  const measured = Math.max(
+    scoreOf(documentSignals, locale),
     aggregate(windows.map((w) => w.score)),
   );
 
+  // Rhythm alone may not accuse anybody: careful second-language writing
+  // measures the same as generated text on every rhythm signal, in both
+  // languages. Leaving green needs a second, independent kind of evidence
+  // -- the physical traces of a paste, which are facts about the bytes.
+  // See CORROBORATION in weights.ts for the numbers behind this.
+  const forensic = documentSignals
+    .filter((s) => s.level === "A")
+    .reduce((total, s) => total + s.contribution, 0);
+  const corroborated = forensic >= CORROBORATION;
+  const score = corroborated
+    ? measured
+    : Math.min(measured, BANDS[locale].amarillo - 1);
+
   return {
     ...base,
-    band: bandFor(score),
+    band: bandFor(score, locale),
     score,
     reliable: true,
+    corroborated,
     signals: documentSignals,
     windows,
   };

@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { createFormatter, createTranslator } from "next-intl";
+
+import en from "@/messages/en.json";
+import es from "@/messages/es.json";
 
 import { checkEntitlement } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
@@ -106,13 +110,49 @@ describe("checkEntitlement", () => {
 });
 
 describe("trialDisclosure", () => {
+  // The disclosure is a legal obligation before payment details are taken,
+  // so it is checked against the real message catalogue in both languages
+  // rather than against a fixture that could drift from what ships.
+  const when = new Date("2026-09-10T12:00:00Z");
+
+  function render(locale: "es" | "en") {
+    const messages = locale === "es" ? es : en;
+    const t = createTranslator({ locale, messages, namespace: "checkout" });
+    const format = createFormatter({ locale });
+    return trialDisclosure(
+      locale,
+      t,
+      (date) =>
+        format.dateTime(date, {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+      when,
+    );
+  }
+
   it("states the charge date and both prices before payment (§6.1)", () => {
-    const text = trialDisclosure(new Date("2026-09-10T12:00:00Z"));
+    const text = render("es");
     expect(text).toContain("Hoy no se te cobra nada");
-    expect(text).toContain("13/09/2026");
+    expect(text).toContain("septiembre");
+    expect(text).toContain("2026");
     expect(text).toContain("29,99");
     expect(text).toContain("14,99");
     expect(text).toContain("cancelar");
+  });
+
+  it("says the same thing in English, with the month in words", () => {
+    // 13/09 and 09/13 are the same date to nobody. Spelling the month is
+    // what stops a US reader taking the charge date for three months away.
+    const text = render("en");
+    expect(text).toContain("not charged today");
+    expect(text).toContain("September");
+    expect(text).toContain("2026");
+    expect(text).toContain("29.99");
+    expect(text).toContain("14.99");
+    expect(text).toContain("cancel");
+    expect(text).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
   });
 });
 

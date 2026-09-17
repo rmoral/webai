@@ -1,10 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { asRaw, splitSentences } from "@/lib/ai/detector/segment";
 import type { Band, DetectorAnalysis } from "@/lib/ai/detector/types";
 import { RELIABILITY } from "@/lib/ai/detector/weights";
+import { Link } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // The finding is a band and a list of what was measured. There is no number
@@ -15,42 +16,38 @@ import { cn } from "@/lib/utils";
 
 const SCALE: Exclude<Band, "gris">[] = ["verde", "amarillo", "rojo"];
 
-const BANDS: Record<
+/**
+ * Only the colours live here. The band names and the sentence that goes with
+ * each one are copy, and the copy in this panel is the product: it is what
+ * stops a band being read as an accusation.
+ */
+const BAND_STYLE: Record<
   Exclude<Band, "gris">,
-  { headline: string; step: string; fill: string; text: string }
+  { fill: string; text: string }
 > = {
-  verde: {
-    headline: "No hay indicios de escritura automática",
-    step: "sin indicios",
-    fill: "var(--success)",
-    text: "text-success-ink",
-  },
-  amarillo: {
-    headline: "Hay algunos indicios de escritura automática",
-    step: "algunos indicios",
-    fill: "var(--warning-fill)",
-    text: "text-warning-ink",
-  },
-  rojo: {
-    headline: "Hay indicios claros de escritura automática",
-    step: "indicios claros",
-    fill: "var(--danger)",
-    text: "text-danger-ink",
-  },
+  verde: { fill: "var(--success)", text: "text-success-ink" },
+  amarillo: { fill: "var(--warning-fill)", text: "text-warning-ink" },
+  rojo: { fill: "var(--danger)", text: "text-danger-ink" },
 };
-
-function plural(n: number, uno: string, varios: string) {
-  return n === 1 ? uno : varios;
-}
 
 /** What was actually found. A signal that did not fire is not evidence. */
 function Evidence({ result }: { result: DetectorAnalysis }) {
+  const t = useTranslations("detector");
+  const signalText = useTranslations("detectorSignals");
   const found = result.signals.filter((s) => s.contribution > 0);
   if (found.length === 0) return null;
 
+  // The engine emits a signal id and its measurements; the wording is a
+  // message. That is what lets one engine serve two languages, and it means
+  // the sentence a visitor reads is never assembled on the server.
+  const explain = signalText as unknown as (
+    key: string,
+    values?: Record<string, string | number>,
+  ) => string;
+
   return (
     <dl className="flex flex-col gap-4">
-      <p className="text-sm font-medium">Qué hemos medido</p>
+      <p className="text-sm font-medium">{t("evidenceTitle")}</p>
       {found.map((signal) => (
         <div key={signal.id} className="flex flex-col gap-1">
           <dt className="flex items-baseline gap-2 text-sm font-medium">
@@ -59,13 +56,13 @@ function Evidence({ result }: { result: DetectorAnalysis }) {
               className="mt-[0.4rem] size-1.5 shrink-0 rounded-full"
               style={{ background: "var(--muted-foreground)" }}
             />
-            {signal.label}
+            {explain(`${signal.id}.label`)}
           </dt>
           <dd className="text-muted-foreground pl-3.5 text-xs leading-relaxed">
-            {signal.explanation}
+            {explain(`${signal.id}.explanation`, signal.values)}
             {signal.samples?.length ? (
               <span className="mt-1 block">
-                Por ejemplo:{" "}
+                {t("forExample")}{" "}
                 {signal.samples.map((s, i) => (
                   <span key={i}>
                     {i > 0 && ", "}
@@ -93,19 +90,21 @@ export function DetectorResultView({
   text: string;
   canSeeSentences: boolean;
 }) {
+  const t = useTranslations("detector");
+  const format = useFormatter();
+
   if (result.band === "gris") {
     return (
       <div className="flex flex-col gap-4 p-5" data-testid="detector-result">
         <div>
-          <p className="font-medium">Texto demasiado corto para analizarlo</p>
+          <p className="font-medium">{t("tooShortTitle")}</p>
           <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-            Con {result.words.toLocaleString("es-ES")}{" "}
-            {plural(result.words, "palabra", "palabras")} en{" "}
-            {result.sentenceCount}{" "}
-            {plural(result.sentenceCount, "frase", "frases")}, las medidas de
-            ritmo son ruido. Hacen falta al menos {RELIABILITY.minWords}{" "}
-            palabras y {RELIABILITY.minSentences} frases para que el resultado
-            signifique algo. Preferimos decírtelo a darte un número inventado.
+            {t("tooShortBody", {
+              words: t("wordsCount", { count: result.words }),
+              sentences: t("sentencesCount", { count: result.sentenceCount }),
+              minWords: RELIABILITY.minWords,
+              minSentences: RELIABILITY.minSentences,
+            })}
           </p>
         </div>
         {/* Forensic findings do not depend on length: an invisible character
@@ -116,53 +115,49 @@ export function DetectorResultView({
     );
   }
 
-  const band = BANDS[result.band];
+  const band = BAND_STYLE[result.band];
+  const step = (b: Exclude<Band, "gris">) => t(`bands.${b}.step`);
 
   return (
     <div className="flex flex-col gap-5 p-5" data-testid="detector-result">
       <div className="flex flex-col gap-3">
-        <p className={cn("font-semibold", band.text)}>{band.headline}</p>
+        <p className={cn("font-semibold", band.text)}>
+          {t(`bands.${result.band}.headline`)}
+        </p>
         <div
           className="flex gap-1"
           role="img"
-          aria-label={`${band.step}, sobre una escala de sin indicios, algunos indicios e indicios claros`}
+          aria-label={t("scaleLabel", { step: step(result.band) })}
         >
-          {SCALE.map((step) => (
+          {SCALE.map((item) => (
             <span
-              key={step}
+              key={item}
               className={cn(
                 "h-1.5 flex-1 rounded-full",
-                step === result.band ? "" : "bg-border",
+                item === result.band ? "" : "bg-border",
               )}
               style={
-                step === result.band ? { background: band.fill } : undefined
+                item === result.band ? { background: band.fill } : undefined
               }
             />
           ))}
         </div>
         <div className="text-muted-foreground flex justify-between text-xs">
-          {SCALE.map((step) => (
-            <span key={step} className={step === result.band ? band.text : ""}>
-              {BANDS[step].step}
+          {SCALE.map((item) => (
+            <span key={item} className={item === result.band ? band.text : ""}>
+              {step(item)}
             </span>
           ))}
         </div>
         <p className="text-muted-foreground text-sm">
-          Sobre {result.words.toLocaleString("es-ES")} palabras. No damos un
-          porcentaje porque no existe ninguno que sea de fiar: lo que puedes
-          leer es qué hemos encontrado.
+          {t("over", { words: format.number(result.words) })}
         </p>
       </div>
 
       {result.band === "verde" && (
         <p className="border-brand-line bg-brand-soft text-brand-ink rounded-lg border px-4 py-3 text-xs leading-relaxed">
-          <b className="font-semibold">
-            Sin indicios no significa «lo escribió una persona».
-          </b>{" "}
-          Medimos el ritmo del texto y los rastros que deja un copiar y pegar.
-          Un texto generado y luego reescrito a mano, o generado en un registro
-          narrativo o académico cuidado, puede no dejar ninguno. Lo que puedes
-          concluir es que no hay indicios, no que no haya IA.
+          <b className="font-semibold">{t("greenNoticeTitle")}</b>{" "}
+          {t("greenNoticeBody")}
         </p>
       )}
 
@@ -172,9 +167,9 @@ export function DetectorResultView({
         <WindowMap result={result} text={text} />
       ) : (
         <p className="text-muted-foreground text-xs">
-          El desglose por pasajes está disponible en los planes de pago.{" "}
-          <Link href="/precios" className="underline">
-            Ver planes
+          {t("gated")}{" "}
+          <Link href="/pricing" className="underline">
+            {t("gatedCta")}
           </Link>
         </p>
       )}
@@ -182,10 +177,7 @@ export function DetectorResultView({
       {/* Non-negotiable per the design system: the result always reads as
           orientation, never as proof. */}
       <p className="text-muted-foreground border-t pt-4 text-xs leading-relaxed">
-        Esto mide patrones de estilo, no autoría. Un texto humano muy formal
-        puede dar indicios y un texto generado con buen estilo puede no dar
-        ninguno. Ningún detector, el nuestro incluido, sirve como prueba para
-        acusar a nadie.
+        {t("disclaimer")}
       </p>
     </div>
   );
@@ -204,6 +196,7 @@ function WindowMap({
   result: DetectorAnalysis;
   text: string;
 }) {
+  const t = useTranslations("detector");
   const marked = result.windows.filter((w) => w.band !== "verde");
   if (marked.length === 0) return null;
 
@@ -220,23 +213,23 @@ function WindowMap({
     }
   }
 
-  // Cut with the engine's own splitter, not a copy of it: the ranges are
-  // indices into that array, and a copy that drifted would quote the wrong
-  // sentences without failing anywhere.
-  const sentences = splitSentences(asRaw(text));
+  // Cut with the engine's own splitter, in the language it measured: the
+  // ranges are indices into that array, and a different split would quote
+  // the wrong sentences without failing anywhere.
+  const sentences = splitSentences(asRaw(text), result.locale);
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm font-medium">Dónde se concentran los indicios</p>
+      <p className="text-sm font-medium">{t("windowsTitle")}</p>
       <div className="flex flex-col gap-3">
         {runs.map((run, i) => (
           <blockquote
             key={i}
             className="border-l-2 pl-3 text-xs leading-relaxed"
-            style={{ borderColor: BANDS[run.band].fill }}
+            style={{ borderColor: BAND_STYLE[run.band].fill }}
           >
             <span className="text-muted-foreground block">
-              Frases {run.from + 1}–{run.to + 1}
+              {t("sentenceRange", { from: run.from + 1, to: run.to + 1 })}
             </span>
             {sentences.slice(run.from, run.to + 1).join(" ")}
           </blockquote>

@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { User } from "@supabase/supabase-js";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/auth/client";
+import { Link } from "@/lib/i18n/navigation";
 
 // The marketing pages are statically prerendered for SEO, so the layout that
 // wraps them cannot read the session on the server. Without this the header
-// told every signed-in visitor to "Crear cuenta gratis" — on /precios, of all
+// told every signed-in visitor to sign up — on the pricing page, of all
 // places. Resolving it in the browser keeps the pages static.
 export function HeaderAuth() {
+  const t = useTranslations("nav");
   // undefined = not resolved yet. Rendering the signed-out buttons during
   // that moment would flash the wrong state at the people most likely to pay.
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -43,7 +45,7 @@ export function HeaderAuth() {
   if (user) {
     return (
       <Button size="sm" asChild>
-        <Link href="/app">Mi cuenta</Link>
+        <Link href="/app">{t("account")}</Link>
       </Button>
     );
   }
@@ -51,10 +53,10 @@ export function HeaderAuth() {
   return (
     <>
       <Button variant="ghost" size="sm" asChild>
-        <Link href="/login">Entrar</Link>
+        <Link href="/login">{t("login")}</Link>
       </Button>
       <Button size="sm" asChild>
-        <Link href="/login">Crear cuenta gratis</Link>
+        <Link href="/login">{t("signup")}</Link>
       </Button>
     </>
   );

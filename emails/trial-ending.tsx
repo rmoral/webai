@@ -9,22 +9,32 @@ import {
   Text,
 } from "@react-email/components";
 
-export function TrialEndingEmail({ appUrl }: { appUrl: string }) {
+import { getPathname } from "@/lib/i18n/navigation";
+import { emailTranslator, HTML_LANG, type Locale } from "./translator";
+
+export function TrialEndingEmail({
+  appUrl,
+  locale,
+}: {
+  appUrl: string;
+  locale: Locale;
+}) {
+  const t = emailTranslator(locale);
+
   return (
-    <Html lang="es">
+    <Html lang={HTML_LANG[locale]}>
       <Head />
-      <Preview>Tu prueba de Verbalyx Pro termina mañana</Preview>
+      <Preview>{t("trialPreview")}</Preview>
       <Body style={{ fontFamily: "sans-serif", backgroundColor: "#fafafa" }}>
         <Container style={{ padding: "32px", maxWidth: "480px" }}>
-          <Heading as="h2">Tu prueba termina mañana</Heading>
+          <Heading as="h2">{t("trialHeading")}</Heading>
+          <Text>{t("trialBody")}</Text>
           <Text>
-            Mañana finaliza tu periodo de prueba de Verbalyx Pro y se activará
-            tu suscripción. Si quieres seguir, no tienes que hacer nada.
-          </Text>
-          <Text>
-            Si prefieres cancelar, puedes hacerlo en un clic desde{" "}
-            <Link href={`${appUrl}/app`}>tu cuenta</Link> y no se te cobrará
-            nada.
+            {t("trialCancelBefore")}{" "}
+            <Link href={`${appUrl}${getPathname({ href: "/app", locale })}`}>
+              {t("trialAccount")}
+            </Link>{" "}
+            {t("trialCancelAfter")}
           </Text>
         </Container>
       </Body>

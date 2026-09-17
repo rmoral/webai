@@ -13,6 +13,8 @@ import {
 } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events } from "@/lib/db/schema";
+import { getPathname } from "@/lib/i18n/navigation";
+import { routing } from "@/lib/i18n/routing";
 import { hashIp } from "@/lib/security/crypto";
 
 // Terms version recorded with the consent, per study §6.7.
@@ -21,6 +23,11 @@ const TERMS_VERSION = "2026-09-15";
 const bodySchema = z.object({
   plan: z.enum(["pro", "unlimited", "topup"]),
   interval: z.enum(["monthly", "yearly"]).default("yearly"),
+  // Stripe renders its own checkout page in this language, and the two URLs
+  // it sends people back to have to land in it too. Someone who started in
+  // English and returns to a Spanish page has, as far as they can tell,
+  // ended up somewhere else.
+  locale: z.enum(routing.locales).default(routing.defaultLocale),
 });
 
 /**
@@ -48,7 +55,7 @@ async function handle(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  const { plan, interval } = parsed.data;
+  const { plan, interval, locale } = parsed.data;
 
   // These two are the only things that can throw before the Stripe call,
   // and they fail for completely different reasons. One `server_error`
@@ -117,7 +124,7 @@ async function handle(request: NextRequest) {
           }
         : {}),
       consent_collection: { terms_of_service: "required" },
-      locale: "es",
+      locale,
       ...(isSubscription
         ? {
             payment_method_collection: "always" as const,
@@ -136,12 +143,17 @@ async function handle(request: NextRequest) {
                 user_id: user.id,
                 plan,
                 origin: withTrial ? "trial_3d" : "direct",
+                // Carried so the webhook can write the trial emails in the
+                // language this customer was reading. A webhook has no URL
+                // and no request to read it from, and this is the last
+                // moment at which we know it.
+                locale,
               },
             },
           }
-        : { metadata: { user_id: user.id, purchase: "topup" } }),
-      success_url: `${appUrl}/app?checkout=success`,
-      cancel_url: `${appUrl}/precios?checkout=cancelled`,
+        : { metadata: { user_id: user.id, purchase: "topup", locale } }),
+      success_url: `${appUrl}${getPathname({ href: "/app", locale })}?checkout=success`,
+      cancel_url: `${appUrl}${getPathname({ href: "/pricing", locale })}?checkout=cancelled`,
     });
 
     // Auditable consent record: who, when, from where, which terms. Stripe

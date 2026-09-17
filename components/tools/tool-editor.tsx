@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
-import { PLANS, type PlanId } from "@/lib/billing/plans";
+import { PLANS, TRIAL, type PlanId } from "@/lib/billing/plans";
+import { Link } from "@/lib/i18n/navigation";
 import { countWords } from "@/lib/security/validation";
 
 declare global {
@@ -34,18 +35,6 @@ declare global {
 
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
-const MODE_LABELS: Record<string, string> = {
-  academico: "Académico",
-  neutro: "Neutro",
-  informal: "Informal",
-  estandar: "Estándar",
-  fluido: "Fluido",
-  formal: "Formal",
-  simple: "Simple",
-  creativo: "Creativo",
-  general: "General",
-};
-
 export function ToolEditor({
   tool,
   plan = "anonymous",
@@ -53,6 +42,13 @@ export function ToolEditor({
   tool: ToolId;
   plan?: PlanId;
 }) {
+  const t = useTranslations("editor");
+  const names = useTranslations("tools");
+  const modeLabel = useTranslations("modes");
+  // The API is not under [locale], so it cannot resolve the language from
+  // the URL. The client knows it and says so; the server validates it.
+  const locale = useLocale();
+
   const modes = TOOLS[tool].modes;
   // What the user picked, which may belong to a tool they have since left.
   // resolveMode is what decides the mode actually in force.
@@ -127,6 +123,7 @@ export function ToolEditor({
         body: JSON.stringify({
           text: input,
           mode,
+          locale,
           turnstileToken: tokenRef.current || undefined,
         }),
       });
@@ -138,7 +135,7 @@ export function ToolEditor({
           posthog?.capture("paywall_shown", { tool });
           setUpsell(true);
         }
-        setError(data?.message ?? "Algo ha salido mal. Inténtalo de nuevo.");
+        setError(data?.message ?? t("genericError"));
         setStatus("idle");
         return;
       }
@@ -169,7 +166,7 @@ export function ToolEditor({
       setParts(await diffParts(sent, acc));
       posthog?.capture("tool_used", { tool, words, mode });
     } catch {
-      setError("Error de conexión. Inténtalo de nuevo.");
+      setError(t("connectionError"));
       setStatus("idle");
     } finally {
       if (widgetId.current) window.turnstile?.reset(widgetId.current);
@@ -187,15 +184,14 @@ export function ToolEditor({
 
       {!included && (
         <UpsellBanner
-          title={`${TOOLS[tool].name} está en los planes de pago.`}
+          title={t("paywall", { tool: names(`${tool}.name`) })}
           action={
             <Button size="sm" asChild>
-              <Link href="/precios">Ver planes</Link>
+              <Link href="/pricing">{t("seePlans")}</Link>
             </Button>
           }
         >
-          Puedes probar gratis el humanizador y el detector de IA sin crear
-          cuenta.
+          {t("freeNote")}
         </UpsellBanner>
       )}
 
@@ -204,7 +200,7 @@ export function ToolEditor({
           <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
             {modes.map((m) => (
               <Chip key={m} pressed={m === mode} onClick={() => setPicked(m)}>
-                {MODE_LABELS[m] ?? m}
+                {modeLabel(m)}
               </Chip>
             ))}
           </div>
@@ -215,14 +211,13 @@ export function ToolEditor({
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Pega aquí tu texto…"
-              aria-label="Texto de entrada"
+              placeholder={t("placeholder")}
+              aria-label={t("inputLabel")}
               className="min-h-44 w-full resize-y bg-transparent p-5 text-base outline-none md:min-h-64 md:text-sm"
             />
             <p className="text-muted-foreground border-t px-5 py-2 text-xs">
-              {words.toLocaleString("es-ES")} palabras
-              {remaining !== null &&
-                ` · te quedan ${remaining.toLocaleString("es-ES")}`}
+              {t("words", { words })}
+              {remaining !== null && t("remaining", { words: remaining })}
             </p>
           </div>
 
@@ -242,11 +237,11 @@ export function ToolEditor({
                     <span className="text-muted-foreground">
                       {status === "loading"
                         ? measures
-                          ? "Analizando…"
-                          : "Escribiendo…"
+                          ? t("analyzing")
+                          : t("writing")
                         : measures
-                          ? "El análisis aparecerá aquí"
-                          : "El resultado aparecerá aquí"}
+                          ? t("analysisHere")
+                          : t("resultHere")}
                     </span>
                   )
                 )}
@@ -268,17 +263,17 @@ export function ToolEditor({
             size="lg"
           >
             {!included
-              ? "Requiere un plan de pago"
+              ? t("paywallCta")
               : status === "loading"
-                ? "Procesando…"
-                : TOOLS[tool].name}
+                ? t("processing")
+                : names(`${tool}.name`)}
           </Button>
           {status === "done" && !measures && (
             <Button
               variant="outline"
               onClick={() => navigator.clipboard.writeText(output)}
             >
-              Copiar resultado
+              {t("copyResult")}
             </Button>
           )}
           <div ref={widgetRef} className="ml-auto" />
@@ -294,29 +289,27 @@ export function ToolEditor({
       {upsell ? (
         <UpsellBanner
           tone="quota"
-          title="Has agotado tu límite."
+          title={t("quotaTitle")}
           action={
             <Button size="sm" asChild>
-              <Link href="/precios">Ver planes</Link>
+              <Link href="/pricing">{t("seePlans")}</Link>
             </Button>
           }
         >
-          Sigue escribiendo hoy mismo con Ilimitado: 3 días gratis y cancelas
-          cuando quieras.
+          {t("quotaBody", { days: TRIAL.days })}
         </UpsellBanner>
       ) : (
         !paid &&
         included && (
           <UpsellBanner
-            title="¿Textos más largos?"
+            title={t("longerTitle")}
             action={
               <Button size="sm" variant="soft" asChild>
-                <Link href="/precios">Ver planes</Link>
+                <Link href="/pricing">{t("seePlans")}</Link>
               </Button>
             }
           >
-            Los planes de pago amplían el límite por petición, guardan tu
-            historial y desbloquean todas las herramientas.
+            {t("longerBody")}
           </UpsellBanner>
         )
       )}

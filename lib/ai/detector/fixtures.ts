@@ -1,6 +1,7 @@
-// Calibration corpus for Phase 1. Kept beside the engine rather than inside
-// the test file because the weights in weights.ts are tuned by hand against
-// exactly these texts, and a person turning a weight needs to read them.
+// Calibration corpus for Phase 1, in both languages. Kept beside the engine
+// rather than inside the test file because the anchors in weights.ts are
+// tuned by hand against exactly these texts, and a person turning one needs
+// to read them.
 //
 // Read the names as REGISTERS, not as verified provenance. These texts were
 // written for this file; none of them is a provenance-verified human sample
@@ -82,3 +83,88 @@ En la actualidad, resulta fundamental comprender cómo las herramientas digitale
 
 /** Below the floor. The engine must refuse to put a band on this. */
 export const CORTO = `Un texto corto no da para mucho. Tiene cuatro frases. Ninguna medida estadística sirve aquí. Y decirlo es más honesto que inventarse un número.`;
+
+/**
+ * Spanish written carefully by a non-native speaker: signposted structure,
+ * even sentence lengths, a narrow range of constructions.
+ *
+ * Added because the English corpus showed that this profile is the one a
+ * detector wrongly flags, and assuming Spanish is immune without measuring
+ * would be assuming exactly what needs checking. See weights.ts.
+ */
+export const NO_NATIVO = `En este trabajo voy a analizar el impacto del teletrabajo en la productividad de los equipos de desarrollo. El tema es importante porque muchas empresas han cambiado sus políticas después de la pandemia, y los resultados no son iguales en todas las organizaciones.
+
+En primer lugar, es necesario definir qué entendemos por productividad. Algunos estudios miden el número de funcionalidades entregadas en un periodo. Otros estudios miden la calidad del código y el número de errores que llegan a producción. Estas dos definiciones pueden dar resultados opuestos para el mismo equipo.
+
+En segundo lugar, la evidencia sobre el teletrabajo es contradictoria. Un estudio de 2023 encontró que los desarrolladores que trabajaban desde casa cerraban más tareas que sus compañeros de la oficina. Sin embargo, el mismo estudio encontró que el tiempo de revisión del código aumentó casi un cuarenta por ciento. Esto sugiere que la productividad individual y la productividad del equipo no son la misma cosa.
+
+En tercer lugar, el contexto de la empresa es muy importante. Los equipos que ya estaban distribuidos antes del cambio se adaptaron más rápido que los equipos que no lo estaban. En mi experiencia en dos empresas, la diferencia fue muy clara. La primera empresa tenía documentación de cada proceso y la transición fue sencilla. La segunda empresa dependía de conversaciones informales y la transición fue difícil.
+
+En conclusión, el impacto del teletrabajo depende de cómo medimos la productividad y de la situación de cada empresa. Hace falta más investigación antes de dar una recomendación general.`;
+
+// ─── English ─────────────────────────────────────────────────────────────
+
+/** Copy-pasted from a chat, untouched: Markdown, em dash and all. */
+export const GENERATED_UNEDITED = `**The Role of Artificial Intelligence in Modern Organisations**
+
+Artificial intelligence has fundamentally transformed the way organisations approach their internal processes. In today's rapidly evolving landscape, it is essential to understand how these tools can be integrated effectively into existing workflows. Companies that have embarked on this journey report substantial improvements in their operational productivity.
+
+Furthermore, it is important to note that technological adoption does not depend solely on the available infrastructure. In this regard, staff training plays a crucial role in the success of any initiative. Moreover, it is worth mentioning that organisations investing in capability building achieve better long-term outcomes. This finding is echoed across the leading sector studies of recent years.
+
+Similarly, organisational culture significantly influences the acceptance of new tools. It is essential that leaders understand the expectations of their teams before initiating any deployment. Therefore, internal communication becomes a key aspect of the technological adoption process. It is equally relevant to establish clear indicators from the outset.
+
+It should be noted that resistance to change constitutes one of the most frequent obstacles. Organisations must address this issue with specific support strategies. In this way, an orderly transition towards new ways of working is facilitated. Experience demonstrates that supported projects achieve notably higher adoption rates.
+
+In conclusion, digital transformation requires a comprehensive approach that combines technology, people and processes in a balanced manner. Organisations that understand this will obtain a sustainable competitive advantage over time — and that advantage will prove difficult for their direct competitors to replicate.`;
+
+/**
+ * Careful academic English: the register that most resembles generated prose
+ * on every measure here, and the one a false positive costs most.
+ */
+export const ACADEMIC_FORMAL = `The periodisation of the English Renaissance has long been shaped by a historiographical tension that no amount of archival work has resolved. Tillyard placed its coherence in a shared cosmology; Greenblatt, half a century later, complicated that reading by showing how contested and improvised that supposed order actually was.
+
+The dispute is not merely chronological. To accept one date over another is to commit to what counts as "Renaissance": the circulation of classical texts, a reform of devotion, a particular formal taste? Recent work on private libraries in provincial towns complicates the picture further, since it documents Italian authors decades earlier than the consensus allowed.
+
+Perhaps the difficulty lies in the category itself, inherited from a critical tradition that looked for an English reflection of an Italian model. If we abandon that expectation, the question of the date loses much of its urgency. What remains is a history of uneven receptions, partial readings, local appropriations that resist any single scheme. Kerrigan and Brotton have said as much, with different emphases.
+
+A caution is worth adding. The surviving documentation privileges wealthy readers, who are the ones who left inventories; of popular reading we know little, and the little we know comes from indirect sources, most of them judicial. Any periodisation built on that material inherits the bias. That is not an argument for abandoning periodisation, but it is one for holding it with less confidence than the handbooks tend to display.`;
+
+/**
+ * Second-language English, written with care: signposted structure, even
+ * sentence lengths, a narrow range of constructions.
+ *
+ * This is the sample that decides the English anchors. English AI detectors
+ * have a documented record of flagging non-native writers, for exactly the
+ * reason visible here -- fluency acquired as a second language is more
+ * regular, and regularity is what these measures read as machine-like. The
+ * human anchor for cv_longitud_frase sits below this text's reading, not at
+ * the native average, and tests/detector.test.ts pins the consequence.
+ */
+export const NON_NATIVE = `In this essay I will discuss the impact of remote work on the productivity of software teams. This topic is important because many companies have changed their policies after the pandemic, and the results are not the same for every organisation.
+
+First, it is necessary to define what we mean by productivity. Some studies measure the number of features delivered in a period. Other studies measure the quality of the code and the number of defects that reach production. These two definitions can give opposite results for the same team.
+
+Second, the evidence about remote work is mixed. A study from 2023 found that developers working from home closed more tickets than their colleagues in the office. However, the same study found that the time to review a pull request increased by almost forty per cent. This suggests that individual productivity and team productivity are not the same thing.
+
+Third, the context of the company is very important. Teams that were already distributed before the change adapted faster than teams that were not. In my own experience working in two companies, the difference was very clear. The first company had documentation for every process and the transition was smooth. The second company depended on informal conversations and the transition was difficult.
+
+In conclusion, the impact of remote work depends on how we measure productivity and on the situation of each company. More research is necessary before we can give a general recommendation.`;
+
+/** A native speaker writing loosely: short sentences, asides, real numbers. */
+export const INFORMAL = `Six years in and I still don't know what to say when someone asks me whether AI is going to take our jobs. Depends. The first time I watched a colleague automate in twenty minutes something that used to eat my whole morning, it stung. A lot.
+
+Then I worked out that what he'd automated was the boring half: copying cells from one place to another, checking the totals added up, sending the same email to fourteen people. The rest — deciding what to measure, arguing it out with the client, sitting through a two-hour meeting to discover nobody knew what they wanted — that's all still here.
+
+For how long? No idea. But I've stopped making bets: in 2019 I said language models would never write decent code, and look at that. Right now I've got an editor open where half of what's in it was written by a machine, and I don't mind. I find it strange, which is a different thing.
+
+We had a silly wager in the office back in January. Six of us, twenty quid each, on how many would still be doing the same job by December. Marta won, she said five. It's November and there are still six of us, so technically she lost, but we gave her the pot anyway because she was the only one who dared say a number. The rest of us put things like "depends on the sector". Cowards.`;
+
+/** Written opening, generated close: the case averaging would hide. */
+export const MIXED = `I started writing this on a train, which is where things occur to me. I had no plan. I wanted to explain why I stopped using spreadsheets for the shop's books and ended up with a notebook, which is going backwards, I know.
+
+The reason is daft: in the spreadsheet everything always added up, and that gave me a false calm. In the notebook the numbers don't add up until I sit down and make them, and that sitting down is when I actually find out how the month has gone. With the spreadsheet open I never found out. I looked at the total and that was that.
+
+In today's business landscape, it is essential to understand how digital tools can be effectively integrated into the management of small enterprises. Furthermore, it is important to note that digitalisation does not depend solely on the software available. In this regard, the habits of the owner play a crucial role in the success of any control system. Moreover, it is worth mentioning that businesses combining both approaches achieve better outcomes. Similarly, consistency in record-keeping significantly influences the quality of the information obtained. Therefore, it is essential to establish a regular routine of accounting review.`;
+
+/** Below the floor. The engine must refuse to put a band on this. */
+export const SHORT = `A short text does not give you much. It has four sentences. No statistical measure works here. Saying so is more honest than inventing a number.`;

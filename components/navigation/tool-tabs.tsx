@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import { Link, usePathname } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // One tab strip for both areas. Inside /app it switches the editor's tool
@@ -23,13 +24,16 @@ export function ToolTabs({ className }: { className?: string }) {
 }
 
 function Tabs({ className }: { className?: string }) {
+  // next-intl's usePathname: the internal pathname, so matching a tool works
+  // the same in both languages without a table of translated URLs here.
   const pathname = usePathname();
   const active = useSearchParams().get("tool");
+  const t = useTranslations();
   const inApp = pathname.startsWith("/app");
 
   const current: ToolId = inApp
     ? ((active && active in TOOLS ? active : "humanize") as ToolId)
-    : ((Object.values(TOOLS).find((t) => t.path === pathname)?.id ??
+    : ((Object.values(TOOLS).find((tool) => tool.path === pathname)?.id ??
         "") as ToolId);
 
   return (
@@ -43,6 +47,7 @@ function Tabs({ className }: { className?: string }) {
       {Object.values(TOOLS).map((tool) => {
         const selected = tool.id === current;
         const reachable = inApp ? tool.live : tool.landing;
+        const name = t(`tools.${tool.id}.name`);
         const classes = cn(
           "relative shrink-0 px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors",
           selected ? "text-brand" : "text-muted-foreground",
@@ -59,10 +64,10 @@ function Tabs({ className }: { className?: string }) {
               key={tool.id}
               role="tab"
               aria-disabled
-              title="Muy pronto"
+              title={t("nav.soon")}
               className={classes}
             >
-              {tool.name}
+              {name}
             </span>
           );
         }
@@ -72,10 +77,12 @@ function Tabs({ className }: { className?: string }) {
             key={tool.id}
             role="tab"
             aria-selected={selected}
-            href={inApp ? `/app?tool=${tool.id}` : tool.path}
+            href={
+              inApp ? { pathname: "/app", query: { tool: tool.id } } : tool.path
+            }
             className={classes}
           >
-            {tool.name}
+            {name}
             {underline}
           </Link>
         );

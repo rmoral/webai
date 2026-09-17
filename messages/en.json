@@ -1,0 +1,740 @@
+{
+  "site": {
+    "title": "Verbalyx — AI writing tools that show their working",
+    "description": "Humanize, detect, paraphrase and proofread. Evidence instead of invented percentages."
+  },
+  "nav": {
+    "pricing": "Pricing",
+    "login": "Sign in",
+    "signup": "Create a free account",
+    "account": "My account",
+    "language": "Language",
+    "soon": "Coming soon"
+  },
+  "footer": {
+    "tools": "Tools",
+    "product": "Product",
+    "legal": "Legal",
+    "soon": "coming soon",
+    "rights": "© {year} YBB Solutions, LLC — Verbalyx",
+    "market": "English and Spanish",
+    "privacyNote": "We do not store text from the free plans.",
+    "legalNotice": "Legal notice",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "cookies": "Cookies"
+  },
+  "tools": {
+    "humanize": {
+      "name": "AI humanizer"
+    },
+    "detect": {
+      "name": "AI detector"
+    },
+    "paraphrase": {
+      "name": "Paraphraser"
+    },
+    "correct": {
+      "name": "Grammar checker"
+    }
+  },
+  "modes": {
+    "academico": "Academic",
+    "neutro": "Neutral",
+    "informal": "Informal",
+    "estandar": "Standard",
+    "fluido": "Fluent",
+    "formal": "Formal",
+    "simple": "Simple",
+    "creativo": "Creative",
+    "general": "General"
+  },
+  "home": {
+    "badge": "No sign-up · {words} words a day",
+    "h1": "AI writing tools that show their working",
+    "intro": "Humanize, detect, paraphrase and proofread. Every result comes with what we actually measured, because a number with nothing behind it is not an answer.",
+    "more": "Need more words a day?",
+    "morePricing": "See the plans"
+  },
+  "landing": {
+    "faqTitle": "Frequently asked questions",
+    "humanize": {
+      "metaTitle": "Free AI humanizer — rewrite AI text to sound human",
+      "metaDescription": "Rewrite generated text so it reads like a person wrote it, with the meaning intact. Three registers, free, no sign-up.",
+      "h1": "AI humanizer",
+      "intro": "Paste generated text and get its rhythm back: sentences of varied length, none of the usual filler, and the meaning untouched. Free, no account needed.",
+      "signalsTitle": "What it changes",
+      "signals": [
+        {
+          "term": "The rhythm",
+          "description": "Models write sentences of suspiciously similar length. This alternates long and short the way a person does."
+        },
+        {
+          "term": "The filler",
+          "description": "\"It is important to note\", \"in today's world\", \"plays a crucial role\", \"delve into\". Gone."
+        },
+        {
+          "term": "The voice",
+          "description": "Active voice, ordinary contractions and plain wording, instead of the register of an instruction manual."
+        },
+        {
+          "term": "What it leaves alone",
+          "description": "Figures, names, quotations and technical terms stay exactly as they were. It adds no information and no opinions."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Three registers, not one",
+          "body": "Academic uses the connectives of a university paper and an impersonal stance, without falling into the formulas that give a model away. Neutral is clear, direct prose that suits most writing. Informal is conversational without being sloppy. The register is chosen before you run it and genuinely changes the output, not just the tone of one sentence."
+        },
+        {
+          "title": "What to expect, and what not to",
+          "body": "Humanizing is not a free pass through a detector. What it does is fix what actually gives generated text away: the flat cadence and the padding. If the original says little, it will still say little afterwards, and no rewriter fixes that. Nor is this for faking authorship: it is for making a generated draft sound like you before you rewrite it yourself."
+        }
+      ],
+      "faq": [
+        {
+          "q": "Does it change what my text means?",
+          "a": "It should not. The instruction is explicit: keep the meaning, the information and roughly the length. Figures, proper nouns, quotations and technical terms are kept verbatim. Read it before you hand it in anyway — no automatic rewrite is immune to shifting a nuance."
+        },
+        {
+          "q": "Will it get past AI detectors?",
+          "a": "We do not promise that, and be wary of anyone who does. We fix the patterns detectors measure — flat rhythm, filler connectives, thin punctuation — which measurably lowers the signals. But detectors change, and guaranteeing a result on somebody else's tool would be selling you smoke."
+        },
+        {
+          "q": "How many words can I process?",
+          "a": "Without an account, {anonWords} words a day and up to {anonRequest} per request. With a free account, {freeWords} a day. Paid plans raise both the monthly allowance and the size of a single request."
+        },
+        {
+          "q": "Do you store my text?",
+          "a": "Only on paid plans, encrypted, so you have a history. On free plans the text is not stored at all: only the word count needed to apply the limits."
+        }
+      ],
+      "outro": {
+        "lead": "Want to check how much it reads as AI first?",
+        "tool": "Run the detector",
+        "pricing": "see the plans"
+      }
+    },
+    "detect": {
+      "metaTitle": "Free AI detector — evidence, not a percentage",
+      "metaDescription": "Check whether a text carries the traces of AI writing. You get the specific evidence, not an invented percentage. Free, no sign-up.",
+      "h1": "AI detector",
+      "intro": "Paste a text and we tell you what we found: the rhythm of the sentences and the traces a copy-paste out of a chat leaves behind. No percentage, evidence in front of you. Free, no account needed.",
+      "signalsTitle": "What we measure",
+      "signals": [
+        {
+          "term": "Sentence rhythm",
+          "description": "People alternate long and short sentences irregularly; models drift toward a flat cadence. It is the field's most robust finding and the one that best survives a rewrite."
+        },
+        {
+          "term": "The extremes",
+          "description": "Writing produces four-word sentences and forty-word sentences. Generated prose clusters between fifteen and twenty-five."
+        },
+        {
+          "term": "Paste residue",
+          "description": "The spaced em dash, invisible characters, curly quotes, Markdown that survived the copy. Text typed by hand does not carry these."
+        },
+        {
+          "term": "The slips that are missing",
+          "description": "Flawless spacing across two thousand words, without a single fossil correction, says something. We only count it in long texts, where it means anything."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Why you will not see a percentage",
+          "body": "Tools advertising \"92% AI-generated\" have no way to stand behind that figure: there is no calibrated model that turns these signals into a real probability, and presenting one as though there were invites serious decisions on a fragile measurement. You get a band — no indications, some indications, clear indications — and underneath it the list of what we found, with examples. It is less impressive and it is more honest."
+        },
+        {
+          "title": "The mistake we refuse to make",
+          "body": "This tool ends up pointed at students, and English AI detectors have a documented record of flagging people who did the work — non-native writers most of all, whose prose is measurably more regular. Missing generated text and accusing a person are not errors of equal cost, so the thresholds sit deliberately high, and the calibration corpus includes careful non-native English on purpose. If a change started flagging it, our test suite fails before the change ships."
+        },
+        {
+          "title": "Under two hundred words we say nothing",
+          "body": "Variation measures need a sample. Below two hundred words or eight sentences the result would be noise wearing the costume of data, so we answer grey and tell you why. Paste residue is still reported at any length: an invisible character is an invisible character in twenty words as much as in two thousand."
+        }
+      ],
+      "faq": [
+        {
+          "q": "How does this AI detector work?",
+          "a": "It measures two things. The rhythm of the text: how much sentence length varies, how many sentences fall at the extremes, whether each sentence echoes the length of the last, how regular the paragraphs are. And the material traces of a copy-paste out of a chat: spaced em dashes, invisible characters, leftover Markdown, curly quotes. We score sliding windows of four sentences rather than the whole text, so a generated paragraph inside written work does not wash out in the average."
+        },
+        {
+          "q": "Is it reliable? Can I use it to accuse someone?",
+          "a": "No. No AI detector, ours included, is evidence. They all produce false positives and false negatives: careful formal writing by a person can show indications, and generated text that was then rewritten by hand may show none. The result is orientation about style, never a verdict about authorship."
+        },
+        {
+          "q": "Why no percentage, when everyone else gives one?",
+          "a": "Because it would be made up. \"87% AI-generated\" implies a statistical precision no current technique has. We give a qualitative band and, underneath, exactly what supports it, so you can look at the actual sentences and judge for yourself."
+        },
+        {
+          "q": "Does it penalise non-native English?",
+          "a": "That is the failure mode we calibrate against. Second-language English tends to be more regular in rhythm, which is precisely what naive detectors read as machine-like. Careful non-native prose is part of the corpus the thresholds are set on, and it is pinned in the automated tests, so a change that starts flagging it breaks the build."
+        },
+        {
+          "q": "How many words does it need?",
+          "a": "At least two hundred words and eight sentences. Below that we answer grey instead of handing you a meaningless number. You can analyse up to {anonWords} words a day without an account."
+        },
+        {
+          "q": "Do you keep the texts I analyse?",
+          "a": "No. The analysis runs on our server against the text you send and is not stored: we only record the word count needed to apply your plan's limits."
+        }
+      ],
+      "outro": {
+        "lead": "Reads as AI and you want to fix it?",
+        "tool": "Try the humanizer",
+        "pricing": "see the plans"
+      }
+    },
+    "paraphrase": {
+      "metaTitle": "Paraphrasing tool — rewrite text in six registers",
+      "metaDescription": "Rewrite any text in six registers while keeping what it says: standard, fluent, formal, simple, creative and academic.",
+      "h1": "Paraphrasing tool",
+      "intro": "Rewrite a text in different words without losing what it says. Six registers, from academic to creative, with the changes marked so you can see what moved.",
+      "signalsTitle": "The six registers",
+      "signals": [
+        {
+          "term": "Standard",
+          "description": "A balanced rewrite: changes the wording without straying from the original. The sensible starting point."
+        },
+        {
+          "term": "Fluent",
+          "description": "Optimises for reading aloud. Unpicks heavy subordinate clauses and the sentences that make you stumble."
+        },
+        {
+          "term": "Formal and academic",
+          "description": "Impersonal stance, precise vocabulary and the connectives of a paper or a report. Academic also respects citation convention."
+        },
+        {
+          "term": "Simple and creative",
+          "description": "Simple drops the register until anyone can follow it. Creative allows imagery and turns the original did not have, with the same content."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Paraphrasing is not swapping synonyms",
+          "body": "Replacing every word with a thesaurus entry produces text that reads strangely and, worse, keeps the same syntax: a marker spots it instantly and so does plagiarism software. What is needed is rebuilding the sentence. That is why the output may have a different number of sentences than the input, and why the changes are marked: so you review them rather than copy blind."
+        },
+        {
+          "title": "About plagiarism",
+          "body": "Paraphrasing a source without citing it is still plagiarism, however well rewritten. This tool is for expressing what you have already understood and are going to attribute, not for dodging the attribution. If the text you start from is someone else's, you still need the citation."
+        }
+      ],
+      "faq": [
+        {
+          "q": "Does it keep the meaning?",
+          "a": "That is the stated goal, and figures, names and quotations are kept verbatim. In the creative register the distance from the original is greater by definition, so review that one more carefully than the rest."
+        },
+        {
+          "q": "Will it help me avoid plagiarism?",
+          "a": "No. Paraphrasing a source without citing it is plagiarism either way. It helps you write in your own words something you are going to attribute properly."
+        },
+        {
+          "q": "Is it included in the free plan?",
+          "a": "No. The paraphraser is on the paid plans. The humanizer and the detector do work without an account, at {anonWords} words a day."
+        },
+        {
+          "q": "Can I see what changed?",
+          "a": "Yes. The result arrives with the differences marked against your original, so you review sentence by sentence instead of eyeballing two blocks of text."
+        }
+      ],
+      "outro": {
+        "lead": "Would you rather correct than rewrite?",
+        "tool": "Use the grammar checker",
+        "pricing": "see the plans"
+      }
+    },
+    "correct": {
+      "metaTitle": "Grammar checker — spelling, grammar and punctuation",
+      "metaDescription": "Fix spelling, grammar, punctuation and agreement, with every change marked so you can review it.",
+      "h1": "Grammar checker",
+      "intro": "Spelling, grammar, punctuation and agreement, with every change marked on your text. It fixes what is wrong without rewriting what is right.",
+      "signalsTitle": "What it fixes",
+      "signals": [
+        {
+          "term": "Spelling",
+          "description": "Including the pairs spellcheckers wave through because both words exist: their and there, its and it's, affect and effect."
+        },
+        {
+          "term": "Grammar and agreement",
+          "description": "Subject-verb agreement, tense consistency, dangling modifiers, preposition choice, pronoun reference."
+        },
+        {
+          "term": "Punctuation",
+          "description": "Comma splices, missing serial commas where they change the meaning, unclosed quotes, apostrophes in plurals."
+        },
+        {
+          "term": "What it leaves alone",
+          "description": "Your voice. It does not rewrite correct sentences for sport or shift your register: if it is right, it stays."
+        }
+      ],
+      "notes": [
+        {
+          "title": "Two modes, different ambition",
+          "body": "General mode fixes what is wrong and leaves the rest. Academic goes further: as well as correcting, it flags constructions that are valid but out of register — colloquialisms, verbal tics, overused passive voice — because in a university paper those cost marks too. If you only want the errors, stay in general."
+        },
+        {
+          "title": "Why you see the differences",
+          "body": "A checker that hands back a clean block of text forces you to trust it blind or compare word by word. Here it arrives marked: every change shows against the original. It is more work to read and it is the only way to learn from the mistake instead of repeating it next month."
+        }
+      ],
+      "faq": [
+        {
+          "q": "British or American English?",
+          "a": "It follows whichever your text already uses rather than imposing one. What it will not do is leave a document half in one and half in the other, which is the error that actually looks careless."
+        },
+        {
+          "q": "How is this different from my word processor's checker?",
+          "a": "A classic checker compares word by word against a dictionary and gets little right beyond spelling. This one reads the whole sentence, so it sees agreement, tense, preposition choice and punctuation, which is where nearly all real errors live."
+        },
+        {
+          "q": "Is it included in the free plan?",
+          "a": "No. The grammar checker is on the paid plans. The humanizer and the detector work without an account."
+        },
+        {
+          "q": "Will it change my style?",
+          "a": "In general mode, no: it corrects errors and leaves correct writing alone. In academic mode it does flag valid but out-of-register constructions, which is exactly what that mode is for."
+        }
+      ],
+      "outro": {
+        "lead": "Need to rephrase rather than correct?",
+        "tool": "Use the paraphraser",
+        "pricing": "see the plans"
+      }
+    }
+  },
+  "pricing": {
+    "metaTitle": "Pricing",
+    "metaDescription": "Verbalyx plans: free to start, Pro and Unlimited to write without brakes. Try Unlimited for {days} days.",
+    "h1": "Pricing",
+    "intro": "Start free. Try Unlimited for {days} days and decide afterwards.",
+    "perMonth": "/month",
+    "yearlyLine": "{yearly} a year — you save {saving}. Monthly: {monthly}",
+    "wordsPerDay": "{words} words a day",
+    "wordsPerMonth": "{words} words a month",
+    "perRequest": "Up to {words} per request",
+    "freeTools": "Humanizer and detector (band and evidence)",
+    "proTools": "Every tool, history and the passage breakdown",
+    "priority": "Priority queue",
+    "trialBadge": "{days}-day trial",
+    "signup": "Create a free account",
+    "choosePro": "Choose Pro yearly",
+    "proMonthly": "Pro monthly",
+    "tryFree": "Try {days} days free",
+    "unlimitedYearly": "Unlimited yearly",
+    "topupTitle": "Word top-up",
+    "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
+    "topupCta": "Buy a top-up",
+    "taxNote": "Prices are in US dollars, exclusive of tax; applicable taxes — including US sales tax or your country's VAT where it applies — are calculated at checkout. Renewal is automatic and you can cancel online, at any time, from your account. See the",
+    "taxNoteLink": "terms of service"
+  },
+  "plans": {
+    "anonymous": "Anonymous",
+    "free": "Free",
+    "pro": "Pro",
+    "unlimited": "Unlimited"
+  },
+  "editor": {
+    "inputLabel": "Text to process",
+    "placeholder": "Paste your text here…",
+    "words": "{words} words",
+    "remaining": " · {words} left",
+    "resultHere": "The result will appear here",
+    "analysisHere": "The analysis will appear here",
+    "writing": "Writing…",
+    "analyzing": "Analysing…",
+    "paywall": "{tool} is on the paid plans.",
+    "paywallCta": "Requires a paid plan",
+    "freeNote": "You can try the humanizer and the AI detector free, without an account.",
+    "genericError": "Something went wrong. Try again.",
+    "processing": "Working…",
+    "copyResult": "Copy result",
+    "connectionError": "Connection error. Try again.",
+    "seePlans": "See plans",
+    "quotaTitle": "You have hit your limit.",
+    "quotaBody": "Keep writing today with Unlimited: {days} days free, cancel whenever you like.",
+    "longerTitle": "Longer texts?",
+    "longerBody": "Paid plans raise the per-request limit, keep your history and unlock every tool."
+  },
+  "detector": {
+    "bands": {
+      "verde": {
+        "headline": "No indications of machine writing",
+        "step": "no indications"
+      },
+      "amarillo": {
+        "headline": "Some indications of machine writing",
+        "step": "some indications"
+      },
+      "rojo": {
+        "headline": "Clear indications of machine writing",
+        "step": "clear indications"
+      }
+    },
+    "scaleLabel": "{step}, on a scale of no indications, some indications and clear indications",
+    "tooShortTitle": "Too short to analyse",
+    "tooShortBody": "With {words} in {sentences}, the rhythm measures are noise. It takes at least {minWords} words and {minSentences} sentences for the result to mean anything. We would rather tell you than hand you an invented number.",
+    "wordsCount": "{count, plural, one {# word} other {# words}}",
+    "sentencesCount": "{count, plural, one {# sentence} other {# sentences}}",
+    "over": "Across {words} words. We do not give a percentage because there is no trustworthy one: what you can read is what we found.",
+    "greenNoticeTitle": "No indications does not mean \"a person wrote this\".",
+    "greenNoticeBody": "We measure the rhythm of the text and the traces a copy-paste leaves behind. Text that was generated and then rewritten by hand, or generated in a careful narrative or academic register, may leave none. What you can conclude is that there are no indications, not that there was no AI.",
+    "evidenceTitle": "What we measured",
+    "forExample": "For example:",
+    "windowsTitle": "Where the indications concentrate",
+    "sentenceRange": "Sentences {from}–{to}",
+    "gated": "The passage breakdown is available on the paid plans.",
+    "gatedCta": "See plans",
+    "disclaimer": "This measures patterns of style, not authorship. Careful formal writing by a person can show indications, and well-written generated text may show none. No detector, ours included, works as evidence to accuse anyone."
+  },
+  "errors": {
+    "server_error": "We could not process your text. Try again in a few minutes.",
+    "invalid_request": "Invalid request.",
+    "tool_not_available": "This tool is coming soon.",
+    "captcha_failed": "Anti-bot check failed.",
+    "rate_limited": "Too many requests. Wait a moment.",
+    "unknown_tool": "That tool does not exist.",
+    "tool_not_in_plan": "{tool} is available on the paid plans.",
+    "request_too_long": "Your plan allows up to {words} words per request.",
+    "forbidden": "Not available on your plan.",
+    "quota_daily": "You have used today's words. Try Unlimited free for 3 days.",
+    "quota_monthly": "You have used your plan's words this month. You can buy a top-up.",
+    "notFoundTitle": "This page does not exist",
+    "notFoundBody": "The link you followed does not lead anywhere. The page may have moved.",
+    "notFoundCta": "Go to the home page"
+  },
+  "app": {
+    "history": "History",
+    "account": "My account",
+    "admin": "Admin",
+    "signOut": "Sign out",
+    "wordsToday": "words today",
+    "wordsMonth": "words this month",
+    "topup": "You have {words} top-up words available.",
+    "planBadge": "{plan} plan"
+  },
+  "history": {
+    "title": "History",
+    "docTitle": "Document",
+    "gatedTitle": "History is on the paid plans.",
+    "gatedBody": "On the free plans we do not keep your text: it is processed and discarded. With Pro or Unlimited every result is stored encrypted, and you can come back to it whenever you like.",
+    "intro": "Your texts are stored encrypted. Only you can read them, and you can delete them one by one.",
+    "empty": "Nothing here yet. Anything you process from now on will show up in this list.",
+    "back": "Back to history",
+    "input": "Your text",
+    "output": "Result",
+    "delete": "Delete",
+    "deleting": "Deleting…",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "login": {
+    "title": "Sign in",
+    "description": "With Google or a magic link to your inbox. No passwords.",
+    "google": "Continue with Google",
+    "or": "or",
+    "emailPlaceholder": "you@example.com",
+    "send": "Send me the link",
+    "sending": "Sending…",
+    "sent": "Check your inbox: we have sent you a link to sign in.",
+    "error": "We could not send the link. Try again.",
+    "finishing": "Signing you in…",
+    "finishFailed": "We could not complete the sign-in.",
+    "finishRetry": "Try again"
+  },
+  "account": {
+    "title": "My account",
+    "data": "Details",
+    "created": "Account created on {date}",
+    "subscription": "Subscription",
+    "plan": "{plan} plan",
+    "limitsPaid": "{month} words a month · up to {request} per request.",
+    "limitsFree": "{day} words a day · up to {request} per request.",
+    "topups": " Top-ups available: {words} words.",
+    "manage": "Manage or cancel subscription",
+    "cancelNote": "You can cancel online at any time. You keep access until the end of the period you have already paid for.",
+    "usage": "Usage this month",
+    "today": "Today",
+    "month": "This month",
+    "requests": "Requests",
+    "deleteTitle": "Delete my account and data",
+    "deleteBody": "Permanently deletes your account, your subscription and all your data. This cannot be undone.",
+    "deleteCta": "Delete my account",
+    "deleteConfirm": "Are you sure? This deletes your account, your history and your subscription.",
+    "deleteYes": "Yes, delete",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "deleteError": "We could not delete the account. Try again."
+  },
+  "highlight": {
+    "added": "Added",
+    "rewritten": "Rewritten"
+  },
+  "checkout": {
+    "opening": "Opening checkout…",
+    "needSubscription": "You need an active subscription to buy a top-up.",
+    "configProblem": "Checkout is unavailable right now because of a configuration problem on our side. We are on it.",
+    "stripe_unavailable": "We could not reach the payment provider. Try again in a few minutes.",
+    "database_unavailable": "We could not read your plan. Try again in a few minutes.",
+    "price_not_configured": "This plan is not available to buy yet. We are on it.",
+    "checkout_failed": "Our payment provider rejected the request. Try again in a few minutes.",
+    "server_error": "We could not open checkout because of a problem on our side. Try again in a few minutes.",
+    "invalid_request": "That request was not valid. Reload the page.",
+    "default": "Checkout could not be opened. Try again.",
+    "reference": "{message} (ref: {code})",
+    "disclosure": "You are not charged today. On {date}, when the {days}-day trial ends, you will be charged {unlimited}/month unless you cancel first. You can cancel or switch to Pro ({pro}/month) in two clicks from your account."
+  },
+  "legal": {
+    "updated": "Last updated: 17 September 2026.",
+    "legalNotice": {
+      "title": "Legal notice",
+      "sections": [
+        {
+          "heading": "Who operates the service",
+          "body": "verbalyx.ai is operated by {company}, {jurisdiction}, with its address at {address}. For legal matters write to {legalEmail}; for general enquiries and support, to {contactEmail}."
+        },
+        {
+          "heading": "What the service is",
+          "body": "Verbalyx is an AI writing-assistance service: humanizing, detecting, paraphrasing and proofreading text. It is provided online, by subscription or on a free tier with usage limits."
+        },
+        {
+          "heading": "Intellectual property",
+          "body": "The design, the code, the brand and the contents of the site belong to the operating company. The text you enter and the results generated from it are yours: we claim no rights over them."
+        },
+        {
+          "heading": "Copyright claims",
+          "body": "If you believe material accessible through the service infringes your copyright, send a notice to {legalEmail} identifying the work, the allegedly infringing material and your contact details, with a statement of good faith and of accuracy under penalty of perjury, in accordance with the Digital Millennium Copyright Act (17 U.S.C. § 512)."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of service",
+      "sections": [
+        {
+          "heading": "Who provides the service",
+          "body": "The service is provided by {company}, {jurisdiction}, with its address at {address}. By creating an account or taking out a subscription you accept these terms."
+        },
+        {
+          "heading": "The service",
+          "body": "Verbalyx offers AI writing tools on a free tier, with daily limits, and by paid subscription. The current limits of each plan are always shown on the pricing page and may change on reasonable prior notice."
+        },
+        {
+          "heading": "Account and minimum age",
+          "body": "You must be at least 18 to take out a subscription. If you are between 13 and 17 you may use the free tier with the consent of a parent or guardian. You are responsible for the security of your credentials."
+        },
+        {
+          "heading": "Subscription, free trial and automatic renewal",
+          "body": "Payments are processed through Stripe. The Unlimited plan includes a {trialDays}-day trial that requires a payment method. Before you enter your payment details we show you, clearly and conspicuously, that you are not charged today, the exact date of the first charge and its amount. If you do not cancel before the trial ends, the subscription starts and the plan you chose is charged. All subscriptions renew automatically for periods equal to the one you signed up for, until you cancel."
+        },
+        {
+          "heading": "Cancellation",
+          "body": "You can cancel at any time and online, from \"My account\", with no phone call, no email and no extra steps: the same number of clicks it took to sign up. Cancellation takes effect at the end of the period you have already paid for, and you keep access until that date. There are no cancellation penalties."
+        },
+        {
+          "heading": "Refunds",
+          "body": "Amounts already charged for a current period are not refundable, unless applicable law requires otherwise or the service was unavailable for reasons attributable to us. If you believe you have been charged in error, write to {contactEmail} within 30 days of the charge and we will review it."
+        },
+        {
+          "heading": "Prices and taxes",
+          "body": "Prices are stated in US dollars and do not include tax. Applicable taxes — including sales tax in US states that require it, or VAT in your country where it applies — are calculated and shown at checkout."
+        },
+        {
+          "heading": "Consumers in the EU, the EEA and the UK",
+          "body": "We direct the service at English-speaking and Spanish-speaking countries, including Spain. If you are a consumer resident in the European Union, the EEA or the United Kingdom, nothing in these terms deprives you of the mandatory rights granted by the law of your country of residence. In particular: on signing up you expressly consent to immediate access to the digital content and acknowledge that, once performance has begun, the 14-day right of withdrawal lapses, without prejudice to the free trial period and to your right to cancel at any time."
+        },
+        {
+          "heading": "Acceptable use",
+          "body": "You may not use the service for unlawful activity, to infringe the rights of others, to generate misleading or defamatory content, or to circumvent academic assessment where doing so breaches your institution's rules. The AI detector produces indicative, statistical results and must not be used as sole evidence to accuse anyone."
+        },
+        {
+          "heading": "Warranties",
+          "body": "Results are generated by artificial-intelligence models and may contain errors, inaccuracies or omissions; review them before you use them. The service is provided \"as is\" and \"as available\", without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose and non-infringement, to the fullest extent permitted by law. We do not warrant that the text produced will pass any third-party AI detector."
+        },
+        {
+          "heading": "Limitation of liability",
+          "body": "To the fullest extent permitted by law, the company's total liability to you for any claim relating to the service will not exceed the amount you paid in the twelve months before the event giving rise to it. We are not liable for indirect, incidental, special or consequential damages, nor for lost profits or lost data. Some jurisdictions do not allow these exclusions; where that is so, they apply to the extent the law permits."
+        },
+        {
+          "heading": "Governing law and jurisdiction",
+          "body": "These terms are governed by the laws of the State of Florida, United States, without regard to its conflict-of-laws rules. The state and federal courts located in Orange County, Florida will have jurisdiction, unless you are a consumer and the law of your country of residence gives you the right to bring proceedings in the courts of your domicile, in which case that right prevails."
+        },
+        {
+          "heading": "Changes and contact",
+          "body": "We may amend these terms; if a change is material we will notify you by email or within the service before it takes effect, and you may cancel if you do not accept it. For any question about these terms: {legalEmail}."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "sections": [
+        {
+          "heading": "Data controller",
+          "body": "{company}, {jurisdiction}, with its address at {address}. To exercise your rights or ask anything about this policy: {legalEmail}."
+        },
+        {
+          "heading": "Where your data is processed",
+          "body": "The company is established in the United States and your data is processed principally there, as well as on our providers' infrastructure. If you live outside the US, this involves an international transfer of data; the safeguards we apply are set out below."
+        },
+        {
+          "heading": "What we process and why",
+          "body": "Account data (email address and, if you provide it, a name) to provide the service. Billing data, handled entirely by Stripe: we do not store card numbers. Usage metrics (word and request counts) to apply your plan's limits and detect abuse; IP addresses are always stored pseudonymised through a keyed hash, never in the clear. Product analytics with PostHog, which runs cookieless until you consent."
+        },
+        {
+          "heading": "Your text",
+          "body": "Text from anonymous users and the free plan is not stored: we keep only the word count. To produce the result, the text is sent to our AI provider (Anthropic) through its API and is not used to train models. Document history is an optional feature of the paid plans and is stored encrypted with AES-256-GCM; you can turn it off or delete it whenever you like."
+        },
+        {
+          "heading": "Providers",
+          "body": "We work with processors under contract: Supabase (database and authentication), Vercel (hosting), Stripe (payments), Anthropic (AI processing), Resend (transactional email), PostHog (analytics) and Sentry (error logging). We do not sell your personal data and do not share it with third parties for advertising."
+        },
+        {
+          "heading": "Retention",
+          "body": "We keep your account data for as long as the account exists. When you delete your account we delete your personal data and your documents; we retain only billing records for the period required by US tax and accounting rules, and aggregate metrics that cannot identify you."
+        },
+        {
+          "heading": "Your rights",
+          "body": "You can access, correct, export and delete your data. The quickest route is \"My account\", which includes deleting your account and your data. You can also write to {legalEmail}; we will respond within 30 days at most."
+        },
+        {
+          "heading": "If you live in the EU, the EEA or the UK",
+          "body": "The GDPR applies to you. Our legal bases are: performance of the contract (account, providing the service, plan limits and billing), legitimate interest (security and abuse prevention) and your consent (cookie analytics and marketing communications). You have the rights of access, rectification, erasure, objection, restriction and portability, and to withdraw consent at any time. Transfers of data to the United States rely on the European Commission's standard contractual clauses signed with our providers. You may lodge a complaint with your country's supervisory authority — in Spain, the Agencia Española de Protección de Datos (aepd.es). To exercise any of these rights: {legalEmail}."
+        },
+        {
+          "heading": "If you live in California",
+          "body": "The CCPA, as amended by the CPRA, applies to you. You have the right to know what categories of personal information we collect and why, to request its deletion, to correct it, to limit the use of sensitive personal information, and not to be treated differently for exercising these rights. We do not sell or share your personal information as the CCPA uses those terms, and that includes the information of anyone under 16. To exercise your rights: {legalEmail}."
+        },
+        {
+          "heading": "Children",
+          "body": "The service is not directed at children under 13 and we do not knowingly collect their data. If we identify an account belonging to a child under 13, we delete it along with its data. If you believe a child in your care has given us data, write to us and we will resolve it."
+        },
+        {
+          "heading": "Changes",
+          "body": "If we change this policy materially we will notify you by email or within the service before the change takes effect."
+        }
+      ]
+    },
+    "cookies": {
+      "title": "Cookie policy",
+      "sections": [
+        {
+          "heading": "Cookies we use",
+          "body": "Strictly necessary technical cookies: the authentication session (Supabase) and interface preferences. Without them the service cannot work. Analytics (PostHog): runs in cookieless mode until you consent through the banner; if you consent, analytics cookies are used. Advertising (Google): only with your consent, through Consent Mode v2."
+        },
+        {
+          "heading": "Managing your consent",
+          "body": "You can accept, reject or change your choice at any time from the cookie banner or from your browser settings. Rejecting analytics and advertising does not affect how the service works or your plan's limits."
+        },
+        {
+          "heading": "We do not sell or share your information",
+          "body": "We do not use cookies to sell or share personal information for cross-context behavioural advertising, as the CCPA uses those terms. If you live in California and want to exercise your rights, write to {legalEmail}."
+        }
+      ]
+    },
+    "jurisdiction": "a limited liability company organised in the State of Florida, United States"
+  },
+  "emails": {
+    "welcomeSubject": "Your Verbalyx trial is active",
+    "welcomePreview": "Your Verbalyx Unlimited trial is active",
+    "welcomeHeading": "Welcome to Verbalyx",
+    "welcomeBody": "Your {days}-day trial is now active. From here you can use every tool with no daily limit and up to {words} words per request.",
+    "welcomeCta": "Go to my tools →",
+    "welcomeNote": "You can cancel at any time from your account. If you cancel before the trial ends, you are not charged anything.",
+    "trialSubject": "Your Verbalyx trial ends tomorrow",
+    "trialPreview": "Your Verbalyx trial ends tomorrow",
+    "trialHeading": "Your trial ends tomorrow",
+    "trialBody": "Your trial period ends tomorrow and your subscription starts. If you want to carry on, there is nothing to do.",
+    "trialCancelBefore": "If you would rather cancel, you can do it in one click from",
+    "trialAccount": "your account",
+    "trialCancelAfter": "and you will not be charged."
+  },
+  "detectorSignals": {
+    "raya_espaciada": {
+      "label": "Spaced em dash",
+      "explanation": "{count, plural, one {One em dash (—) with a space} other {# em dashes (—) with spaces}} on either side, at {per1000} per 1,000 words. British style allows this, so on its own it proves nothing — but it is also the dash a chat interface produces, and it is not on most keyboards."
+    },
+    "caracteres_invisibles": {
+      "label": "Invisible characters",
+      "explanation": "{count, plural, one {One invisible character} other {# invisible characters}} (zero-width space or similar). Nobody types these: they arrive when text is copied out of a web interface."
+    },
+    "homoglifos": {
+      "label": "Letters from another alphabet",
+      "explanation": "{count, plural, one {One word mixes} other {# words mix}} Latin letters with Cyrillic or Greek. This is not evidence of machine writing: it is evidence that the text has been through an evasion tool."
+    },
+    "markdown_superviviente": {
+      "label": "Leftover Markdown",
+      "explanation": "{count, plural, one {One piece} other {# pieces}} of unconverted Markdown: asterisk bold, hash headings or rules. These survive a copy out of a chat."
+    },
+    "comillas_curvas": {
+      "label": "Curly quotation marks",
+      "explanation": "{count, plural, one {One curly quotation mark} other {# curly quotation marks}} in an otherwise plain text. A word processor produces these too, so they count for little on their own."
+    },
+    "emojis_estructurales": {
+      "label": "Emoji used as bullets",
+      "explanation": "{count, plural, one {One line starts} other {# lines start}} with an emoji in a bullet position, a very characteristic layout pattern."
+    },
+    "espacios_especiales": {
+      "label": "Special spaces",
+      "explanation": "{count, plural, one {One special space} other {# special spaces}} (non-breaking or thin) instead of an ordinary one."
+    },
+    "semirraya_como_raya": {
+      "label": "En dash used as a dash",
+      "explanation": "{count, plural, one {One en dash (–) used} other {# en dashes (–) used}} where a dash goes. Standard in British style, so this counts for little by itself."
+    },
+    "puntos_suspensivos_unicode": {
+      "label": "Single-character ellipsis",
+      "explanation": "The ellipsis appears as one character (…) rather than three full stops, {count, plural, one {once} other {# times}}. Word autocorrect does this as well."
+    },
+    "apostrofo_tipografico": {
+      "label": "Curly apostrophe",
+      "explanation": "{count, plural, one {One curly apostrophe} other {# curly apostrophes}} (’) rather than the straight one. Every word processor produces these, so this barely counts in English."
+    },
+    "vinetas_uniformes": {
+      "label": "Uniform bullets",
+      "explanation": "{count, plural, one {One bullet} other {# bullets}} in identical format."
+    },
+    "listas_numeradas_perfectas": {
+      "label": "Numbered list with no gaps",
+      "explanation": "{count} consecutive numbered list items, with no gaps and no restarts."
+    },
+    "encabezado_negrita_dos_puntos": {
+      "label": "Bold headings with colons",
+      "explanation": "{count, plural, one {One paragraph starts} other {# paragraphs start}} with a bold heading followed by a colon."
+    },
+    "apertura_interrogacion_perfecta": {
+      "label": "Opening marks never dropped",
+      "explanation": "Every question and exclamation carries its opening mark."
+    },
+    "espaciado_impecable": {
+      "label": "Spacing without a single slip",
+      "explanation": "Across {words} words there is not one double space and not one space before a punctuation mark."
+    },
+    "ausencia_correcciones_fosiles": {
+      "label": "Not one fossil correction",
+      "explanation": "No word accidentally repeated and no sentence abandoned half-written, which is what usually survives when someone writes straight through."
+    },
+    "cv_longitud_frase": {
+      "label": "Sentence length variation",
+      "explanation": "Sentence lengths vary with a coefficient of {value}. Native English prose usually sits between 0.45 and 0.70; below 0.30 the rhythm is flat. Careful second-language writing also sits low, which is why this alone does not move the band. Mean of {meanWords} words per sentence."
+    },
+    "distribucion_longitudes": {
+      "label": "Very short and very long sentences",
+      "explanation": "A proportion of {value} of the sentences is very short (five words or fewer) or very long (thirty-five or more). Writing produces both extremes; generated prose clusters in the middle."
+    },
+    "autocorrelacion_longitudes": {
+      "label": "Length echoing",
+      "explanation": "Each sentence echoes the length of the one before it with a correlation of {value}. The higher it runs, the more metronomic the rhythm."
+    },
+    "varianza_longitud_palabra": {
+      "label": "Word length variation",
+      "explanation": "Word lengths vary with a coefficient of {value}."
+    },
+    "varianza_densidad_silabica": {
+      "label": "Syllable variation",
+      "explanation": "Syllables per word vary with a coefficient of {value}."
+    },
+    "uniformidad_parrafos": {
+      "label": "Paragraph regularity",
+      "explanation": "The paragraphs run to {shape} sentences: a variation of {value}. Generated writing produces paragraphs of three or four sentences with almost metrical regularity."
+    }
+  }
+}

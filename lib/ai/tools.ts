@@ -5,21 +5,44 @@ import type { PlanId } from "@/lib/billing/plans";
 
 export type ToolId = "humanize" | "detect" | "paraphrase" | "correct";
 
+/**
+ * Mode identifiers. They are Spanish words for historical reasons and stay
+ * that way in every language: they travel into the prompt and into stored
+ * usage rows, so renaming one would rewrite history. What the visitor reads
+ * is the `modes.<id>` message.
+ */
+export type ModeId =
+  | "academico"
+  | "neutro"
+  | "informal"
+  | "estandar"
+  | "fluido"
+  | "formal"
+  | "simple"
+  | "creativo"
+  | "general";
+
 export interface ToolDefinition {
   id: ToolId;
-  /** UI name, in Spanish. */
-  name: string;
-  /** Marketing landing path. */
-  path: string;
+  /**
+   * The tool's marketing landing, as an INTERNAL pathname. What the visitor
+   * sees is decided per language in lib/i18n/routing.ts -- this never
+   * appears in a URL.
+   *
+   * The display name is not here either: it is a message
+   * (`tools.<id>.name`), because "Corrector" and "Grammar checker" are not
+   * the same string and a registry cannot hold both.
+   */
+  path: "/humanize" | "/detect" | "/paraphrase" | "/correct";
   /** Minimum plan required to use the tool at all. */
   minPlan: PlanId;
   /** Modes the tool accepts (empty = no modes). */
-  modes: readonly string[];
+  modes: readonly ModeId[];
   /**
    * Mode preselected in the UI. Declared rather than derived from the
    * order of `modes`, which only ever matched the humanizer by accident.
    */
-  defaultMode?: string;
+  defaultMode?: ModeId;
   /**
    * Whether the tool has a working endpoint. The UI reads this to disable
    * tabs and cards, so "is it built yet?" is answered in exactly one place.
@@ -36,8 +59,7 @@ export interface ToolDefinition {
 export const TOOLS: Record<ToolId, ToolDefinition> = {
   humanize: {
     id: "humanize",
-    name: "Humanizador",
-    path: "/humanizador-de-texto-ia",
+    path: "/humanize",
     minPlan: "anonymous",
     modes: ["academico", "neutro", "informal"],
     defaultMode: "neutro",
@@ -46,8 +68,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   },
   detect: {
     id: "detect",
-    name: "Detector de IA",
-    path: "/detector-de-ia",
+    path: "/detect",
     minPlan: "anonymous",
     modes: [],
     live: true,
@@ -55,8 +76,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   },
   paraphrase: {
     id: "paraphrase",
-    name: "Parafraseador",
-    path: "/parafrasear-texto",
+    path: "/paraphrase",
     minPlan: "anonymous",
     modes: ["estandar", "fluido", "formal", "simple", "creativo", "academico"],
     defaultMode: "estandar",
@@ -65,8 +85,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   },
   correct: {
     id: "correct",
-    name: "Corrector",
-    path: "/corrector-ortografico-gramatical",
+    path: "/correct",
     minPlan: "anonymous",
     modes: ["general", "academico"],
     defaultMode: "general",
@@ -90,8 +109,8 @@ export function getTool(id: string): ToolDefinition | undefined {
  * impossible mode cannot be sent whatever the state history, and the editor
  * and the server agree on the default because both come from this registry.
  */
-export function resolveMode(id: ToolId, chosen?: string): string | undefined {
+export function resolveMode(id: ToolId, chosen?: string): ModeId | undefined {
   const { modes, defaultMode } = TOOLS[id];
-  if (chosen && (modes as readonly string[]).includes(chosen)) return chosen;
-  return defaultMode ?? modes[0];
+  const picked = modes.find((mode) => mode === chosen);
+  return picked ?? defaultMode ?? modes[0];
 }

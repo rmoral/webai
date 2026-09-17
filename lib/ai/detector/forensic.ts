@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/routing";
+
 import { countEvidence, absenceEvidence } from "./scoring";
 import type { RawText, SignalEvidence } from "./types";
 
@@ -8,6 +10,10 @@ import type { RawText, SignalEvidence } from "./types";
 // destroys most of what this file looks for -- a non-breaking space becomes a
 // space, a curly quote becomes a straight one -- so the ordering is enforced
 // by the type, not by a comment someone can skip past. See types.ts.
+//
+// What is measured is the same in both languages; what it is worth is not,
+// and that lives in the anchors in weights.ts. A curly apostrophe is a trace
+// in Spanish and the default output of every English word processor.
 
 const EMOJI_BULLETS = /^[\s]*(?:✅|❌|🚀|📌|💡|🔹|🔸|⭐|✨|👉|📊|🎯|⚡)/gmu;
 
@@ -52,7 +58,10 @@ function perfectNumberedItems(raw: string): number {
   return total;
 }
 
-/** Every ? and ! carries its opener. A person in a hurry drops them. */
+/**
+ * Every ? and ! carries its opening ¿ or ¡. A person in a hurry drops them.
+ * Spanish only -- there is nothing to drop in English.
+ */
 function openersAlwaysPresent(raw: string): boolean {
   const closers = countMatches(raw, /[?!]/g).length;
   const openers = countMatches(raw, /[¿¡]/g).length;
@@ -83,9 +92,21 @@ function noFossilCorrections(raw: string): boolean {
 export function forensicSignals(
   raw: RawText,
   wordCount: number,
+  locale: Locale,
 ): SignalEvidence[] {
-  const plural = (n: number, one: string, many: string) =>
-    n === 1 ? one : many;
+  const count = (
+    id: Parameters<typeof countEvidence>[0],
+    found: string[] | number,
+    samples?: string[],
+  ) =>
+    countEvidence(
+      id,
+      locale,
+      typeof found === "number" ? found : found.length,
+      wordCount,
+      {},
+      samples,
+    );
 
   const dashes = countMatches(raw, /\s—\s/g);
   const enDashes = countMatches(raw, /\s–\s|\p{L}–\p{L}/gu);
@@ -102,117 +123,36 @@ export function forensicSignals(
   const boldHeadings = countMatches(raw, /^\s*\*\*[^*\n]+:\*\*/gm);
 
   const signals: (SignalEvidence | null)[] = [
-    countEvidence(
-      "raya_espaciada",
-      dashes.length,
-      wordCount,
-      (n, per) =>
-        `${n} ${plural(n, "raya", "rayas")} (—) con espacio a ambos lados, la convención inglesa: en español la raya va pegada al inciso. ${per.toFixed(1)} por cada 1.000 palabras. Además, ese carácter no está en un teclado español.`,
-      dashes,
-    ),
-    countEvidence(
-      "caracteres_invisibles",
-      invisible.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "carácter invisible", "caracteres invisibles")} (espacio de ancho cero o similar). No se teclean: aparecen al copiar desde una interfaz web.`,
-    ),
-    countEvidence(
-      "homoglifos",
-      homoglyphs.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "palabra mezcla", "palabras mezclan")} letras latinas con cirílicas o griegas. Esto no indica escritura automática: indica que el texto ha pasado por una herramienta de evasión.`,
-      homoglyphs,
-    ),
-    countEvidence(
-      "comillas_curvas",
-      curly.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "comilla tipográfica", "comillas tipográficas")} en un texto que por lo demás es plano. Un campo de texto produce comillas rectas.`,
-    ),
-    countEvidence(
-      "espacios_especiales",
-      spaces.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "espacio especial", "espacios especiales")} (espacio duro o fino) en lugar del espacio normal.`,
-    ),
-    countEvidence(
-      "semirraya_como_raya",
-      enDashes.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "semirraya", "semirrayas")} (–) usada como raya. En español no cumple esa función.`,
-    ),
-    countEvidence(
-      "puntos_suspensivos_unicode",
-      ellipsis.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "vez", "veces")} aparecen los puntos suspensivos como un solo carácter (…) en lugar de tres puntos.`,
-    ),
-    countEvidence(
-      "apostrofo_tipografico",
-      apostrophes.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "apóstrofo tipográfico", "apóstrofos tipográficos")} (’) en lugar del recto.`,
-    ),
-    countEvidence(
-      "markdown_superviviente",
-      markdown.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "resto", "restos")} de Markdown sin convertir (negritas con asteriscos, encabezados con almohadilla o separadores). Sobreviven al copiar desde un chat.`,
-      markdown,
-    ),
-    countEvidence(
-      "emojis_estructurales",
-      emojis.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "línea empieza", "líneas empiezan")} por un emoji en posición de viñeta, un patrón de maquetación muy característico.`,
-    ),
-    countEvidence(
-      "vinetas_uniformes",
-      bullets.length,
-      wordCount,
-      (n) => `${n} ${plural(n, "viñeta", "viñetas")} con formato idéntico.`,
-    ),
-    countEvidence(
-      "listas_numeradas_perfectas",
-      numbered,
-      wordCount,
-      (n) =>
-        `${n} elementos de lista numerada consecutivos, sin saltos ni reinicios.`,
-    ),
-    countEvidence(
-      "encabezado_negrita_dos_puntos",
-      boldHeadings.length,
-      wordCount,
-      (n) =>
-        `${n} ${plural(n, "párrafo empieza", "párrafos empiezan")} por un encabezado en negrita seguido de dos puntos.`,
-      boldHeadings,
-    ),
+    count("raya_espaciada", dashes, dashes),
+    count("caracteres_invisibles", invisible),
+    count("homoglifos", homoglyphs, homoglyphs),
+    count("comillas_curvas", curly),
+    count("espacios_especiales", spaces),
+    count("semirraya_como_raya", enDashes),
+    count("puntos_suspensivos_unicode", ellipsis),
+    count("apostrofo_tipografico", apostrophes),
+    count("markdown_superviviente", markdown, markdown),
+    count("emojis_estructurales", emojis),
+    count("vinetas_uniformes", bullets),
+    count("listas_numeradas_perfectas", numbered),
+    count("encabezado_negrita_dos_puntos", boldHeadings, boldHeadings),
     absenceEvidence(
       "apertura_interrogacion_perfecta",
+      locale,
       openersAlwaysPresent(raw),
       wordCount,
-      "Todas las interrogaciones y exclamaciones llevan su signo de apertura. Escribiendo deprisa se omiten a menudo; un modelo nunca lo hace.",
     ),
     absenceEvidence(
       "espaciado_impecable",
+      locale,
       spacingFlawless(raw),
       wordCount,
-      "En todo el texto no hay un solo espacio doble ni un espacio antes de un signo de puntuación.",
     ),
     absenceEvidence(
       "ausencia_correcciones_fosiles",
+      locale,
       noFossilCorrections(raw),
       wordCount,
-      "No hay ninguna palabra repetida por descuido ni ninguna frase abandonada a medias, que es lo que suele quedar al escribir de corrido.",
     ),
   ];
 

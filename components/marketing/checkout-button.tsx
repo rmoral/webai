@@ -1,35 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
 
 import { Button } from "@/components/ui/button";
 import type { BillingInterval } from "@/lib/billing/plans";
+import { useRouter } from "@/lib/i18n/navigation";
 
 // Stripe refusing us is our problem, not the customer's, and there is
-// nothing for them to retry. The reference is what tells us which setting.
-const CONFIG_PROBLEM =
-  "El pago no está disponible ahora mismo por un problema de configuración nuestro. Ya estamos en ello.";
+// nothing for them to retry. Four settings fail the same way from the
+// outside, so they share one message and the reference tells us which.
+const CONFIG_PROBLEM = [
+  "tax_not_configured",
+  "terms_url_missing",
+  "stripe_key_invalid",
+  "customer_update_invalid",
+] as const;
 
-const MESSAGES: Record<string, string> = {
-  tax_not_configured: CONFIG_PROBLEM,
-  terms_url_missing: CONFIG_PROBLEM,
-  stripe_key_invalid: CONFIG_PROBLEM,
-  customer_update_invalid: CONFIG_PROBLEM,
-  stripe_unavailable:
-    "No hemos podido contactar con el proveedor de pagos. Vuelve a intentarlo en unos minutos.",
-  database_unavailable:
-    "No hemos podido leer tu plan. Vuelve a intentarlo en unos minutos.",
-  price_not_configured:
-    "Este plan todavía no está disponible para comprar. Estamos en ello.",
-  checkout_failed:
-    "Nuestro proveedor de pagos ha rechazado la solicitud. Vuelve a intentarlo en unos minutos.",
-  server_error:
-    "No hemos podido abrir el pago por un problema nuestro. Vuelve a intentarlo en unos minutos.",
-  invalid_request: "La solicitud no era válida. Recarga la página.",
-  default: "No se pudo abrir el pago. Inténtalo de nuevo.",
-};
+const KNOWN = [
+  "stripe_unavailable",
+  "database_unavailable",
+  "price_not_configured",
+  "checkout_failed",
+  "server_error",
+  "invalid_request",
+] as const;
 
 export function CheckoutButton({
   plan,
@@ -42,10 +38,20 @@ export function CheckoutButton({
   label: string;
   variant?: "default" | "outline";
 }) {
+  const t = useTranslations("checkout");
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const posthog = usePostHog();
+
+  function messageFor(code: string) {
+    if ((CONFIG_PROBLEM as readonly string[]).includes(code))
+      return t("configProblem");
+    if ((KNOWN as readonly string[]).includes(code))
+      return t(code as (typeof KNOWN)[number]);
+    return t("default");
+  }
 
   async function checkout() {
     setLoading(true);
@@ -55,15 +61,17 @@ export function CheckoutButton({
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ plan, interval }),
+      // Stripe Checkout renders in this language, and the URLs it sends
+      // people back to have to land in it too.
+      body: JSON.stringify({ plan, interval, locale }),
     });
 
     if (res.status === 401) {
-      router.push("/login?next=/precios");
+      router.push({ pathname: "/login", query: { next: "/pricing" } });
       return;
     }
     if (res.status === 403) {
-      setError("Necesitas una suscripción activa para comprar una recarga.");
+      setError(t("needSubscription"));
       setLoading(false);
       return;
     }
@@ -77,15 +85,15 @@ export function CheckoutButton({
     // Every failure used to read the same, so the four causes were
     // indistinguishable from the outside. The reference is what turns a
     // support message into a diagnosis.
-    const code = typeof data?.error === "string" ? data.error : "sin_respuesta";
-    setError(`${MESSAGES[code] ?? MESSAGES.default} (ref: ${code})`);
+    const code = typeof data?.error === "string" ? data.error : "no_response";
+    setError(t("reference", { message: messageFor(code), code }));
     setLoading(false);
   }
 
   return (
     <>
       <Button variant={variant} onClick={checkout} disabled={loading}>
-        {loading ? "Abriendo el pago…" : label}
+        {loading ? t("opening") : label}
       </Button>
       {error && <p className="text-destructive text-xs">{error}</p>}
     </>

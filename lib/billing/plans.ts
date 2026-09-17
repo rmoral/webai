@@ -1,4 +1,5 @@
 import type { ToolId } from "@/lib/ai/tools";
+import type { Locale } from "@/lib/i18n/routing";
 
 // Single source of truth for plan limits and pricing (USD).
 // Never hardcode these values in UI components.
@@ -160,8 +161,14 @@ export const TRIAL = {
   days: 3,
 };
 
-export function formatUsd(amount: number): string {
-  return amount.toLocaleString("es-ES", {
+/**
+ * Prices are in dollars everywhere; only the punctuation changes. A Spanish
+ * reader expects "29,99 US$" and an English one "$29.99", and showing the
+ * Spanish form to a US customer reads the comma as a thousands separator --
+ * which is a price ten times off, on the page whose only job is to sell.
+ */
+export function formatUsd(amount: number, locale: Locale = "es"): string {
+  return amount.toLocaleString(locale === "en" ? "en-US" : "es-ES", {
     style: "currency",
     currency: CURRENCY,
     minimumFractionDigits: 2,
