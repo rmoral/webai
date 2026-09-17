@@ -156,7 +156,9 @@ async function handle(
   }
 
   if (tool === "detect") {
-    const analysis = analyze(text);
+    // Measured against the anchors of the language being read. See the note
+    // at the top of lib/ai/detector/pipeline.ts.
+    const analysis = analyze(text, locale);
     // The per-window breakdown is the paid half of the detector
     // (PlanLimits.sentenceHighlight): it is what locates a generated block
     // inside a written text. Everyone gets the band and the evidence.

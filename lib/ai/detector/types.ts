@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/routing";
+
 import type { SignalId, SignalLevel } from "./weights";
 
 // The public contract. Phase 2 adds a calibrated percentage and Phase 3 a
@@ -28,7 +30,6 @@ export type NormalizedText = string & { readonly [normalizedBrand]: true };
 export interface SignalEvidence {
   id: SignalId;
   level: SignalLevel;
-  label: string;
   /** From weights.ts, on the 0-1000 budget. */
   weight: number;
   /** Raw occurrences. Zero for continuous measures. */
@@ -39,8 +40,16 @@ export interface SignalEvidence {
   saturated: number;
   /** weight times saturated. What this signal actually bought. */
   contribution: number;
-  /** One sentence, in Spanish, for the user. */
-  explanation: string;
+  /**
+   * Values for the `detectorSignals.<id>.explanation` message.
+   *
+   * The engine emits measurements, not sentences. It used to build the
+   * Spanish prose itself, which meant a second language would have meant a
+   * second engine -- and it made the signals untestable without reading
+   * their copy. The label and the wording live in the message catalogue,
+   * keyed by `id`.
+   */
+  values: Record<string, string | number>;
   /** Concrete excerpts, so the evidence can be checked rather than believed. */
   samples?: string[];
 }
@@ -68,6 +77,16 @@ export interface DetectorAnalysis {
   score: number;
   reliable: boolean;
   reason?: "texto_corto" | "frases_insuficientes";
+  /**
+   * Whether level A found enough to let the band leave green. False means
+   * the rhythm measured high but nothing corroborated it, so the score was
+   * held below the yellow threshold. See CORROBORATION in weights.ts.
+   *
+   * Absent on a grey result, where no band was computed at all.
+   */
+  corroborated?: boolean;
+  /** The language the text was measured as. Anchors differ per language. */
+  locale: Locale;
   words: number;
   sentenceCount: number;
   paragraphCount: number;

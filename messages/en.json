@@ -646,5 +646,95 @@
     "trialCancelBefore": "If you would rather cancel, you can do it in one click from",
     "trialAccount": "your account",
     "trialCancelAfter": "and you will not be charged."
+  },
+  "detectorSignals": {
+    "raya_espaciada": {
+      "label": "Spaced em dash",
+      "explanation": "{count, plural, one {One em dash (—) with a space} other {# em dashes (—) with spaces}} on either side, at {per1000} per 1,000 words. British style allows this, so on its own it proves nothing — but it is also the dash a chat interface produces, and it is not on most keyboards."
+    },
+    "caracteres_invisibles": {
+      "label": "Invisible characters",
+      "explanation": "{count, plural, one {One invisible character} other {# invisible characters}} (zero-width space or similar). Nobody types these: they arrive when text is copied out of a web interface."
+    },
+    "homoglifos": {
+      "label": "Letters from another alphabet",
+      "explanation": "{count, plural, one {One word mixes} other {# words mix}} Latin letters with Cyrillic or Greek. This is not evidence of machine writing: it is evidence that the text has been through an evasion tool."
+    },
+    "markdown_superviviente": {
+      "label": "Leftover Markdown",
+      "explanation": "{count, plural, one {One piece} other {# pieces}} of unconverted Markdown: asterisk bold, hash headings or rules. These survive a copy out of a chat."
+    },
+    "comillas_curvas": {
+      "label": "Curly quotation marks",
+      "explanation": "{count, plural, one {One curly quotation mark} other {# curly quotation marks}} in an otherwise plain text. A word processor produces these too, so they count for little on their own."
+    },
+    "emojis_estructurales": {
+      "label": "Emoji used as bullets",
+      "explanation": "{count, plural, one {One line starts} other {# lines start}} with an emoji in a bullet position, a very characteristic layout pattern."
+    },
+    "espacios_especiales": {
+      "label": "Special spaces",
+      "explanation": "{count, plural, one {One special space} other {# special spaces}} (non-breaking or thin) instead of an ordinary one."
+    },
+    "semirraya_como_raya": {
+      "label": "En dash used as a dash",
+      "explanation": "{count, plural, one {One en dash (–) used} other {# en dashes (–) used}} where a dash goes. Standard in British style, so this counts for little by itself."
+    },
+    "puntos_suspensivos_unicode": {
+      "label": "Single-character ellipsis",
+      "explanation": "The ellipsis appears as one character (…) rather than three full stops, {count, plural, one {once} other {# times}}. Word autocorrect does this as well."
+    },
+    "apostrofo_tipografico": {
+      "label": "Curly apostrophe",
+      "explanation": "{count, plural, one {One curly apostrophe} other {# curly apostrophes}} (’) rather than the straight one. Every word processor produces these, so this barely counts in English."
+    },
+    "vinetas_uniformes": {
+      "label": "Uniform bullets",
+      "explanation": "{count, plural, one {One bullet} other {# bullets}} in identical format."
+    },
+    "listas_numeradas_perfectas": {
+      "label": "Numbered list with no gaps",
+      "explanation": "{count} consecutive numbered list items, with no gaps and no restarts."
+    },
+    "encabezado_negrita_dos_puntos": {
+      "label": "Bold headings with colons",
+      "explanation": "{count, plural, one {One paragraph starts} other {# paragraphs start}} with a bold heading followed by a colon."
+    },
+    "apertura_interrogacion_perfecta": {
+      "label": "Opening marks never dropped",
+      "explanation": "Every question and exclamation carries its opening mark."
+    },
+    "espaciado_impecable": {
+      "label": "Spacing without a single slip",
+      "explanation": "Across {words} words there is not one double space and not one space before a punctuation mark."
+    },
+    "ausencia_correcciones_fosiles": {
+      "label": "Not one fossil correction",
+      "explanation": "No word accidentally repeated and no sentence abandoned half-written, which is what usually survives when someone writes straight through."
+    },
+    "cv_longitud_frase": {
+      "label": "Sentence length variation",
+      "explanation": "Sentence lengths vary with a coefficient of {value}. Native English prose usually sits between 0.45 and 0.70; below 0.30 the rhythm is flat. Careful second-language writing also sits low, which is why this alone does not move the band. Mean of {meanWords} words per sentence."
+    },
+    "distribucion_longitudes": {
+      "label": "Very short and very long sentences",
+      "explanation": "A proportion of {value} of the sentences is very short (five words or fewer) or very long (thirty-five or more). Writing produces both extremes; generated prose clusters in the middle."
+    },
+    "autocorrelacion_longitudes": {
+      "label": "Length echoing",
+      "explanation": "Each sentence echoes the length of the one before it with a correlation of {value}. The higher it runs, the more metronomic the rhythm."
+    },
+    "varianza_longitud_palabra": {
+      "label": "Word length variation",
+      "explanation": "Word lengths vary with a coefficient of {value}."
+    },
+    "varianza_densidad_silabica": {
+      "label": "Syllable variation",
+      "explanation": "Syllables per word vary with a coefficient of {value}."
+    },
+    "uniformidad_parrafos": {
+      "label": "Paragraph regularity",
+      "explanation": "The paragraphs run to {shape} sentences: a variation of {value}. Generated writing produces paragraphs of three or four sentences with almost metrical regularity."
+    }
   }
 }

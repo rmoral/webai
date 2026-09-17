@@ -646,5 +646,95 @@
     "trialCancelBefore": "Si prefieres cancelar, puedes hacerlo en un clic desde",
     "trialAccount": "tu cuenta",
     "trialCancelAfter": "y no se te cobrará nada."
+  },
+  "detectorSignals": {
+    "raya_espaciada": {
+      "label": "Raya con espaciado inglés",
+      "explanation": "{count, plural, one {Una raya (—) con espacio a ambos lados} other {# rayas (—) con espacio a ambos lados}}, que es la convención inglesa: en español la raya va pegada al inciso. {per1000} por cada 1.000 palabras. Además, ese carácter no está en un teclado español."
+    },
+    "caracteres_invisibles": {
+      "label": "Caracteres invisibles",
+      "explanation": "{count, plural, one {Un carácter invisible} other {# caracteres invisibles}} (espacio de ancho cero o similar). No se teclean: aparecen al copiar desde una interfaz web."
+    },
+    "homoglifos": {
+      "label": "Letras de otro alfabeto",
+      "explanation": "{count, plural, one {Una palabra mezcla} other {# palabras mezclan}} letras latinas con cirílicas o griegas. Esto no indica escritura automática: indica que el texto ha pasado por una herramienta de evasión."
+    },
+    "markdown_superviviente": {
+      "label": "Restos de Markdown",
+      "explanation": "{count, plural, one {Un resto} other {# restos}} de Markdown sin convertir: negritas con asteriscos, encabezados con almohadilla o separadores. Sobreviven al copiar desde un chat."
+    },
+    "comillas_curvas": {
+      "label": "Comillas tipográficas",
+      "explanation": "{count, plural, one {Una comilla tipográfica} other {# comillas tipográficas}} en un texto que por lo demás es plano. Un campo de texto produce comillas rectas."
+    },
+    "emojis_estructurales": {
+      "label": "Emojis como viñetas",
+      "explanation": "{count, plural, one {Una línea empieza} other {# líneas empiezan}} por un emoji en posición de viñeta, un patrón de maquetación muy característico."
+    },
+    "espacios_especiales": {
+      "label": "Espacios especiales",
+      "explanation": "{count, plural, one {Un espacio especial} other {# espacios especiales}} (duro o fino) en lugar del espacio normal."
+    },
+    "semirraya_como_raya": {
+      "label": "Semirraya usada como raya",
+      "explanation": "{count, plural, one {Una semirraya (–) usada} other {# semirrayas (–) usadas}} como raya. En español no cumple esa función."
+    },
+    "puntos_suspensivos_unicode": {
+      "label": "Puntos suspensivos de un solo carácter",
+      "explanation": "{count, plural, one {Una vez aparecen} other {# veces aparecen}} los puntos suspensivos como un solo carácter (…) en lugar de tres puntos."
+    },
+    "apostrofo_tipografico": {
+      "label": "Apóstrofo tipográfico",
+      "explanation": "{count, plural, one {Un apóstrofo tipográfico} other {# apóstrofos tipográficos}} (’) en lugar del recto."
+    },
+    "vinetas_uniformes": {
+      "label": "Viñetas uniformes",
+      "explanation": "{count, plural, one {Una viñeta} other {# viñetas}} con formato idéntico."
+    },
+    "listas_numeradas_perfectas": {
+      "label": "Lista numerada sin saltos",
+      "explanation": "{count} elementos de lista numerada consecutivos, sin saltos ni reinicios."
+    },
+    "encabezado_negrita_dos_puntos": {
+      "label": "Encabezados en negrita con dos puntos",
+      "explanation": "{count, plural, one {Un párrafo empieza} other {# párrafos empiezan}} por un encabezado en negrita seguido de dos puntos."
+    },
+    "apertura_interrogacion_perfecta": {
+      "label": "Signos de apertura siempre presentes",
+      "explanation": "Todas las interrogaciones y exclamaciones llevan su signo de apertura. Escribiendo deprisa se omiten a menudo; un modelo nunca lo hace."
+    },
+    "espaciado_impecable": {
+      "label": "Espaciado sin un solo desliz",
+      "explanation": "En {words} palabras no hay un solo espacio doble ni un espacio antes de un signo de puntuación."
+    },
+    "ausencia_correcciones_fosiles": {
+      "label": "Ni una corrección fósil",
+      "explanation": "No hay ninguna palabra repetida por descuido ni ninguna frase abandonada a medias, que es lo que suele quedar al escribir de corrido."
+    },
+    "cv_longitud_frase": {
+      "label": "Variación de longitud de frase",
+      "explanation": "Las frases varían de longitud con un coeficiente de {value}. En prosa humana nativa suele estar entre 0,50 y 0,70; por debajo de 0,30 el ritmo es llano. Media de {meanWords} palabras por frase."
+    },
+    "distribucion_longitudes": {
+      "label": "Frases muy cortas y muy largas",
+      "explanation": "Una proporción de {value} de las frases es muy corta (cinco palabras o menos) o muy larga (treinta y cinco o más). Al escribir se producen ambos extremos; la escritura automática se concentra en el medio."
+    },
+    "autocorrelacion_longitudes": {
+      "label": "Encadenado de longitudes",
+      "explanation": "Cada frase repite la longitud de la anterior con una correlación de {value}. Cuanto más alta, más encadenado y regular es el ritmo."
+    },
+    "varianza_longitud_palabra": {
+      "label": "Variación de longitud de palabra",
+      "explanation": "La longitud de las palabras varía con un coeficiente de {value}."
+    },
+    "varianza_densidad_silabica": {
+      "label": "Variación silábica",
+      "explanation": "El número de sílabas por palabra varía con un coeficiente de {value}."
+    },
+    "uniformidad_parrafos": {
+      "label": "Regularidad de los párrafos",
+      "explanation": "Los párrafos tienen {shape} frases: una variación de {value}. La escritura automática produce párrafos de tres o cuatro frases con una regularidad casi métrica."
+    }
   }
 }

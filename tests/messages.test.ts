@@ -20,10 +20,29 @@ function paths(value: Json, prefix = ""): string[] {
   );
 }
 
-/** The {placeholders} a message expects, ICU plural bodies excluded. */
+/**
+ * The {placeholders} a message expects.
+ *
+ * Only arguments at brace depth zero count. Inside "{count, plural, one
+ * {once} other {# times}}" the word `once` is prose, not an argument, and a
+ * regex that cannot tell the difference reports every plural as a mismatch
+ * between a language that needed the word and one that did not.
+ */
 function placeholders(message: string): Set<string> {
   const found = new Set<string>();
-  for (const [, name] of message.matchAll(/\{(\w+)[,}]/g)) found.add(name);
+  let depth = 0;
+  for (let i = 0; i < message.length; i++) {
+    const char = message[i];
+    if (char === "}") {
+      depth--;
+    } else if (char === "{") {
+      if (depth === 0) {
+        const name = /^\{(\w+)\s*[,}]/.exec(message.slice(i))?.[1];
+        if (name) found.add(name);
+      }
+      depth++;
+    }
+  }
   return found;
 }
 

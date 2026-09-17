@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
-import { Link, usePathname } from "@/lib/i18n/navigation";
+import { getPathname, usePathname } from "@/lib/i18n/navigation";
 import { docForSlug, LEGAL_SLUGS } from "@/lib/i18n/legal";
 import { LOCALE_LABELS, routing, type Locale } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,15 @@ import { cn } from "@/lib/utils";
  * Switches language without leaving the page.
  *
  * `usePathname` here is next-intl's, so it returns the INTERNAL pathname
- * ("/detect", not "/detector-de-ia"). Passing that to a locale-aware Link is
- * what turns /detector-de-ia into /en/ai-detector rather than dropping the
- * visitor on the English home page -- which is the usual way a language
+ * ("/detect", not "/detector-de-ia"). Resolving that against the other
+ * locale is what turns /detector-de-ia into /en/ai-detector rather than
+ * dropping the visitor on the English home page -- the usual way a language
  * switcher quietly loses people.
+ *
+ * A plain anchor, not a client-side Link. Crossing the locale prefix is the
+ * one navigation the App Router will not do in the client: the localised
+ * Link rendered the right href and then stayed on the page it was already
+ * on. A language switch happens once, and a full load is the honest way.
  *
  * Nothing is auto-detected or remembered across visits on purpose: sending a
  * Spanish speaker to /en because their browser header says so breaks
@@ -39,9 +44,12 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   // takes, so the pair is asserted here. What keeps it honest is that the
   // pathname and the params both come from the route being rendered.
   const hrefFor = (locale: Locale) =>
-    ({ pathname, params: paramsFor(locale) }) as Parameters<
-      typeof Link
-    >[0]["href"];
+    getPathname({
+      href: { pathname, params: paramsFor(locale) } as Parameters<
+        typeof getPathname
+      >[0]["href"],
+      locale,
+    });
 
   return (
     <nav
@@ -55,9 +63,8 @@ export function LanguageSwitcher({ className }: { className?: string }) {
               /
             </span>
           )}
-          <Link
+          <a
             href={hrefFor(locale)}
-            locale={locale}
             hrefLang={locale}
             aria-current={locale === active ? "true" : undefined}
             className={cn(
@@ -69,7 +76,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             title={LOCALE_LABELS[locale]}
           >
             {locale}
-          </Link>
+          </a>
         </span>
       ))}
     </nav>

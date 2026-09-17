@@ -33,8 +33,17 @@ const BAND_STYLE: Record<
 /** What was actually found. A signal that did not fire is not evidence. */
 function Evidence({ result }: { result: DetectorAnalysis }) {
   const t = useTranslations("detector");
+  const signalText = useTranslations("detectorSignals");
   const found = result.signals.filter((s) => s.contribution > 0);
   if (found.length === 0) return null;
+
+  // The engine emits a signal id and its measurements; the wording is a
+  // message. That is what lets one engine serve two languages, and it means
+  // the sentence a visitor reads is never assembled on the server.
+  const explain = signalText as unknown as (
+    key: string,
+    values?: Record<string, string | number>,
+  ) => string;
 
   return (
     <dl className="flex flex-col gap-4">
@@ -47,10 +56,10 @@ function Evidence({ result }: { result: DetectorAnalysis }) {
               className="mt-[0.4rem] size-1.5 shrink-0 rounded-full"
               style={{ background: "var(--muted-foreground)" }}
             />
-            {signal.label}
+            {explain(`${signal.id}.label`)}
           </dt>
           <dd className="text-muted-foreground pl-3.5 text-xs leading-relaxed">
-            {signal.explanation}
+            {explain(`${signal.id}.explanation`, signal.values)}
             {signal.samples?.length ? (
               <span className="mt-1 block">
                 {t("forExample")}{" "}
@@ -204,10 +213,10 @@ function WindowMap({
     }
   }
 
-  // Cut with the engine's own splitter, not a copy of it: the ranges are
-  // indices into that array, and a copy that drifted would quote the wrong
-  // sentences without failing anywhere.
-  const sentences = splitSentences(asRaw(text));
+  // Cut with the engine's own splitter, in the language it measured: the
+  // ranges are indices into that array, and a different split would quote
+  // the wrong sentences without failing anywhere.
+  const sentences = splitSentences(asRaw(text), result.locale);
 
   return (
     <div className="flex flex-col gap-2">
