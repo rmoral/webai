@@ -55,11 +55,24 @@ export const routing = defineRouting({
       en: "/checkout",
     },
 
+    // Where a redirect-based payment method comes back to. The card flow
+    // confirms in place and never leaves, but a bank redirect does, and
+    // landing on /app with no date shown is how a charge becomes a
+    // surprise.
+    "/checkout/done": {
+      es: "/pago/listo",
+      en: "/checkout/done",
+    },
+
     // One route, four documents. The slug itself is localised through
     // LEGAL_SLUGS in lib/i18n/legal.ts rather than through four folders.
     "/legal/[slug]": "/legal/[slug]",
 
     "/login": "/login",
+    // Two routes, one form. Somebody arriving from "create a free account"
+    // and landing on a page headed "sign in" has no way to tell they are in
+    // the right place, and that doubt costs a signup.
+    "/signup": { es: "/registro", en: "/signup" },
     "/auth/finish": "/auth/finish",
 
     "/app": "/app",

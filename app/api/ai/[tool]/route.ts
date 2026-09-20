@@ -207,6 +207,8 @@ async function handle(
     plan: PLANS.anonymous,
     topupWords: 0,
     periodStart: null as Date | null,
+    periodEnd: null as Date | null,
+    interval: null as "month" | "year" | null,
     subscriptionId: null as string | null,
     trialEnd: null as Date | null,
   };

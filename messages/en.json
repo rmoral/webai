@@ -326,7 +326,64 @@
     "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
     "topupCta": "Buy a top-up",
     "taxNote": "Prices are in US dollars, exclusive of tax; applicable taxes — including US sales tax or your country's VAT where it applies — are calculated at checkout. Renewal is automatic and you can cancel online, at any time, from your account. See the",
-    "taxNoteLink": "terms of service"
+    "taxNoteLink": "terms of service",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "twoMonthsFree": "Two months free against the monthly price.",
+    "yearlyTotal": "{amount} a year",
+    "billingFree": "No card. Ever.",
+    "billingProMonthly": "You are charged {amount} today and every month.",
+    "billingProYearly": "You are charged {amount} today, once a year. You save {saving}.",
+    "billingUnlimitedMonthly": "{days}-day trial. After that, {amount}/month.",
+    "billingUnlimitedYearly": "You are charged {amount} today, once a year. You save {saving}.",
+    "chooseProMonthly": "Choose Pro monthly",
+    "chooseProYearly": "Choose Pro yearly",
+    "chooseUnlimitedYearly": "Choose Unlimited yearly",
+    "annualNoTrial": "The yearly plan is charged today, in full: {amount}. It carries no free trial — the {days}-day trial exists only on the monthly cycle, so that nobody ends up with a yearly charge they did not expect.",
+    "guarantee": "Cancel online in two clicks, whenever you like. No calls, no emails.",
+    "compareTitle": "What each plan includes",
+    "rowWordsDay": "Words a day",
+    "rowWordsMonth": "Words a month",
+    "rowPerRequest": "Words per request",
+    "rowTools": "Tools",
+    "rowHistory": "Encrypted history",
+    "rowBreakdown": "Passage breakdown",
+    "rowPriority": "Queue priority",
+    "rowTopup": "Word top-up",
+    "valueNone": "—",
+    "valueYes": "Yes",
+    "valueNo": "No",
+    "valueFreeTools": "Humanizer and detector",
+    "valueAllTools": "All four",
+    "valueTopup": "{amount} for {words}, no expiry",
+    "valueTopupNeedsPlan": "Needs a paid plan",
+    "faqTitle": "Questions about billing",
+    "faq": [
+      {
+        "q": "When am I charged?",
+        "a": "On Pro and on Unlimited yearly, today, as soon as the payment goes through. On the Unlimited trial, on the fourth day: nothing is charged for the first three, and you see the exact date before handing over a card."
+      },
+      {
+        "q": "How do I cancel?",
+        "a": "From your account, in two clicks, whenever you like. No call, no email. Cancel during the trial and nothing is charged."
+      },
+      {
+        "q": "What happens when the trial ends?",
+        "a": "On day 3, when you open the app, we ask what you want to do: stay on Unlimited, step down to Pro with proration, or cancel. Do nothing and it renews on Unlimited."
+      },
+      {
+        "q": "Do the words expire?",
+        "a": "The plan's words reset every month. Top-up words do not expire while you have an active subscription."
+      },
+      {
+        "q": "Do the prices include tax?",
+        "a": "No. They are in dollars and exclude tax; US sales tax or your country's VAT, where it applies, is calculated at payment."
+      },
+      {
+        "q": "Do you give refunds?",
+        "a": "If something went wrong, write to us and we look at it case by case. The 3-day trial exists precisely so that you do not have to ask for one."
+      }
+    ]
   },
   "plans": {
     "anonymous": "Anonymous",
@@ -462,16 +519,29 @@
     "confirm": "Confirm",
     "cancel": "Cancel"
   },
-  "login": {
-    "title": "Sign in",
-    "description": "With Google or a magic link to your inbox. No passwords.",
+  "auth": {
+    "signupTitle": "Your free account: {words} words a day and session history",
+    "signupLede": "No password and no card. It takes less time than reading this sentence.",
+    "signinTitle": "Back to your account",
+    "signinLede": "Sign in with Google, or ask us for a link. There was never a password to remember.",
+    "benefitWords": "From {from} to {to} words a day, starting now.",
+    "benefitTools": "The humanizer and the detector in full, at no cost.",
     "google": "Continue with Google",
     "or": "or",
-    "emailPlaceholder": "you@example.com",
-    "send": "Send me the link",
+    "emailPlaceholder": "you@email.com",
+    "send": "Send me a sign-in link",
     "sending": "Sending…",
-    "sent": "Check your inbox: we have sent you a link to sign in.",
+    "sent": "We have sent a link to {email}. Open it on this device and you land back where you were.",
     "error": "We could not send the link. Try again.",
+    "textKept": "Your text is still in the editor. Come back and it is there as you left it, with nothing to restore.",
+    "privacy": "We keep no text on the free plan: only the word count, to apply the limits. No card.",
+    "crossToSignin": "Already have an account? Sign in",
+    "crossToSignup": "No account yet? Create a free one",
+    "legal": "Creating an account means accepting the terms of service and the privacy policy.",
+    "signupMetaTitle": "Create a free account",
+    "signinMetaTitle": "Sign in"
+  },
+  "login": {
     "finishing": "Signing you in…",
     "finishFailed": "We could not complete the sign-in.",
     "finishRetry": "Try again"

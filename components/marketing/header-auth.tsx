@@ -56,7 +56,7 @@ export function HeaderAuth() {
         <Link href="/login">{t("login")}</Link>
       </Button>
       <Button size="sm" asChild>
-        <Link href="/login">{t("signup")}</Link>
+        <Link href="/signup">{t("signup")}</Link>
       </Button>
     </>
   );

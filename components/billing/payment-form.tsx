@@ -21,7 +21,7 @@ import {
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
-import type { Locale } from "@/lib/i18n/routing";
+import { pathFor, type Locale } from "@/lib/i18n/routing";
 import { useRouter } from "@/lib/i18n/navigation";
 
 // Payment, inside the site.
@@ -204,7 +204,10 @@ function PaymentForm({
       clientSecret: data.clientSecret,
       redirect: "if_required",
       confirmParams: {
-        return_url: `${window.location.origin}/${locale === "es" ? "" : `${locale}/`}app`,
+        // Only reached by a payment method that leaves the page. It used to
+        // point at /app, so the one flow that most needs the confirmation
+        // screen was the one flow that never saw it.
+        return_url: `${window.location.origin}${pathFor("/checkout/done", locale)}`,
       },
     });
 

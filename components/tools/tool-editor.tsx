@@ -90,6 +90,32 @@ export function ToolEditor({
   const widgetId = useRef<string>(null);
   const posthog = usePostHog();
 
+  // What was typed survives leaving the page and coming back -- which is
+  // exactly what signing up is. "Your text is still in the editor" is a
+  // promise the sign-up page makes; this is what makes it true, and it
+  // costs nothing because sessionStorage never leaves the browser.
+  //
+  // Per tool, because two tools are two different pieces of work. Read in
+  // an effect rather than in the initial state: sessionStorage does not
+  // exist on the server, and reading it during render makes the two passes
+  // disagree.
+  useEffect(() => {
+    try {
+      setInput(sessionStorage.getItem(`editor:${tool}`) ?? "");
+    } catch {
+      // Private mode, or storage denied. An empty box is a fine fallback.
+    }
+  }, [tool]);
+
+  useEffect(() => {
+    try {
+      if (input) sessionStorage.setItem(`editor:${tool}`, input);
+      else sessionStorage.removeItem(`editor:${tool}`);
+    } catch {
+      // As above: losing the draft is survivable, failing the render is not.
+    }
+  }, [input, tool]);
+
   // Switching tool reuses this component, so a previous result would sit
   // under the new tool's heading as if it had produced it.
   useEffect(() => {
@@ -259,7 +285,13 @@ export function ToolEditor({
               overflowed={overflowed}
               className="min-h-44 md:min-h-64"
             />
-            <p className="text-muted-foreground border-t px-5 py-2 text-xs">
+            <p
+              // Rendered from state, so it is also the signal that the
+              // client has taken over: before hydration the box can hold
+              // text while React still believes it is empty.
+              data-testid="word-count"
+              className="text-muted-foreground border-t px-5 py-2 text-xs"
+            >
               {t("words", { words })}
               {remaining !== null && t("remaining", { words: remaining })}
             </p>

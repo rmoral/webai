@@ -9,17 +9,8 @@ import {
 // the hosted session: it is a one-off payment, not a subscription, and the
 // embedded flow here only creates subscriptions.
 import { CheckoutButton } from "@/components/marketing/checkout-button";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { trialDisclosure } from "@/lib/billing/disclosure";
-import {
-  PLANS,
-  PRICES,
-  TOPUP,
-  TRIAL,
-  formatUsd,
-  yearlySaving,
-} from "@/lib/billing/plans";
+import { PricingPlans } from "@/components/marketing/pricing-plans";
+import { PLANS, TOPUP, TRIAL, formatUsd } from "@/lib/billing/plans";
 import { alternatesFor } from "@/lib/i18n/metadata";
 import { Link } from "@/lib/i18n/navigation";
 import { LEGAL_SLUGS } from "@/lib/i18n/legal";
@@ -42,9 +33,79 @@ export default async function PricingPage({ params }: Params) {
   setRequestLocale(locale);
   const t = await getTranslations("pricing");
   const plans = await getTranslations("plans");
-  const checkout = await getTranslations("checkout");
   const format = await getFormatter();
   const n = (value: number) => format.number(value);
+
+  const faq = t.raw("faq") as { q: string; a: string }[];
+
+  // Every cell comes from PLANS. A comparison table with a number typed
+  // into it is the first thing to go stale, and the last thing anybody
+  // thinks to check.
+  const limitsOf = (tier: "free" | "pro" | "unlimited") => PLANS[tier].limits;
+  const yes = t("valueYes");
+  const no = t("valueNo");
+  const none = t("valueNone");
+  const perDay = (tier: "free" | "pro" | "unlimited") => {
+    const value = limitsOf(tier).wordsPerDay;
+    return value === null ? none : n(value);
+  };
+  const perMonth = (tier: "free" | "pro" | "unlimited") => {
+    const value = limitsOf(tier).wordsPerMonth;
+    return value === null ? none : n(value);
+  };
+
+  const rows: { label: string; values: string[] }[] = [
+    {
+      label: t("rowWordsDay"),
+      values: [perDay("free"), perDay("pro"), perDay("unlimited")],
+    },
+    {
+      label: t("rowWordsMonth"),
+      values: [perMonth("free"), perMonth("pro"), perMonth("unlimited")],
+    },
+    {
+      label: t("rowPerRequest"),
+      values: (["free", "pro", "unlimited"] as const).map((tier) =>
+        n(limitsOf(tier).maxWordsPerRequest),
+      ),
+    },
+    {
+      label: t("rowTools"),
+      values: [t("valueFreeTools"), t("valueAllTools"), t("valueAllTools")],
+    },
+    {
+      label: t("rowHistory"),
+      values: (["free", "pro", "unlimited"] as const).map((tier) =>
+        limitsOf(tier).history ? yes : no,
+      ),
+    },
+    {
+      label: t("rowBreakdown"),
+      values: (["free", "pro", "unlimited"] as const).map((tier) =>
+        limitsOf(tier).sentenceHighlight ? yes : no,
+      ),
+    },
+    {
+      label: t("rowPriority"),
+      values: (["free", "pro", "unlimited"] as const).map((tier) =>
+        limitsOf(tier).priorityQueue ? yes : no,
+      ),
+    },
+    {
+      label: t("rowTopup"),
+      values: [
+        t("valueTopupNeedsPlan"),
+        t("valueTopup", {
+          amount: formatUsd(TOPUP.amount, locale),
+          words: n(TOPUP.words),
+        }),
+        t("valueTopup", {
+          amount: formatUsd(TOPUP.amount, locale),
+          words: n(TOPUP.words),
+        }),
+      ],
+    },
+  ];
 
   return (
     <main className="mx-auto max-w-[65rem] px-6 py-12">
@@ -53,149 +114,62 @@ export default async function PricingPage({ params }: Params) {
         {t("intro", { days: TRIAL.days })}
       </p>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-3">
-        <section className="rounded-xl border p-4">
-          <h2 className="font-semibold">{plans("free")}</h2>
-          <p className="mt-1 text-2xl font-semibold">{formatUsd(0, locale)}</p>
-          <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
-            <li>
-              {t("wordsPerDay", {
-                words: n(PLANS.free.limits.wordsPerDay ?? 0),
-              })}
-            </li>
-            <li>
-              {t("perRequest", {
-                words: n(PLANS.free.limits.maxWordsPerRequest),
-              })}
-            </li>
-            <li>{t("freeTools")}</li>
-          </ul>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/login">{t("signup")}</Link>
-          </Button>
-        </section>
+      <PricingPlans />
 
-        <section className="rounded-xl border p-4">
-          <h2 className="font-semibold">{plans("pro")}</h2>
-          <p className="mt-1 text-2xl font-semibold">
-            {formatUsd(PRICES.pro.yearly.monthlyEquivalent, locale)}
-            <span className="text-muted-foreground text-base font-normal">
-              {" "}
-              {t("perMonth")}
-            </span>
-          </p>
-          <p className="text-muted-foreground text-sm">
-            {t("yearlyLine", {
-              yearly: formatUsd(PRICES.pro.yearly.amount, locale),
-              saving: formatUsd(yearlySaving("pro"), locale),
-              monthly: formatUsd(PRICES.pro.monthly.amount, locale),
-            })}
-          </p>
-          <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
-            <li>
-              {t("wordsPerMonth", {
-                words: n(PLANS.pro.limits.wordsPerMonth ?? 0),
-              })}
-            </li>
-            <li>
-              {t("perRequest", {
-                words: n(PLANS.pro.limits.maxWordsPerRequest),
-              })}
-            </li>
-            <li>{t("proTools")}</li>
-          </ul>
-          <div className="mt-4 flex flex-col gap-2">
-            <Button asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "pro", cycle: "yearly" },
-                }}
-              >
-                {t("choosePro")}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "pro", cycle: "monthly" },
-                }}
-              >
-                {t("proMonthly")}
-              </Link>
-            </Button>
-          </div>
-        </section>
+      {/* Above the table, not below it: the promise that makes the table
+          worth reading is that none of it is a trap. */}
+      <p className="text-success-ink border-success-line bg-success-soft mt-8 rounded-xl border p-4 text-sm">
+        {t("guarantee")}
+      </p>
 
-        <section className="border-brand ring-brand rounded-xl border p-4 ring-1">
-          <h2 className="flex items-center gap-2 font-semibold">
-            {plans("unlimited")}{" "}
-            <Badge variant="brand">
-              {t("trialBadge", { days: TRIAL.days })}
-            </Badge>
-          </h2>
-          <p className="mt-1 text-2xl font-semibold">
-            {formatUsd(PRICES.unlimited.yearly.monthlyEquivalent, locale)}
-            <span className="text-muted-foreground text-base font-normal">
-              {" "}
-              {t("perMonth")}
-            </span>
-          </p>
-          <p className="text-muted-foreground text-sm">
-            {t("yearlyLine", {
-              yearly: formatUsd(PRICES.unlimited.yearly.amount, locale),
-              saving: formatUsd(yearlySaving("unlimited"), locale),
-              monthly: formatUsd(PRICES.unlimited.monthly.amount, locale),
-            })}
-          </p>
-          <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
-            <li>
-              {t("wordsPerMonth", {
-                words: n(PLANS.unlimited.limits.wordsPerMonth ?? 0),
-              })}
-            </li>
-            <li>
-              {t("perRequest", {
-                words: n(PLANS.unlimited.limits.maxWordsPerRequest),
-              })}
-            </li>
-            <li>{t("priority")}</li>
-          </ul>
-          <div className="mt-4 flex flex-col gap-2">
-            <Button asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "unlimited", cycle: "monthly" },
-                }}
-              >
-                {t("tryFree", { days: TRIAL.days })}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "unlimited", cycle: "yearly" },
-                }}
-              >
-                {t("unlimitedYearly")}
-              </Link>
-            </Button>
-          </div>
-          {/* Required before collecting payment details (§6.1). */}
-          <p className="mt-3 text-xs" data-testid="trial-disclosure">
-            {trialDisclosure(locale, checkout, (date) =>
-              format.dateTime(date, {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              }),
-            )}
-          </p>
-        </section>
+      <h2 className="mt-10 text-xl font-semibold tracking-tight">
+        {t("compareTitle")}
+      </h2>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[34rem] text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th scope="col" className="py-2 pr-4 font-medium" />
+              {(["free", "pro", "unlimited"] as const).map((tier) => (
+                <th key={tier} scope="col" className="py-2 pr-4 font-semibold">
+                  {plans(tier)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="text-muted-foreground">
+            {rows.map((row) => (
+              <tr key={row.label} className="border-b last:border-0">
+                <th
+                  scope="row"
+                  className="text-foreground py-2 pr-4 font-normal"
+                >
+                  {row.label}
+                </th>
+                {row.values.map((value, i) => (
+                  <td key={i} className="py-2 pr-4">
+                    {value}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+
+      <h2 className="mt-10 text-xl font-semibold tracking-tight">
+        {t("faqTitle")}
+      </h2>
+      <dl className="mt-4 space-y-5">
+        {faq.map((entry) => (
+          <div key={entry.q}>
+            <dt className="font-medium">{entry.q}</dt>
+            <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">
+              {entry.a}
+            </dd>
+          </div>
+        ))}
+      </dl>
 
       <section className="mt-8 rounded-xl border p-4">
         <h2 className="font-semibold">{t("topupTitle")}</h2>

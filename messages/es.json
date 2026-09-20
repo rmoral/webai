@@ -326,7 +326,64 @@
     "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
     "topupCta": "Comprar recarga",
     "taxNote": "Precios en dólares estadounidenses, sin impuestos incluidos; los impuestos aplicables —incluido el impuesto sobre ventas de EE. UU. o el IVA de tu país cuando corresponda— se calculan en el pago. La renovación es automática y puedes cancelar en línea, en cualquier momento, desde tu cuenta. Consulta los",
-    "taxNoteLink": "términos del servicio"
+    "taxNoteLink": "términos del servicio",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "twoMonthsFree": "Dos meses gratis frente al mensual.",
+    "yearlyTotal": "{amount} al año",
+    "billingFree": "Sin tarjeta. Para siempre.",
+    "billingProMonthly": "Se te cobran {amount} hoy y cada mes.",
+    "billingProYearly": "Se te cobran {amount} hoy, una vez al año. Ahorras {saving}.",
+    "billingUnlimitedMonthly": "{days} días de prueba. Después, {amount}/mes.",
+    "billingUnlimitedYearly": "Se te cobran {amount} hoy, una vez al año. Ahorras {saving}.",
+    "chooseProMonthly": "Elegir Pro mensual",
+    "chooseProYearly": "Elegir Pro anual",
+    "chooseUnlimitedYearly": "Elegir Ilimitado anual",
+    "annualNoTrial": "El plan anual se cobra hoy, entero: {amount}. No lleva prueba gratuita — la prueba de {days} días solo existe en el ciclo mensual, para que nadie acabe con un cargo anual que no esperaba.",
+    "guarantee": "Cancela online en dos clics, cuando quieras. Sin llamadas ni correos.",
+    "compareTitle": "Qué incluye cada plan",
+    "rowWordsDay": "Palabras al día",
+    "rowWordsMonth": "Palabras al mes",
+    "rowPerRequest": "Palabras por petición",
+    "rowTools": "Herramientas",
+    "rowHistory": "Historial cifrado",
+    "rowBreakdown": "Desglose por pasajes",
+    "rowPriority": "Prioridad de cola",
+    "rowTopup": "Recarga de palabras",
+    "valueNone": "—",
+    "valueYes": "Sí",
+    "valueNo": "No",
+    "valueFreeTools": "Humanizador y detector",
+    "valueAllTools": "Las cuatro",
+    "valueTopup": "{amount} por {words}, sin caducidad",
+    "valueTopupNeedsPlan": "Requiere un plan de pago",
+    "faqTitle": "Preguntas sobre la facturación",
+    "faq": [
+      {
+        "q": "¿Cuándo se me cobra?",
+        "a": "En Pro y en Ilimitado anual, hoy mismo al completar el pago. En la prueba de Ilimitado, al cuarto día: los tres primeros no se cobra nada y verás la fecha exacta antes de dar la tarjeta."
+      },
+      {
+        "q": "¿Cómo cancelo?",
+        "a": "Desde tu cuenta, en dos clics, cuando quieras. No hay que llamar ni escribir un correo. Si cancelas durante la prueba, no se cobra nada."
+      },
+      {
+        "q": "¿Qué pasa cuando termina la prueba?",
+        "a": "El día 3, al entrar, te preguntamos qué quieres hacer: seguir en Ilimitado, bajar a Pro con prorrateo o cancelar. Si no haces nada, se renueva en Ilimitado."
+      },
+      {
+        "q": "¿Las palabras caducan?",
+        "a": "Las del plan se reinician cada mes. Las de una recarga no caducan mientras tengas una suscripción activa."
+      },
+      {
+        "q": "¿Los precios llevan impuestos?",
+        "a": "No. Son en dólares y sin impuestos; el impuesto sobre ventas de EE. UU. o el IVA de tu país, cuando corresponda, se calcula en el pago."
+      },
+      {
+        "q": "¿Hacéis reembolsos?",
+        "a": "Si algo ha ido mal, escríbenos y lo miramos caso por caso. La prueba de 3 días existe precisamente para que no tengas que pedir uno."
+      }
+    ]
   },
   "plans": {
     "anonymous": "Anónimo",
@@ -462,16 +519,29 @@
     "confirm": "Confirmar",
     "cancel": "Cancelar"
   },
-  "login": {
-    "title": "Inicia sesión",
-    "description": "Con Google o con un enlace mágico a tu correo. Sin contraseñas.",
+  "auth": {
+    "signupTitle": "Tu cuenta gratis: {words} palabras al día e historial de sesión",
+    "signupLede": "Sin contraseña y sin tarjeta. Tardas menos que en leer esta frase.",
+    "signinTitle": "Vuelve a tu cuenta",
+    "signinLede": "Entra con Google o pídenos un enlace de acceso. Nunca hubo contraseña que recordar.",
+    "benefitWords": "De {from} a {to} palabras al día, hoy mismo.",
+    "benefitTools": "Humanizador y detector completos, sin coste.",
     "google": "Continuar con Google",
     "or": "o",
     "emailPlaceholder": "tu@correo.com",
-    "send": "Enviarme el enlace",
+    "send": "Enviarme un enlace de acceso",
     "sending": "Enviando…",
-    "sent": "Revisa tu correo: te hemos enviado un enlace para entrar.",
+    "sent": "Te hemos enviado un enlace a {email}. Ábrelo desde este mismo dispositivo y vuelves justo donde estabas.",
     "error": "No se pudo enviar el enlace. Inténtalo de nuevo.",
+    "textKept": "Tu texto sigue en el editor. Al volver lo encuentras tal cual, sin recuperar nada.",
+    "privacy": "No guardamos tus textos en el plan gratuito: solo el recuento de palabras para aplicar los límites. Sin tarjeta.",
+    "crossToSignin": "¿Ya tienes cuenta? Iniciar sesión",
+    "crossToSignup": "¿Aún no tienes cuenta? Crear cuenta gratis",
+    "legal": "Al crear la cuenta aceptas los términos del servicio y la política de privacidad.",
+    "signupMetaTitle": "Crear cuenta gratis",
+    "signinMetaTitle": "Iniciar sesión"
+  },
+  "login": {
     "finishing": "Entrando…",
     "finishFailed": "No hemos podido completar el acceso.",
     "finishRetry": "Inténtalo de nuevo"

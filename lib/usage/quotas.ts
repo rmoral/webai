@@ -267,6 +267,8 @@ export async function consumeDailyWords(
       plan,
       topupWords: 0,
       periodStart: null,
+      periodEnd: null,
+      interval: null,
       subscriptionId: null,
       trialEnd: null,
     },

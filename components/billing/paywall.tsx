@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
 
-import { CheckoutPanel } from "@/components/billing/checkout";
+// Loaded only when somebody actually opens the payment view. Imported at
+// module scope it pulls @stripe/stripe-js into the bundle of every page
+// that shows a lock -- including the detector landing, which never pays for
+// anything.
+const CheckoutPanel = dynamic(() =>
+  import("@/components/billing/checkout").then((m) => m.CheckoutPanel),
+);
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ToolId } from "@/lib/ai/tools";
@@ -17,7 +24,7 @@ import {
   type PlanId,
 } from "@/lib/billing/plans";
 import type { Locale } from "@/lib/i18n/routing";
-import { Link, useRouter } from "@/lib/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // The paywall. One shell, five triggers, and the rule that holds them all
@@ -169,7 +176,10 @@ export function PaywallDialog({
 }
 
 /** The disclosure block. 14 px, in the flow, on a tinted panel — never fine print. */
-export function TrialDisclosure({ className }: { className?: string }) {
+export function TrialDisclosure({
+  className,
+  ...props
+}: React.ComponentProps<"p">) {
   const locale = useLocale() as Locale;
   const checkout = useTranslations("checkout");
   const format = useFormatter();
@@ -180,6 +190,7 @@ export function TrialDisclosure({ className }: { className?: string }) {
         "border-brand-line bg-brand-softer text-brand-ink rounded-xl border p-4 text-sm leading-normal",
         className,
       )}
+      {...props}
     >
       {trialDisclosure(locale, checkout, (date) =>
         format.dateTime(date, {
@@ -228,6 +239,10 @@ export function QuotaPaywall({
   const format = useFormatter();
   const posthog = usePostHog();
   const router = useRouter();
+  // Where to come back to after signing up. The editor keeps the text, so
+  // returning here means returning to their own work rather than to a
+  // dashboard -- the most avoidable leak in the funnel.
+  const here = usePathname();
   const accountState = accountStateOf(plan);
   const context = {
     trigger: "quota" as const,
@@ -343,7 +358,11 @@ export function QuotaPaywall({
             </Button>
             <Button variant="outline" asChild>
               <Link
-                href={accountState === "anonymous" ? "/login" : "/pricing"}
+                href={
+                  accountState === "anonymous"
+                    ? { pathname: "/signup" as const, query: { next: here } }
+                    : { pathname: "/pricing" as const }
+                }
                 onClick={() =>
                   posthog?.capture("paywall_secondary_clicked", context)
                 }
@@ -389,6 +408,7 @@ export function ToolPaywall({
   const locale = useLocale() as Locale;
   const posthog = usePostHog();
   const router = useRouter();
+  const here = usePathname();
   const accountState = accountStateOf(plan);
   const context = {
     trigger: "tool" as const,
@@ -424,10 +444,10 @@ export function ToolPaywall({
           onClick={() => {
             posthog?.capture("paywall_primary_clicked", context);
             router.push({
-              pathname: accountState === "anonymous" ? "/login" : "/checkout",
+              pathname: accountState === "anonymous" ? "/signup" : "/checkout",
               query:
                 accountState === "anonymous"
-                  ? { next: "/pricing" }
+                  ? { next: here }
                   : { plan: "unlimited", cycle: "monthly" },
             });
           }}
