@@ -352,9 +352,24 @@
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
     "seePlans": "Ver planes",
     "quotaTitle": "Has agotado tu límite.",
-    "quotaBody": "Sigue escribiendo hoy mismo con Ilimitado: {days} días gratis y cancelas cuando quieras.",
-    "longerTitle": "¿Textos más largos?",
-    "longerBody": "Los planes de pago amplían el límite por petición, guardan tu historial y desbloquean todas las herramientas."
+    "quotaBody": "Sigue escribiendo hoy mismo con Ilimitado: {days} días gratis y cancelas cuando quieras."
+  },
+  "paywall": {
+    "seePlans": "Ver planes",
+    "overflowLead": "Procesamos las primeras {words} palabras",
+    "overflowBody": "de las {submitted} que has pegado. Pro amplía el límite a {pro} por petición; Ilimitado, a {unlimited}.",
+    "quotaBadge": "{used} / {limit} palabras de hoy",
+    "quotaTitle": "Tu texto está humanizado. Has agotado las palabras de hoy.",
+    "quotaLeadAnon": "Te enseñamos el principio. Crea una cuenta gratis y pasas a {words} palabras al día, o prueba Ilimitado y lo lees entero ahora.",
+    "quotaLeadUser": "Te enseñamos el principio. Con Ilimitado lo lees entero ahora y dejas de tener límite diario.",
+    "benefitNoLimitLead": "Sin límite diario",
+    "benefitNoLimit": "y hasta {words} palabras por petición.",
+    "benefitToolsLead": "Las cuatro herramientas,",
+    "benefitTools": "historial cifrado y desglose por pasajes.",
+    "tryUnlimited": "Probar Ilimitado {days} días gratis",
+    "createAccount": "Crear cuenta gratis — {words} palabras al día",
+    "seePro": "Ver Pro — {price}/mes",
+    "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento"
   },
   "detector": {
     "bands": {

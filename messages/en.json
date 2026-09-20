@@ -352,9 +352,24 @@
     "connectionError": "Connection error. Try again.",
     "seePlans": "See plans",
     "quotaTitle": "You have hit your limit.",
-    "quotaBody": "Keep writing today with Unlimited: {days} days free, cancel whenever you like.",
-    "longerTitle": "Longer texts?",
-    "longerBody": "Paid plans raise the per-request limit, keep your history and unlock every tool."
+    "quotaBody": "Keep writing today with Unlimited: {days} days free, cancel whenever you like."
+  },
+  "paywall": {
+    "seePlans": "See plans",
+    "overflowLead": "We process the first {words} words",
+    "overflowBody": "of the {submitted} you pasted. Pro raises the per-request limit to {pro}; Unlimited, to {unlimited}.",
+    "quotaBadge": "{used} / {limit} words today",
+    "quotaTitle": "Your text is humanized. You have used up today's words.",
+    "quotaLeadAnon": "This is the start of it. A free account takes you to {words} words a day, or try Unlimited and read the whole thing now.",
+    "quotaLeadUser": "This is the start of it. Unlimited shows you the rest now and drops the daily limit for good.",
+    "benefitNoLimitLead": "No daily limit",
+    "benefitNoLimit": "and up to {words} words per request.",
+    "benefitToolsLead": "All four tools,",
+    "benefitTools": "encrypted history and the passage breakdown.",
+    "tryUnlimited": "Try Unlimited free for {days} days",
+    "createAccount": "Create a free account — {words} words a day",
+    "seePro": "See Pro — {price}/month",
+    "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count"
   },
   "detector": {
     "bands": {

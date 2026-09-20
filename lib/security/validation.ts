@@ -33,3 +33,22 @@ export type AiToolRequest = z.infer<typeof aiToolRequestSchema>;
 export function countWords(text: string): number {
   return text.split(/\s+/).filter(Boolean).length;
 }
+
+/**
+ * The first `max` words, with the original spacing up to the cut.
+ *
+ * Wall A processes the beginning of an over-long paste instead of refusing
+ * it, and the notice names both figures -- "the first 300 of the 812 you
+ * pasted" -- so the cut has to fall exactly where countWords says it does.
+ * Both functions read a word as a maximal run of non-whitespace, which is
+ * what keeps the two numbers in agreement.
+ */
+export function truncateToWords(text: string, max: number): string {
+  if (max <= 0) return "";
+  const word = /\S+/g;
+  for (let seen = 0; ;) {
+    const match = word.exec(text);
+    if (!match) return text;
+    if (++seen === max) return text.slice(0, match.index + match[0].length);
+  }
+}

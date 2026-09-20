@@ -5,6 +5,7 @@ import {
   aiToolRequestSchema,
   countWords,
   MAX_INPUT_CHARS,
+  truncateToWords,
 } from "@/lib/security/validation";
 
 beforeAll(() => {
@@ -77,5 +78,36 @@ describe("countWords", () => {
   it("counts words across whitespace", () => {
     expect(countWords("  hola   mundo\ncruel ")).toBe(3);
     expect(countWords("")).toBe(0);
+  });
+});
+
+describe("truncateToWords", () => {
+  const text = "Uno dos tres   cuatro\ncinco\tseis siete ocho nueve diez";
+
+  it("keeps exactly the number of words the notice promises", () => {
+    // Wall A tells the reader "we processed the first 300 words of the 812
+    // you pasted". Both figures come from countWords, so the cut has to
+    // agree with it or the sentence is a lie about what the model saw.
+    for (const n of [1, 3, 7, 10]) {
+      expect(countWords(truncateToWords(text, n))).toBe(n);
+    }
+  });
+
+  it("cuts at the end of the last kept word", () => {
+    expect(truncateToWords(text, 3)).toBe("Uno dos tres");
+    // Irregular whitespace before the cut is preserved; the editor renders
+    // this same prefix underneath the textarea, so a collapsed run of
+    // spaces would misalign the dimmed overflow against the real text.
+    expect(truncateToWords(text, 4)).toBe("Uno dos tres   cuatro");
+  });
+
+  it("returns the text untouched when it is within the limit", () => {
+    expect(truncateToWords(text, 10)).toBe(text);
+    expect(truncateToWords(text, 50)).toBe(text);
+    expect(truncateToWords("", 5)).toBe("");
+  });
+
+  it("keeps nothing when the limit is zero", () => {
+    expect(truncateToWords(text, 0)).toBe("");
   });
 });

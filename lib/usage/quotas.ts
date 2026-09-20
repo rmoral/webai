@@ -56,6 +56,12 @@ export interface QuotaResult {
   allowed: boolean;
   /** Words left in the plan allowance. `null` when the plan is unmetered. */
   remaining: number | null;
+  /**
+   * The allowance the two figures above are measured against. `null` when
+   * the plan is unmetered. Wall B shows "280 / 500 words today", and
+   * deriving the denominator in the UI would mean hardcoding a limit there.
+   */
+  limit: number | null;
   /** Words taken from the top-up balance, if any. */
   fromTopup?: number;
 }
@@ -100,7 +106,12 @@ export async function consumeWords(
   const client = getRedis();
 
   if (limits.wordsPerDay !== null) {
-    if (!client) return { allowed: true, remaining: limits.wordsPerDay };
+    if (!client)
+      return {
+        allowed: true,
+        remaining: limits.wordsPerDay,
+        limit: limits.wordsPerDay,
+      };
     const { used, allowed } = await consume(
       client,
       dailyKey(subject),
@@ -108,11 +119,21 @@ export async function consumeWords(
       words,
       25 * 60 * 60,
     );
-    return { allowed, remaining: Math.max(0, limits.wordsPerDay - used) };
+    return {
+      allowed,
+      remaining: Math.max(0, limits.wordsPerDay - used),
+      limit: limits.wordsPerDay,
+    };
   }
 
-  if (limits.wordsPerMonth === null) return { allowed: true, remaining: null };
-  if (!client) return { allowed: true, remaining: limits.wordsPerMonth };
+  if (limits.wordsPerMonth === null)
+    return { allowed: true, remaining: null, limit: null };
+  if (!client)
+    return {
+      allowed: true,
+      remaining: limits.wordsPerMonth,
+      limit: limits.wordsPerMonth,
+    };
 
   const { used, allowed } = await consume(
     client,
@@ -123,7 +144,8 @@ export async function consumeWords(
   );
   const remaining = Math.max(0, limits.wordsPerMonth - used);
 
-  if (allowed) return { allowed: true, remaining };
+  const limit = limits.wordsPerMonth;
+  if (allowed) return { allowed: true, remaining, limit };
 
   // Ilimitado is sold as unlimited: warn the owner, keep serving.
   if (limits.softCap) {
@@ -131,13 +153,39 @@ export async function consumeWords(
       level: "warning",
       extra: { subject, words, limit: limits.wordsPerMonth },
     });
-    return { allowed: true, remaining: 0 };
+    return { allowed: true, remaining: 0, limit };
   }
 
   const fromTopup = await consumeTopupWords(subject, words);
-  if (fromTopup) return { allowed: true, remaining: 0, fromTopup: words };
+  if (fromTopup)
+    return { allowed: true, remaining: 0, limit, fromTopup: words };
 
-  return { allowed: false, remaining };
+  return { allowed: false, remaining, limit };
+}
+
+/**
+ * Claims the one over-quota preview a subject gets per day.
+ *
+ * Wall B works by showing people the result they cannot read yet, which
+ * means the model runs for a request the allowance already refused. Without
+ * a cap that turns the daily limit into a suggestion: spend it, then keep
+ * asking and keep being served. The claim is atomic (`SET NX`), so a
+ * client that fires ten requests at once still gets one generation.
+ *
+ * Returns false when the preview is already spent, and the caller falls
+ * back to the plain refusal.
+ */
+export async function claimOverQuotaPreview(subject: string): Promise<boolean> {
+  const client = getRedis();
+  // Dev without Redis: quotas are off there, so this is never reached with
+  // a refusal behind it.
+  if (!client) return true;
+  const day = new Date().toISOString().slice(0, 10);
+  const claimed = await client.set(`paywall:preview:${subject}:${day}`, 1, {
+    nx: true,
+    ex: 25 * 60 * 60,
+  });
+  return claimed === "OK";
 }
 
 /**

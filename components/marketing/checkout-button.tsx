@@ -32,11 +32,14 @@ export function CheckoutButton({
   interval,
   label,
   variant = "default",
+  onStart,
 }: {
   plan: "pro" | "unlimited" | "topup";
   interval: BillingInterval;
   label: string;
   variant?: "default" | "outline";
+  /** Fired before the request, for the caller's own telemetry. */
+  onStart?: () => void;
 }) {
   const t = useTranslations("checkout");
   const locale = useLocale();
@@ -56,6 +59,7 @@ export function CheckoutButton({
   async function checkout() {
     setLoading(true);
     setError(null);
+    onStart?.();
     posthog?.capture("checkout_started", { plan, interval });
 
     const res = await fetch("/api/stripe/checkout", {

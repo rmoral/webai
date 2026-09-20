@@ -56,17 +56,25 @@ test("trial checkout through Stripe with a test card", async ({ page }) => {
   await expect(page.getByText(/Ilimitado/)).toBeVisible({ timeout: 30_000 });
 });
 
-test("the home page offers the tool and routes the upsell to pricing", async ({
+test("the home page offers the tool, and the upsell waits until it is earned", async ({
   page,
 }) => {
   // The editor is the home page: no click between landing and first use.
   await page.goto("/");
-  await expect(page.getByLabel("Texto de entrada")).toBeVisible();
+  const box = page.getByLabel("Texto de entrada");
+  await expect(box).toBeVisible();
 
-  // Anonymous visitors are not on a paid plan, so the upsell is present and
-  // is the entry point to the funnel.
-  const upsell = page.getByText("¿Textos más largos?");
-  await expect(upsell).toBeVisible();
+  // Nothing is sold before anything is asked for. A standing banner under
+  // an empty editor was the old funnel and it converted nobody: always
+  // there, therefore never read.
+  await expect(page.getByText("Ver planes")).toHaveCount(0);
+
+  // It appears the moment the limit costs the visitor something -- here,
+  // a paste past the per-request ceiling -- and that is the way to pricing.
+  await box.fill(
+    Array.from({ length: 400 }, (_, i) => `palabra${i}`).join(" "),
+  );
+  await expect(page.getByText(/Procesamos las primeras/)).toBeVisible();
   await page.getByRole("link", { name: "Ver planes" }).first().click();
   await page.waitForURL(/\/precios/);
   await expect(page.getByRole("heading", { name: "Precios" })).toBeVisible();
