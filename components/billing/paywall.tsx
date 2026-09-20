@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
 
-import { CheckoutButton } from "@/components/marketing/checkout-button";
+import { CheckoutPanel } from "@/components/billing/checkout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { trialDisclosure } from "@/lib/billing/disclosure";
@@ -16,7 +16,7 @@ import {
   type PlanId,
 } from "@/lib/billing/plans";
 import type { Locale } from "@/lib/i18n/routing";
-import { Link } from "@/lib/i18n/navigation";
+import { Link, useRouter } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // The paywall. One shell, five triggers, and the rule that holds them all
@@ -218,10 +218,15 @@ export function QuotaPaywall({
   result: WithheldResult;
   onDismiss: () => void;
 }) {
+  // The offer and the card field are the same dialog. Going to a payment
+  // page from here would mean leaving the text this wall is about.
+  const [paying, setPaying] = useState(false);
   const t = useTranslations("paywall");
+  const checkout = useTranslations("checkout");
   const locale = useLocale() as Locale;
   const format = useFormatter();
   const posthog = usePostHog();
+  const router = useRouter();
   const accountState = accountStateOf(plan);
   const context = {
     trigger: "quota" as const,
@@ -242,83 +247,121 @@ export function QuotaPaywall({
         onDismiss();
       }}
     >
-      <Badge variant="warning">
-        {t("quotaBadge", {
-          used: format.number(result.usedToday),
-          limit: format.number(result.limitToday),
-        })}
-      </Badge>
+      {paying ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPaying(false)}
+              aria-label={checkout("back")}
+            >
+              ←
+            </Button>
+            <h2 id="paywall-quota-title" className="font-semibold">
+              {checkout("modalTitle")}
+            </h2>
+          </div>
+          <CheckoutPanel
+            target={{ tier: "unlimited", interval: "monthly" }}
+            onBack={onDismiss}
+          />
+        </div>
+      ) : (
+        <>
+          <Badge variant="warning">
+            {t("quotaBadge", {
+              used: format.number(result.usedToday),
+              limit: format.number(result.limitToday),
+            })}
+          </Badge>
 
-      <h2 id="paywall-quota-title" className="mt-3 text-xl font-semibold">
-        {t("quotaTitle")}
-      </h2>
-      <p className="text-muted-foreground mt-2 text-sm leading-normal">
-        {accountState === "anonymous"
-          ? t("quotaLeadAnon", {
-              words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-            })
-          : t("quotaLeadUser")}
-      </p>
-
-      <div className="bg-muted/40 mt-4 max-h-56 overflow-hidden rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap">
-        {visible}
-        <span
-          aria-hidden
-          className="blur-[4.5px] select-none"
-          // The fade is the one place a gradient earns its keep: it says
-          // "there is more" without a word of copy. It masks the text
-          // itself rather than painting a panel over it, so it works on
-          // either theme.
-          style={{
-            maskImage: "linear-gradient(to bottom, #000 0%, transparent 85%)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, #000 0%, transparent 85%)",
-          }}
-        >
-          {withheld}
-        </span>
-      </div>
-
-      <ul className="mt-4 space-y-1.5 text-sm">
-        <li>
-          <b className="font-semibold">{t("benefitNoLimitLead")}</b>{" "}
-          {t("benefitNoLimit", {
-            words: format.number(PLANS.unlimited.limits.maxWordsPerRequest),
-          })}
-        </li>
-        <li>
-          <b className="font-semibold">{t("benefitToolsLead")}</b>{" "}
-          {t("benefitTools")}
-        </li>
-      </ul>
-
-      <div className="mt-5 flex flex-col gap-2">
-        <CheckoutButton
-          plan="unlimited"
-          interval="monthly"
-          label={t("tryUnlimited", { days: TRIAL.days })}
-          onStart={() => posthog?.capture("paywall_primary_clicked", context)}
-        />
-        <Button variant="outline" asChild>
-          <Link
-            href={accountState === "anonymous" ? "/login" : "/pricing"}
-            onClick={() =>
-              posthog?.capture("paywall_secondary_clicked", context)
-            }
-          >
+          <h2 id="paywall-quota-title" className="mt-3 text-xl font-semibold">
+            {t("quotaTitle")}
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm leading-normal">
             {accountState === "anonymous"
-              ? t("createAccount", {
+              ? t("quotaLeadAnon", {
                   words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
                 })
-              : t("seePro", {
-                  price: formatUsd(PRICES.pro.monthly.amount, locale),
-                })}
-          </Link>
-        </Button>
-      </div>
+              : t("quotaLeadUser")}
+          </p>
 
-      <TrialDisclosure className="mt-4" />
-      <p className="text-muted-foreground mt-3 text-xs">{t("trustLine")}</p>
+          <div className="bg-muted/40 mt-4 max-h-56 overflow-hidden rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap">
+            {visible}
+            <span
+              aria-hidden
+              className="blur-[4.5px] select-none"
+              // The fade is the one place a gradient earns its keep: it says
+              // "there is more" without a word of copy. It masks the text
+              // itself rather than painting a panel over it, so it works on
+              // either theme.
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, #000 0%, transparent 85%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, #000 0%, transparent 85%)",
+              }}
+            >
+              {withheld}
+            </span>
+          </div>
+
+          <ul className="mt-4 space-y-1.5 text-sm">
+            <li>
+              <b className="font-semibold">{t("benefitNoLimitLead")}</b>{" "}
+              {t("benefitNoLimit", {
+                words: format.number(PLANS.unlimited.limits.maxWordsPerRequest),
+              })}
+            </li>
+            <li>
+              <b className="font-semibold">{t("benefitToolsLead")}</b>{" "}
+              {t("benefitTools")}
+            </li>
+          </ul>
+
+          <div className="mt-5 flex flex-col gap-2">
+            <Button
+              size="lg"
+              onClick={() => {
+                posthog?.capture("paywall_primary_clicked", context);
+                // Nobody can be billed without an account to bill. A signed-out
+                // reader goes through the door first and comes back; the editor
+                // still holds their text either way.
+                if (accountState === "anonymous") {
+                  router.push({
+                    pathname: "/login",
+                    query: { next: "/pricing" },
+                  });
+                  return;
+                }
+                setPaying(true);
+              }}
+            >
+              {t("tryUnlimited", { days: TRIAL.days })}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link
+                href={accountState === "anonymous" ? "/login" : "/pricing"}
+                onClick={() =>
+                  posthog?.capture("paywall_secondary_clicked", context)
+                }
+              >
+                {accountState === "anonymous"
+                  ? t("createAccount", {
+                      words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+                    })
+                  : t("seePro", {
+                      price: formatUsd(PRICES.pro.monthly.amount, locale),
+                    })}
+              </Link>
+            </Button>
+          </div>
+
+          <TrialDisclosure className="mt-4" />
+          <p className="text-muted-foreground mt-3 text-xs">{t("trustLine")}</p>
+        </>
+      )}
     </PaywallDialog>
   );
 }

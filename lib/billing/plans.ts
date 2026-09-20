@@ -162,6 +162,26 @@ export const TRIAL = {
 };
 
 /**
+ * Whether this combination starts with a free trial, and for how long.
+ *
+ * This is the rule the whole redesign turns on. A trial hanging off a
+ * yearly cycle is what made the headline price and the disclosure disagree:
+ * "3 days free" over a charge of $179.88. The trial exists on Ilimitado
+ * monthly and nowhere else.
+ *
+ * It lives here rather than next to the Stripe call because the disclosure,
+ * the pricing page and the paywall all have to agree with it, and those run
+ * in the browser -- importing them into the module that talks to Stripe
+ * would put the secret-key SDK in the client bundle.
+ */
+export function trialDaysFor(
+  tier: PaidTier,
+  interval: BillingInterval,
+): number | null {
+  return tier === TRIAL.tier && interval === TRIAL.interval ? TRIAL.days : null;
+}
+
+/**
  * Prices are in dollars everywhere; only the punctuation changes. A Spanish
  * reader expects "29,99 US$" and an English one "$29.99", and showing the
  * Spanish form to a US customer reads the comma as a thousands separator --

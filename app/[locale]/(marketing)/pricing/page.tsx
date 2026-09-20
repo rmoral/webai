@@ -5,6 +5,9 @@ import {
   setRequestLocale,
 } from "next-intl/server";
 
+// Subscriptions are paid at /checkout, inside the site. The top-up stays on
+// the hosted session: it is a one-off payment, not a subscription, and the
+// embedded flow here only creates subscriptions.
 import { CheckoutButton } from "@/components/marketing/checkout-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,17 +105,26 @@ export default async function PricingPage({ params }: Params) {
             <li>{t("proTools")}</li>
           </ul>
           <div className="mt-4 flex flex-col gap-2">
-            <CheckoutButton
-              plan="pro"
-              interval="yearly"
-              label={t("choosePro")}
-            />
-            <CheckoutButton
-              plan="pro"
-              interval="monthly"
-              variant="outline"
-              label={t("proMonthly")}
-            />
+            <Button asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "pro", cycle: "yearly" },
+                }}
+              >
+                {t("choosePro")}
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "pro", cycle: "monthly" },
+                }}
+              >
+                {t("proMonthly")}
+              </Link>
+            </Button>
           </div>
         </section>
 
@@ -151,17 +163,26 @@ export default async function PricingPage({ params }: Params) {
             <li>{t("priority")}</li>
           </ul>
           <div className="mt-4 flex flex-col gap-2">
-            <CheckoutButton
-              plan="unlimited"
-              interval="monthly"
-              label={t("tryFree", { days: TRIAL.days })}
-            />
-            <CheckoutButton
-              plan="unlimited"
-              interval="yearly"
-              variant="outline"
-              label={t("unlimitedYearly")}
-            />
+            <Button asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "unlimited", cycle: "monthly" },
+                }}
+              >
+                {t("tryFree", { days: TRIAL.days })}
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "unlimited", cycle: "yearly" },
+                }}
+              >
+                {t("unlimitedYearly")}
+              </Link>
+            </Button>
           </div>
           {/* Required before collecting payment details (§6.1). */}
           <p className="mt-3 text-xs" data-testid="trial-disclosure">

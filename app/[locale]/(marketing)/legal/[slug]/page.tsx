@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import {
+  getFormatter,
+  getTranslations,
+  setRequestLocale,
+} from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { TRIAL } from "@/lib/billing/plans";
@@ -7,6 +11,7 @@ import {
   docForSlug,
   LEGAL_DOCS,
   LEGAL_SLUGS,
+  TERMS_VERSION,
   type LegalDoc,
 } from "@/lib/i18n/legal";
 import { routing, type Locale } from "@/lib/i18n/routing";
@@ -101,7 +106,16 @@ export default async function LegalPage({ params }: Params) {
           </section>
         ))}
       </div>
-      <p className="text-muted-foreground mt-12 text-xs">{t("updated")}</p>
+      {/* The same constant that is written into every consent record, so
+          the date a customer read here is the version we can prove. */}
+      <p className="text-muted-foreground mt-12 text-xs">
+        {t("updated", {
+          date: (await getFormatter({ locale })).dateTime(
+            new Date(TERMS_VERSION),
+            { day: "numeric", month: "long", year: "numeric" },
+          ),
+        })}
+      </p>
     </main>
   );
 }

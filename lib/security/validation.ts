@@ -30,6 +30,29 @@ export const aiToolRequestSchema = z
 
 export type AiToolRequest = z.infer<typeof aiToolRequestSchema>;
 
+/**
+ * The body of POST /api/billing/subscribe.
+ *
+ * It carries no price and no trial flag. What the customer owes is read
+ * from `lib/billing/plans.ts` and from Stripe; letting a browser state the
+ * amount is the classic hole, and letting it ask for a trial is the
+ * incoherence this redesign exists to remove.
+ */
+export const subscribeRequestSchema = z.object({
+  plan: z.enum(["pro", "unlimited"]),
+  cycle: z.enum(["monthly", "yearly"]),
+  locale: z.enum(routing.locales),
+  /**
+   * The customer ticked the box saying they understand the subscription
+   * renews by itself. Checked again here: the button that enables on it
+   * lives in a browser, and the record written from this request is what
+   * answers a chargeback.
+   */
+  consent: z.literal(true),
+});
+
+export type SubscribeRequest = z.infer<typeof subscribeRequestSchema>;
+
 export function countWords(text: string): number {
   return text.split(/\s+/).filter(Boolean).length;
 }

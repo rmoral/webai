@@ -30,30 +30,47 @@ test("checkout without a session sends the visitor to login", async ({
   page,
 }) => {
   await page.goto("/precios");
-  await page.getByRole("button", { name: /Probar 3 días gratis/ }).click();
+  await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
   await page.waitForURL(/\/login/);
   await expect(page.getByText("Inicia sesión")).toBeVisible();
 });
 
-test("trial checkout through Stripe with a test card", async ({ page }) => {
+test("trial checkout with a test card, without leaving the site", async ({
+  page,
+}) => {
   test.skip(
     !process.env.STRIPE_SECRET_KEY || !process.env.E2E_STORAGE_STATE,
     "Needs Stripe test keys and a signed-in storage state",
   );
 
   await page.goto("/precios");
-  await page.getByRole("button", { name: /Probar 3 días gratis/ }).click();
+  await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
+  await page.waitForURL(/\/pago/);
 
-  // Stripe-hosted Checkout.
-  await page.waitForURL(/checkout\.stripe\.com/);
-  await page.getByPlaceholder("1234 1234 1234 1234").fill("4242424242424242");
-  await page.getByPlaceholder("MM / AA").fill("12/34");
-  await page.getByPlaceholder("CVC").fill("123");
-  await page.getByTestId("hosted-payment-submit-button").click();
+  // The card field is Stripe's iframe, on our page. The host never sees the
+  // number, and the customer never sees another domain.
+  const card = page
+    .frameLocator(
+      'iframe[title*="payment"], iframe[name^="__privateStripeFrame"]',
+    )
+    .first();
+  await card.getByPlaceholder("1234 1234 1234 1234").fill("4242424242424242");
+  await card.getByPlaceholder("MM / AA").fill("12/34");
+  await card.getByPlaceholder("CVC").fill("123");
 
-  // Back on the app; the webhook promotes the account to Ilimitado.
-  await page.waitForURL(/\/app\?checkout=success/, { timeout: 60_000 });
-  await expect(page.getByText(/Ilimitado/)).toBeVisible({ timeout: 30_000 });
+  // The button stays disabled until the auto-renewal box is ticked.
+  const pay = page.getByRole("button", { name: /Empezar la prueba/ });
+  await expect(pay).toBeDisabled();
+  await page.getByRole("checkbox").check();
+  await pay.click();
+
+  // The confirmation happens here, with the date of the first charge as the
+  // largest thing on it. Nothing was charged.
+  await expect(page.getByText("Prueba activa")).toBeVisible({
+    timeout: 60_000,
+  });
+  await expect(page.getByText("Primer cobro")).toBeVisible();
+  await expect(page.getByText("Hoy has pagado")).toBeVisible();
 });
 
 test("the home page offers the tool, and the upsell waits until it is earned", async ({
@@ -149,8 +166,11 @@ test("a Stripe configuration refusal names itself instead of reading as an outag
     }),
   );
 
+  // The top-up is the one thing still bought through a hosted session: it
+  // is a single payment, not a subscription, so it never went through the
+  // embedded flow.
   await page.goto("/precios");
-  await page.getByRole("button", { name: /Probar 3 días gratis/ }).click();
+  await page.getByRole("button", { name: "Comprar recarga" }).click();
 
   const error = page.getByText(/ref: tax_not_configured/);
   await expect(error).toBeVisible();
@@ -167,4 +187,71 @@ test("the history is behind a session and announces its plan gate", async ({
   await page.goto("/app/historial");
   await page.waitForURL(/\/login/);
   await expect(page.getByText("Inicia sesión")).toBeVisible();
+});
+
+// Phase 3 — payment moved inside the site. These cover the parts that do
+// not need a Stripe test account: where the buttons lead, and who is
+// allowed through. Confirming a card is exercised by the gated test above.
+
+test("the pricing plans lead to the embedded checkout, not off-site", async ({
+  page,
+}) => {
+  await page.goto("/precios");
+
+  for (const [name, query] of [
+    ["Probar 3 días gratis", "plan=unlimited&cycle=monthly"],
+    ["Ilimitado anual", "plan=unlimited&cycle=yearly"],
+    ["Elegir Pro anual", "plan=pro&cycle=yearly"],
+    ["Pro mensual", "plan=pro&cycle=monthly"],
+  ] as const) {
+    const link = page.getByRole("link", { name, exact: true });
+    await expect(link).toBeVisible();
+    // Same origin, and carrying the plan it was pressed on: the cycle is
+    // decided here and must not be re-opened at the card field.
+    const href = await link.getAttribute("href");
+    expect(href).toContain("/pago");
+    for (const part of query.split("&")) expect(href).toContain(part);
+  }
+});
+
+test("checkout refuses to load without an account to bill", async ({
+  page,
+}) => {
+  // Nobody can be charged without somewhere to attach the subscription, so
+  // the page sends them to sign in rather than rendering a card field that
+  // would fail on submit.
+  await page.goto("/pago?plan=unlimited&cycle=monthly");
+  await page.waitForURL(/\/login/);
+  await expect(page.getByText("Inicia sesión")).toBeVisible();
+});
+
+test("the paywall sends a signed-out reader to sign in, not to a card", async ({
+  page,
+}) => {
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: "quota_exceeded",
+        message: "Has agotado tus palabras de hoy.",
+        partialResult:
+          "Un resultado cualquiera, lo bastante largo para partirlo.",
+        visibleChars: 20,
+        usedToday: 300,
+        limitToday: 300,
+      }),
+    }),
+  );
+
+  await page.goto("/humanizador-de-texto-ia");
+  await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+  await page.getByRole("button", { name: "Humanizador" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole("button", { name: /Probar Ilimitado 3 días gratis/ })
+    .click();
+  await page.waitForURL(/\/login/);
 });

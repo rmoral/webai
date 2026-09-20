@@ -46,6 +46,15 @@ export const routing = defineRouting({
       en: "/pricing",
     },
 
+    // The second door to payment, for people arriving from pricing. The
+    // other door is the paywall, which pays in a modal over the editor and
+    // never comes here. Kept out of the sitemap and disallowed in robots:
+    // it is a step in a flow, not a page.
+    "/checkout": {
+      es: "/pago",
+      en: "/checkout",
+    },
+
     // One route, four documents. The slug itself is localised through
     // LEGAL_SLUGS in lib/i18n/legal.ts rather than through four folders.
     "/legal/[slug]": "/legal/[slug]",

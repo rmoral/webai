@@ -16,9 +16,24 @@ import { sendEmail } from "@/lib/email";
 import { isLocale, routing, type Locale } from "@/lib/i18n/routing";
 import { addTopupWords } from "@/lib/usage/quotas";
 
-// The seven events of study §3.4. Idempotency is enforced by inserting the
-// event id first; the mark is rolled back if the handler throws, so Stripe
-// retries a failed delivery instead of skipping it as a duplicate.
+// The events of study §3.4, plus setup_intent.succeeded. Idempotency is
+// enforced by inserting the event id first; the mark is rolled back if the
+// handler throws, so Stripe retries a failed delivery instead of skipping it
+// as a duplicate.
+//
+// Which event confirms a sale moved with the embedded payment flow. There is
+// no checkout session any more, so it can no longer be the thing that sends
+// the confirmation email -- and it could never have been, for a trial, since
+// a trial has no session and no invoice. The two moments that do exist in
+// both flows are:
+//
+//   setup_intent.succeeded   a card was saved: the trial is real and will be
+//                            able to convert.
+//   invoice.paid             money moved. Only the first invoice of a
+//                            subscription is a sale; the rest are renewals.
+//
+// Sending from those two, and from nowhere else, is what keeps a customer
+// who paid through either door from getting the email twice or not at all.
 
 function timestampToDate(seconds: number | null | undefined): Date | null {
   return seconds ? new Date(seconds * 1000) : null;
@@ -56,6 +71,9 @@ async function subscriptionFields(sub: Stripe.Subscription) {
     status: sub.status as typeof subscriptions.$inferInsert.status,
     currentPeriodStart: timestampToDate(item?.current_period_start),
     currentPeriodEnd: timestampToDate(item?.current_period_end),
+    // Read by the end-of-trial wall, which has to appear before the charge,
+    // and by the 24-hour reminder. Neither can call Stripe on the hot path.
+    trialEnd: timestampToDate(sub.trial_end),
     cancelAtPeriodEnd: sub.cancel_at_period_end ? 1 : 0,
     updatedAt: new Date(),
   };
@@ -205,15 +223,9 @@ export async function POST(request: NextRequest) {
           const sub = await getStripe().subscriptions.retrieve(
             session.subscription as string,
           );
+          // The email is sent by invoice.paid or setup_intent.succeeded,
+          // whichever applies; both fire for a hosted session too.
           await upsertSubscription(userId, sub);
-          if (email) {
-            const locale = localeOf(sub.metadata);
-            await sendEmail({
-              to: email,
-              subject: emailTranslator(locale)("welcomeSubject"),
-              react: WelcomeEmail({ appUrl, locale }),
-            });
-          }
         }
 
         // Mirrored for the Google Ads conversion (gclid wiring, sprint 4).
@@ -244,13 +256,44 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 3. Plan or status change: recompute entitlements.
+      // 3. The card was saved during a trial. Nothing is owed yet, so no
+      // invoice event will arrive -- this is the only confirmation that the
+      // trial will actually be able to convert, rather than cancelling
+      // itself for want of a payment method.
+      case "setup_intent.succeeded": {
+        const intent = event.data.object;
+        const customer = intent.customer;
+        if (!customer) break;
+        const subscription = await getStripe().subscriptions.list({
+          customer: typeof customer === "string" ? customer : customer.id,
+          status: "trialing",
+          limit: 1,
+        });
+        const sub = subscription.data[0];
+        if (!sub) break;
+        await applySubscription(sub);
+
+        const trialEmail = await customerEmail(
+          typeof customer === "string" ? customer : customer.id,
+        );
+        if (trialEmail) {
+          const locale = localeOf(sub.metadata);
+          await sendEmail({
+            to: trialEmail,
+            subject: emailTranslator(locale)("welcomeSubject"),
+            react: WelcomeEmail({ appUrl, locale }),
+          });
+        }
+        break;
+      }
+
+      // 4. Plan or status change: recompute entitlements.
       case "customer.subscription.updated": {
         await applySubscription(event.data.object);
         break;
       }
 
-      // 4. Cancelled: back to free. The date feeds the win-back campaign.
+      // 5. Cancelled: back to free. The date feeds the win-back campaign.
       case "customer.subscription.deleted": {
         const sub = event.data.object;
         await db
@@ -266,23 +309,43 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 5. Renewal paid: move the period forward. The monthly quota key is
+      // 6. Renewal paid: move the period forward. The monthly quota key is
       // derived from this date, so the allowance resets by itself.
       case "invoice.paid": {
         const invoice = event.data.object;
         const subscriptionId = invoice.lines?.data[0]?.subscription;
         if (!subscriptionId) break;
-        await applySubscription(
-          await getStripe().subscriptions.retrieve(
-            typeof subscriptionId === "string"
-              ? subscriptionId
-              : subscriptionId.id,
-          ),
+        const paidSub = await getStripe().subscriptions.retrieve(
+          typeof subscriptionId === "string"
+            ? subscriptionId
+            : subscriptionId.id,
         );
+        await applySubscription(paidSub);
+
+        // A renewal is not a sale, and a customer who gets "welcome" every
+        // month stops reading the ones that matter.
+        if (
+          invoice.billing_reason === "subscription_create" &&
+          invoice.customer
+        ) {
+          const buyer = await customerEmail(
+            typeof invoice.customer === "string"
+              ? invoice.customer
+              : invoice.customer.id,
+          );
+          if (buyer) {
+            const locale = localeOf(paidSub.metadata);
+            await sendEmail({
+              to: buyer,
+              subject: emailTranslator(locale)("welcomeSubject"),
+              react: WelcomeEmail({ appUrl, locale }),
+            });
+          }
+        }
         break;
       }
 
-      // 6. Payment failed: Stripe dunning retries and emails the customer.
+      // 7. Payment failed: Stripe dunning retries and emails the customer.
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const subscriptionId = invoice.lines?.data[0]?.subscription;
@@ -306,7 +369,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 7. Chargeback: drop to free and alert. Disputes are the metric that
+      // 8. Chargeback: drop to free and alert. Disputes are the metric that
       // can close the payment gateway (§4), so they page the owner.
       case "charge.dispute.created": {
         const dispute = event.data.object;
