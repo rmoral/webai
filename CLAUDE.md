@@ -37,7 +37,7 @@ Next.js 15 App Router + TypeScript estricto · Tailwind + shadcn/ui · Supabase 
 - Mínimo código: no crear abstracciones especulativas ni módulos "por si acaso"; cada archivo nuevo debe usarse en el mismo PR que lo crea. Preferir editar lo existente a añadir.
 - Una sola fuente de verdad: si un dato/límite/config existe, se importa; nunca se duplica.
 - Coste de computación: Server Components y páginas estáticas por defecto; mínimo JS en cliente; nada de polling — streaming o webhooks.
-- Coste de IA: prompt caching siempre en system prompts; Haiku para textos < 150 palabras; cachear resultados idénticos por hash del input; truncar/rechazar entradas fuera de límite ANTES de llamar a la API; registrar coste por petición en `usage_daily`.
+- Coste de IA: Haiku 4.5 para todas las herramientas de reescritura (el output domina la factura y es el modelo más barato); cachear resultados idénticos por hash del input; truncar/rechazar entradas fuera de límite ANTES de llamar a la API; registrar coste por petición en `usage_daily`. El prompt caching de los system prompts NO funciona con prompts de menos de 4.096 tokens en Haiku: ver la nota medida en `lib/ai/provider.ts` antes de intentar arreglarlo.
 
 ## Comandos
 

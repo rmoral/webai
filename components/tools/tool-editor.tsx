@@ -6,7 +6,14 @@ import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
 
+import {
+  QuotaPaywall,
+  paywallDismissed,
+  rememberPaywallDismissal,
+  type WithheldResult,
+} from "@/components/billing/paywall";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
+import { EditorInput, OverflowNotice } from "@/components/tools/overflow";
 import { DetectorResultView } from "@/components/tools/detector-result";
 import {
   DiffMarks,
@@ -67,6 +74,9 @@ export function ToolEditor({
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [upsell, setUpsell] = useState(false);
+  // Wall B. Set only when the server answered a refused request with the
+  // result anyway; otherwise the refusal falls back to the quota banner.
+  const [withheld, setWithheld] = useState<WithheldResult | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const tokenRef = useRef<string>("");
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -80,6 +90,7 @@ export function ToolEditor({
     setParts(null);
     setReport(null);
     setError(null);
+    setWithheld(null);
     setStatus("idle");
   }, [tool]);
 
@@ -98,7 +109,9 @@ export function ToolEditor({
   }, []);
 
   const words = countWords(input);
-  const paid = plan === "pro" || plan === "unlimited";
+  // Wall A. The ceiling is the plan's, never a number written here.
+  const ceiling = PLANS[plan].limits.maxWordsPerRequest;
+  const overflowed = words > ceiling;
   // The detector measures the text instead of rewriting it, so it answers
   // with JSON rather than a stream and renders its own result view.
   const measures = tool === "detect";
@@ -113,6 +126,7 @@ export function ToolEditor({
     setOutput("");
     setParts(null);
     setReport(null);
+    setWithheld(null);
     // Frozen so the diff compares against what was actually sent, even if
     // the user keeps typing while the answer streams in.
     const sent = input;
@@ -132,8 +146,16 @@ export function ToolEditor({
         const data = await res.json().catch(() => null);
         if (res.status === 429) {
           posthog?.capture("quota_hit", { tool });
-          posthog?.capture("paywall_shown", { tool });
-          setUpsell(true);
+          // The allowance is spent and the server produced the result
+          // anyway: wall B shows the beginning of it. When it did not --
+          // a paid plan out of monthly words, or the day's one preview
+          // already spent -- the banner says so without a teaser.
+          if (typeof data?.partialResult === "string") {
+            setWithheld(data as WithheldResult);
+          } else {
+            posthog?.capture("paywall_shown", { trigger: "quota", tool, plan });
+            setUpsell(true);
+          }
         }
         setError(data?.message ?? t("genericError"));
         setStatus("idle");
@@ -208,12 +230,14 @@ export function ToolEditor({
 
         <div className="grid md:grid-cols-2 md:divide-x">
           <div className="flex flex-col">
-            <textarea
+            <EditorInput
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={setInput}
               placeholder={t("placeholder")}
-              aria-label={t("inputLabel")}
-              className="min-h-44 w-full resize-y bg-transparent p-5 text-base outline-none md:min-h-64 md:text-sm"
+              label={t("inputLabel")}
+              ceiling={ceiling}
+              overflowed={overflowed}
+              className="min-h-44 md:min-h-64"
             />
             <p className="text-muted-foreground border-t px-5 py-2 text-xs">
               {t("words", { words })}
@@ -256,6 +280,8 @@ export function ToolEditor({
           </div>
         </div>
 
+        {overflowed && <OverflowNotice ceiling={ceiling} submitted={words} />}
+
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
             onClick={run}
@@ -286,7 +312,7 @@ export function ToolEditor({
         </p>
       )}
 
-      {upsell ? (
+      {upsell && (
         <UpsellBanner
           tone="quota"
           title={t("quotaTitle")}
@@ -298,20 +324,18 @@ export function ToolEditor({
         >
           {t("quotaBody", { days: TRIAL.days })}
         </UpsellBanner>
-      ) : (
-        !paid &&
-        included && (
-          <UpsellBanner
-            title={t("longerTitle")}
-            action={
-              <Button size="sm" variant="soft" asChild>
-                <Link href="/pricing">{t("seePlans")}</Link>
-              </Button>
-            }
-          >
-            {t("longerBody")}
-          </UpsellBanner>
-        )
+      )}
+
+      {withheld && !paywallDismissed("quota") && (
+        <QuotaPaywall
+          tool={tool}
+          plan={plan}
+          result={withheld}
+          onDismiss={() => {
+            rememberPaywallDismissal("quota");
+            setWithheld(null);
+          }}
+        />
       )}
     </div>
   );

@@ -8,13 +8,21 @@ import type { ToolId } from "@/lib/ai/tools";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/server";
 import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, type Plan } from "@/lib/billing/plans";
 import { saveDocument } from "@/lib/documents/store";
 import { hashIp } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
-import { aiToolRequestSchema, countWords } from "@/lib/security/validation";
+import {
+  aiToolRequestSchema,
+  countWords,
+  truncateToWords,
+} from "@/lib/security/validation";
 import { routing, splitLocale } from "@/lib/i18n/routing";
-import { checkBurstLimit, consumeWords } from "@/lib/usage/quotas";
+import {
+  checkBurstLimit,
+  claimOverQuotaPreview,
+  consumeWords,
+} from "@/lib/usage/quotas";
 import { recordUsage } from "@/lib/usage/tracking";
 
 export const maxDuration = 120;
@@ -47,6 +55,88 @@ function localeFromReferer(request: NextRequest) {
  * mal" and the cause is invisible from both ends. Answer with JSON and
  * report it, so a misconfiguration is diagnosable instead of silent.
  */
+/**
+ * Characters of the result shown sharp in wall B. The rest is blurred and
+ * hidden from assistive technology. See components/billing/paywall.tsx.
+ */
+const VISIBLE_CHARS = 210;
+
+interface Withheld {
+  partialResult: string;
+  visibleChars: number;
+  usedToday: number;
+  limitToday: number;
+}
+
+/**
+ * Wall B: the allowance is spent, so the request is refused -- but the
+ * result is produced anyway and returned withheld, the first 210 characters
+ * legible and the remainder blurred behind the offer. Showing someone the
+ * beginning of their own text is the whole mechanism; a placeholder
+ * converts nobody.
+ *
+ * It is bounded on three sides, because this runs the model for a request
+ * that was already refused:
+ *
+ *   - daily tiers only. A paid plan that exhausts its month has a top-up to
+ *     buy and no reason to be shown a teaser of what it already paid for.
+ *   - rewrites only. The detector costs nothing to run and answers with a
+ *     band, which is not a thing that can be shown half-blurred.
+ *   - once per subject per day, claimed atomically, so the giveaway is a
+ *     single generation and not an open tap (see claimOverQuotaPreview).
+ *
+ * The withheld half does travel to the browser and is readable from the
+ * developer tools. That is deliberate and it is the user's own text coming
+ * back to them -- not somebody else's, and nothing that is stored: the free
+ * tiers keep no document. Holding it server-side instead would mean
+ * persisting a free user's text, which CLAUDE.md forbids outright.
+ */
+async function withheldResult(args: {
+  plan: Plan;
+  prompt: ReturnType<typeof promptFor>;
+  input: string;
+  mode: string | undefined;
+  subject: string;
+  userId: string | null;
+  tool: string;
+  wordsIn: number;
+  quota: { remaining: number | null; limit: number | null };
+}): Promise<Withheld | null> {
+  const { plan, prompt, quota } = args;
+  if (plan.limits.wordsPerDay === null || !prompt) return null;
+  if (quota.limit === null) return null;
+  if (!(await claimOverQuotaPreview(args.subject))) return null;
+
+  const message = await streamCompletion({
+    system: prompt.system,
+    user: prompt.user(args.input, args.mode),
+    wordCount: args.wordsIn,
+  }).finalMessage();
+
+  const output = message.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+
+  after(() =>
+    recordUsage({
+      subjectKey: args.subject,
+      userId: args.userId,
+      tool: args.tool as ToolId,
+      wordsIn: args.wordsIn,
+      wordsOut: countWords(output),
+      costCents: estimateCostCents(message.model, message.usage),
+    }).catch(() => {}),
+  );
+
+  return {
+    partialResult: output,
+    visibleChars: VISIBLE_CHARS,
+    usedToday: quota.limit - (quota.remaining ?? 0),
+    limitToday: quota.limit,
+  };
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ tool: string }> },
@@ -129,25 +219,51 @@ async function handle(
   }
   const plan = subscriber.plan;
 
-  const wordsIn = countWords(text);
-  const entitlement = checkEntitlement(plan, tool, wordsIn);
-  if (!entitlement.allowed) {
+  const submitted = countWords(text);
+  const entitlement = checkEntitlement(plan, tool, submitted);
+
+  // An over-long paste is no longer refused. It is the commonest way a
+  // visitor meets the ceiling, and a 413 sends them away holding nothing;
+  // wall A processes the first `maxWordsPerRequest` words and says so, in
+  // the editor, before the button is pressed. CLAUDE.md asks for input
+  // outside the limit to be truncated before the API call -- this is that
+  // truncation, and the cut is the only thing the model ever sees.
+  if (!entitlement.allowed && entitlement.reason !== "request_too_long") {
     const messages: Record<string, string> = {
       unknown_tool: t("unknown_tool"),
       tool_not_in_plan: t("tool_not_in_plan", { tool: names(`${tool}.name`) }),
-      request_too_long: t("request_too_long", {
-        words: plan.limits.maxWordsPerRequest,
-      }),
     };
     return error(
-      entitlement.reason === "request_too_long" ? 413 : 403,
+      403,
       entitlement.reason ?? "forbidden",
       messages[entitlement.reason ?? ""] ?? t("forbidden"),
     );
   }
 
+  const ceiling = plan.limits.maxWordsPerRequest;
+  const overflowed = submitted > ceiling;
+  const input = overflowed ? truncateToWords(text, ceiling) : text;
+  const wordsIn = overflowed ? ceiling : submitted;
+
   const quota = await consumeWords(subject, subscriber, wordsIn);
   if (!quota.allowed) {
+    const withheld = await withheldResult({
+      plan,
+      prompt,
+      input,
+      mode,
+      subject,
+      userId: user?.id ?? null,
+      tool,
+      wordsIn,
+      quota,
+    });
+    if (withheld) {
+      return NextResponse.json(
+        { ...withheld, error: "quota_exceeded", message: t("quota_daily") },
+        { status: 429, headers: { "cache-control": "no-store" } },
+      );
+    }
     return error(
       429,
       "quota_exceeded",
@@ -158,7 +274,7 @@ async function handle(
   if (tool === "detect") {
     // Measured against the anchors of the language being read. See the note
     // at the top of lib/ai/detector/pipeline.ts.
-    const analysis = analyze(text, locale);
+    const analysis = analyze(input, locale);
     // The per-window breakdown is the paid half of the detector
     // (PlanLimits.sentenceHighlight): it is what locates a generated block
     // inside a written text. Everyone gets the band and the evidence.
@@ -188,7 +304,7 @@ async function handle(
 
   const messageStream = streamCompletion({
     system: prompt!.system,
-    user: prompt!.user(text, mode),
+    user: prompt!.user(input, mode),
     wordCount: wordsIn,
   });
 
@@ -230,7 +346,7 @@ async function handle(
           plan,
           tool: tool as ToolId,
           mode,
-          inputText: text,
+          inputText: input,
           outputText: outText,
         });
       }
