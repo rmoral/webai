@@ -118,3 +118,21 @@ export function splitLocale(pathname: string): {
   }
   return { locale: routing.defaultLocale, rest: pathname };
 }
+
+/**
+ * The localised path for a route, without going through next-intl's
+ * navigation helpers.
+ *
+ * Those helpers are built on React client hooks, so importing them drags
+ * `next/navigation` into anything that renders outside a request -- an
+ * email, a cron, a test. The routing table above is the source of truth
+ * either way; this only reads it and applies the `as-needed` prefix rule.
+ *
+ * Use `Link` and `getPathname` from lib/i18n/navigation inside the app.
+ * This is for the places that have no request to read.
+ */
+export function pathFor(href: keyof typeof routing.pathnames, locale: Locale) {
+  const entry = routing.pathnames[href];
+  const path = typeof entry === "string" ? entry : entry[locale];
+  return locale === routing.defaultLocale ? path : `/${locale}${path}`;
+}

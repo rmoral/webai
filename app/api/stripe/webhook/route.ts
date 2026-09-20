@@ -3,20 +3,23 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
-import { emailTranslator } from "@/emails/translator";
-import { TrialEndingEmail } from "@/emails/trial-ending";
-import { WelcomeEmail } from "@/emails/welcome";
+import { sendSubscriptionConfirmation } from "@/lib/billing/notify";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
 import { TOPUP } from "@/lib/billing/plans";
 import { getStripe } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events, stripeEvents, subscriptions, users } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email";
 import { isLocale, routing, type Locale } from "@/lib/i18n/routing";
 import { addTopupWords } from "@/lib/usage/quotas";
 
-// The events of study §3.4, plus setup_intent.succeeded. Idempotency is
+// The events of study §3.4, less customer.subscription.trial_will_end and
+// plus setup_intent.succeeded.
+//
+// trial_will_end fires three days before a trial ends, which on a
+// three-day trial is the moment it is created: it was sending "your trial
+// ends tomorrow" on day zero. The 24-hour warning is a cron of ours
+// (app/api/cron/trial-reminder), which is the only way to get it right. Idempotency is
 // enforced by inserting the event id first; the mark is rolled back if the
 // handler throws, so Stripe retries a failed delivery instead of skipping it
 // as a duplicate.
@@ -241,22 +244,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 2. Reminder 24 h before the trial converts (required by §6.5).
-      case "customer.subscription.trial_will_end": {
-        const sub = event.data.object;
-        const email = await customerEmail(sub.customer as string);
-        if (email) {
-          const locale = localeOf(sub.metadata);
-          await sendEmail({
-            to: email,
-            subject: emailTranslator(locale)("trialSubject"),
-            react: TrialEndingEmail({ appUrl, locale }),
-          });
-        }
-        break;
-      }
-
-      // 3. The card was saved during a trial. Nothing is owed yet, so no
+      // 2. The card was saved during a trial. Nothing is owed yet, so no
       // invoice event will arrive -- this is the only confirmation that the
       // trial will actually be able to convert, rather than cancelling
       // itself for want of a payment method.
@@ -277,23 +265,24 @@ export async function POST(request: NextRequest) {
           typeof customer === "string" ? customer : customer.id,
         );
         if (trialEmail) {
-          const locale = localeOf(sub.metadata);
-          await sendEmail({
+          await sendSubscriptionConfirmation({
+            subscription: sub,
             to: trialEmail,
-            subject: emailTranslator(locale)("welcomeSubject"),
-            react: WelcomeEmail({ appUrl, locale }),
+            locale: localeOf(sub.metadata),
+            appUrl,
+            paidTodayCents: 0,
           });
         }
         break;
       }
 
-      // 4. Plan or status change: recompute entitlements.
+      // 3. Plan or status change: recompute entitlements.
       case "customer.subscription.updated": {
         await applySubscription(event.data.object);
         break;
       }
 
-      // 5. Cancelled: back to free. The date feeds the win-back campaign.
+      // 4. Cancelled: back to free. The date feeds the win-back campaign.
       case "customer.subscription.deleted": {
         const sub = event.data.object;
         await db
@@ -309,7 +298,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 6. Renewal paid: move the period forward. The monthly quota key is
+      // 5. Renewal paid: move the period forward. The monthly quota key is
       // derived from this date, so the allowance resets by itself.
       case "invoice.paid": {
         const invoice = event.data.object;
@@ -334,18 +323,19 @@ export async function POST(request: NextRequest) {
               : invoice.customer.id,
           );
           if (buyer) {
-            const locale = localeOf(paidSub.metadata);
-            await sendEmail({
+            await sendSubscriptionConfirmation({
+              subscription: paidSub,
               to: buyer,
-              subject: emailTranslator(locale)("welcomeSubject"),
-              react: WelcomeEmail({ appUrl, locale }),
+              locale: localeOf(paidSub.metadata),
+              appUrl,
+              paidTodayCents: invoice.amount_paid ?? 0,
             });
           }
         }
         break;
       }
 
-      // 7. Payment failed: Stripe dunning retries and emails the customer.
+      // 6. Payment failed: Stripe dunning retries and emails the customer.
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const subscriptionId = invoice.lines?.data[0]?.subscription;
@@ -369,7 +359,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 8. Chargeback: drop to free and alert. Disputes are the metric that
+      // 7. Chargeback: drop to free and alert. Disputes are the metric that
       // can close the payment gateway (§4), so they page the owner.
       case "charge.dispute.created": {
         const dispute = event.data.object;
