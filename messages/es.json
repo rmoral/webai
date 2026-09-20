@@ -343,9 +343,7 @@
     "analysisHere": "El análisis aparecerá aquí",
     "writing": "Escribiendo…",
     "analyzing": "Analizando…",
-    "paywall": "{tool} está en los planes de pago.",
     "paywallCta": "Requiere un plan de pago",
-    "freeNote": "Puedes probar gratis el humanizador y el detector de IA sin crear cuenta.",
     "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
     "processing": "Procesando…",
     "copyResult": "Copiar resultado",
@@ -369,7 +367,29 @@
     "tryUnlimited": "Probar Ilimitado {days} días gratis",
     "createAccount": "Crear cuenta gratis — {words} palabras al día",
     "seePro": "Ver Pro — {price}/mes",
-    "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento"
+    "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento",
+    "paidPlanBadge": "Plan de pago",
+    "toolTitle": "El {tool} está en los planes de pago",
+    "toolBody": "El humanizador y el detector siguen siendo gratis, con o sin cuenta. El resto de herramientas entran con Pro o Ilimitado.",
+    "historyLockTitle": "El historial es de los planes de pago",
+    "historyLockBody": "Pro guarda tus textos cifrados y te deja volver a cualquier resultado. En los planes gratuitos no se almacena el texto, solo el recuento.",
+    "unlockWithPro": "Desbloquear con Pro",
+    "close": "Cerrar",
+    "breakdownLock": "Ver el desglose por pasajes"
+  },
+  "trialEnd": {
+    "badge": "Tu prueba termina hoy",
+    "title": "Elige cómo sigues. Hoy todavía no se te ha cobrado nada.",
+    "body": "Has usado Ilimitado durante {days} días. Puedes continuar, bajar a Pro o cancelar: las tres opciones están aquí y ninguna requiere escribirnos.",
+    "perMonth": "/mes",
+    "unlimitedBody": "{month} palabras al mes, {request} por petición y prioridad de cola.",
+    "proBody": "{month} palabras al mes, {request} por petición. Todas las herramientas e historial.",
+    "continueUnlimited": "Continuar en Ilimitado",
+    "switchToPro": "Cambiar a Pro",
+    "cancel": "Cancelar mi suscripción",
+    "working": "Un momento…",
+    "failed": "No hemos podido aplicar el cambio. Vuelve a intentarlo en unos minutos.",
+    "disclosure": "Si no eliges nada, hoy se te cobrarán {unlimited} y la suscripción de Ilimitado seguirá activa mes a mes. Cambiar a Pro aplica el prorrateo automáticamente. Cancelar lleva dos clics desde tu cuenta y puedes hacerlo ahora mismo."
   },
   "detector": {
     "bands": {
@@ -399,7 +419,6 @@
     "windowsTitle": "Dónde se concentran los indicios",
     "sentenceRange": "Frases {from}–{to}",
     "gated": "El desglose por pasajes está disponible en los planes de pago.",
-    "gatedCta": "Ver planes",
     "disclaimer": "Esto mide patrones de estilo, no autoría. Un texto humano muy formal puede dar indicios y un texto generado con buen estilo puede no dar ninguno. Ningún detector, el nuestro incluido, sirve como prueba para acusar a nadie."
   },
   "errors": {

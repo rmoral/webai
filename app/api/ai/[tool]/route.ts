@@ -208,6 +208,7 @@ async function handle(
     topupWords: 0,
     periodStart: null as Date | null,
     subscriptionId: null as string | null,
+    trialEnd: null as Date | null,
   };
   if (user) {
     try {

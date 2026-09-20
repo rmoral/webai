@@ -5,7 +5,8 @@ import { useFormatter, useTranslations } from "next-intl";
 import { asRaw, splitSentences } from "@/lib/ai/detector/segment";
 import type { Band, DetectorAnalysis } from "@/lib/ai/detector/types";
 import { RELIABILITY } from "@/lib/ai/detector/weights";
-import { Link } from "@/lib/i18n/navigation";
+import { FeatureLock } from "@/components/billing/paywall";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 // The finding is a band and a list of what was measured. There is no number
@@ -83,14 +84,17 @@ function Evidence({ result }: { result: DetectorAnalysis }) {
 export function DetectorResultView({
   result,
   text,
-  canSeeSentences,
+  plan,
 }: {
   result: DetectorAnalysis;
   /** The text that was analysed, for locating the windows. */
   text: string;
-  canSeeSentences: boolean;
+  /** Decides the passage breakdown, and names the wall when it is locked. */
+  plan: PlanId;
 }) {
+  const canSeeSentences = PLANS[plan].limits.sentenceHighlight;
   const t = useTranslations("detector");
+  const lock = useTranslations("paywall");
   const format = useFormatter();
 
   if (result.band === "gris") {
@@ -166,12 +170,11 @@ export function DetectorResultView({
       {canSeeSentences ? (
         <WindowMap result={result} text={text} />
       ) : (
-        <p className="text-muted-foreground text-xs">
-          {t("gated")}{" "}
-          <Link href="/pricing" className="underline">
-            {t("gatedCta")}
-          </Link>
-        </p>
+        <FeatureLock
+          feature="breakdown"
+          plan={plan}
+          label={lock("breakdownLock")}
+        />
       )}
 
       {/* Non-negotiable per the design system: the result always reads as

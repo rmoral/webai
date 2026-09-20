@@ -75,3 +75,17 @@ export function truncateToWords(text: string, max: number): string {
     if (++seen === max) return text.slice(0, match.index + match[0].length);
   }
 }
+
+/**
+ * The body of POST /api/billing/manage — the two things the end-of-trial
+ * wall can do to a live subscription. Both are narrowing: switching down to
+ * Pro, or stopping. Neither can raise what anyone is charged, which is why
+ * they are safe to offer on a screen with no way out.
+ */
+export const manageSubscriptionSchema = z.object({
+  action: z.enum(["switch_to_pro", "cancel"]),
+});
+
+export type ManageSubscriptionRequest = z.infer<
+  typeof manageSubscriptionSchema
+>;

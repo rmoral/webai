@@ -169,3 +169,104 @@ test("closes on Escape and does not come back in the same session", async ({
   await page.getByRole("button", { name: "Humanizador" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+// Wall C — a paid tool opened by somebody who cannot run it.
+
+test("names what is still free before it names the price", async ({ page }) => {
+  await page.goto("/parafrasear-texto");
+
+  // Not on arrival: these pages are the SEO asset and a modal over content
+  // reached from a search result is an intrusive interstitial.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.getByLabel("Texto de entrada").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+
+  await expect(dialog.getByText("Plan de pago")).toBeVisible();
+  await expect(
+    dialog.getByText("El parafraseador está en los planes de pago"),
+  ).toBeVisible();
+  // The line that keeps this an offer instead of a shut door.
+  await expect(
+    dialog.getByText(/El humanizador y el detector siguen siendo gratis/),
+  ).toBeVisible();
+  // A CTA that starts a trial carries the disclosure, wherever it appears.
+  await expect(dialog.getByText(/Hoy no se te cobra nada/)).toBeVisible();
+});
+
+test("leaves the tool page usable after the tool wall is closed", async ({
+  page,
+}) => {
+  await page.goto("/parafrasear-texto");
+  await page.getByLabel("Texto de entrada").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  // Dismissing must not leave a blank page: the landing copy and the editor
+  // are still there, and the button still says why it cannot run.
+  await expect(page.getByLabel("Texto de entrada")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Requiere un plan de pago" }),
+  ).toBeVisible();
+
+  // Same session, same trigger: it does not come back.
+  await page.reload();
+  await page.getByLabel("Texto de entrada").click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+// Wall D — a locked feature, answered where it sits.
+
+test("answers the locked breakdown in place, with no charge behind it", async ({
+  page,
+}) => {
+  await page.route("**/api/ai/detect", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        version: "2.0.0",
+        phase: 1,
+        locale: "es",
+        words: 240,
+        sentenceCount: 12,
+        paragraphCount: 3,
+        band: "verde",
+        score: 12,
+        reliable: true,
+        signals: [],
+        windows: [],
+      }),
+    }),
+  );
+
+  await page.goto("/detector-de-ia");
+  await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+  await page.getByRole("button", { name: "Detector de IA" }).click();
+
+  const lock = page.getByRole("button", {
+    name: "Ver el desglose por pasajes",
+  });
+  await expect(lock).toBeVisible();
+  await lock.click();
+
+  const popover = page.getByRole("dialog");
+  await expect(popover).toBeVisible();
+  await expect(
+    popover.getByText(
+      "El desglose por pasajes está disponible en los planes de pago.",
+    ),
+  ).toBeVisible();
+  await expect(
+    popover.getByRole("link", { name: "Desbloquear con Pro" }),
+  ).toBeVisible();
+
+  // The lightest wall in the set: its only action goes to pricing and
+  // starts no charge, so it carries no disclosure.
+  await expect(popover.getByText(/Hoy no se te cobra nada/)).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});

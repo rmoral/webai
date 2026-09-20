@@ -8,6 +8,7 @@ import type { Change } from "diff";
 
 import {
   QuotaPaywall,
+  ToolPaywall,
   paywallDismissed,
   rememberPaywallDismissal,
   type WithheldResult,
@@ -77,6 +78,12 @@ export function ToolEditor({
   // Wall B. Set only when the server answered a refused request with the
   // result anyway; otherwise the refusal falls back to the quota banner.
   const [withheld, setWithheld] = useState<WithheldResult | null>(null);
+  // Wall C, dismissed. Read from session storage on mount rather than
+  // during render, because sessionStorage does not exist on the server and
+  // reading it in the body would make the two renders disagree.
+  const [toolWallDismissed, setToolWallDismissed] = useState(true);
+  // Whether they have reached for the tool yet. See wall C below.
+  const [wantedTool, setWantedTool] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const tokenRef = useRef<string>("");
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -92,6 +99,11 @@ export function ToolEditor({
     setError(null);
     setWithheld(null);
     setStatus("idle");
+  }, [tool]);
+
+  useEffect(() => {
+    setToolWallDismissed(paywallDismissed("tool"));
+    setWantedTool(false);
   }, [tool]);
 
   useEffect(() => {
@@ -204,17 +216,24 @@ export function ToolEditor({
         />
       )}
 
-      {!included && (
-        <UpsellBanner
-          title={t("paywall", { tool: names(`${tool}.name`) })}
-          action={
-            <Button size="sm" asChild>
-              <Link href="/pricing">{t("seePlans")}</Link>
-            </Button>
-          }
-        >
-          {t("freeNote")}
-        </UpsellBanner>
+      {/* Wall C. It opens on the first attempt to use the tool -- a click
+          into the box, or the button -- and not on arrival.
+          
+          The design says "when a free user opens the paraphraser", but
+          these pages are the SEO asset: a modal covering the content of a
+          page someone reached from a search result is an intrusive
+          interstitial, which Google demotes on mobile. Waiting for the
+          first interaction keeps the rule that the wall answers an action
+          while leaving the landing readable and indexable. */}
+      {!included && wantedTool && !toolWallDismissed && (
+        <ToolPaywall
+          tool={tool}
+          plan={plan}
+          onDismiss={() => {
+            rememberPaywallDismissal("tool");
+            setToolWallDismissed(true);
+          }}
+        />
       )}
 
       <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
@@ -233,6 +252,7 @@ export function ToolEditor({
             <EditorInput
               value={input}
               onChange={setInput}
+              onReach={included ? undefined : () => setWantedTool(true)}
               placeholder={t("placeholder")}
               label={t("inputLabel")}
               ceiling={ceiling}
@@ -250,7 +270,7 @@ export function ToolEditor({
               <DetectorResultView
                 result={report.analysis}
                 text={report.text}
-                canSeeSentences={PLANS[plan].limits.sentenceHighlight}
+                plan={plan}
               />
             ) : (
               <div className="flex-1 p-5 text-base whitespace-pre-wrap md:text-sm">
@@ -284,8 +304,8 @@ export function ToolEditor({
 
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
-            onClick={run}
-            disabled={!included || status === "loading" || words === 0}
+            onClick={included ? run : () => setWantedTool(true)}
+            disabled={included && (status === "loading" || words === 0)}
             size="lg"
           >
             {!included

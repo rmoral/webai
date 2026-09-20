@@ -343,9 +343,7 @@
     "analysisHere": "The analysis will appear here",
     "writing": "Writing…",
     "analyzing": "Analysing…",
-    "paywall": "{tool} is on the paid plans.",
     "paywallCta": "Requires a paid plan",
-    "freeNote": "You can try the humanizer and the AI detector free, without an account.",
     "genericError": "Something went wrong. Try again.",
     "processing": "Working…",
     "copyResult": "Copy result",
@@ -369,7 +367,29 @@
     "tryUnlimited": "Try Unlimited free for {days} days",
     "createAccount": "Create a free account — {words} words a day",
     "seePro": "See Pro — {price}/month",
-    "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count"
+    "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count",
+    "paidPlanBadge": "Paid plan",
+    "toolTitle": "The {tool} is on the paid plans",
+    "toolBody": "The humanizer and the detector stay free, with or without an account. The other tools come with Pro or Unlimited.",
+    "historyLockTitle": "History is on the paid plans",
+    "historyLockBody": "Pro keeps your texts encrypted and lets you go back to any result. On the free plans no text is stored, only the word count.",
+    "unlockWithPro": "Unlock with Pro",
+    "close": "Close",
+    "breakdownLock": "See the passage breakdown"
+  },
+  "trialEnd": {
+    "badge": "Your trial ends today",
+    "title": "Choose how you carry on. Nothing has been charged yet.",
+    "body": "You have had Unlimited for {days} days. You can continue, step down to Pro, or cancel — all three are here and none of them needs an email to us.",
+    "perMonth": "/month",
+    "unlimitedBody": "{month} words a month, {request} per request, and queue priority.",
+    "proBody": "{month} words a month, {request} per request. Every tool, and history.",
+    "continueUnlimited": "Stay on Unlimited",
+    "switchToPro": "Switch to Pro",
+    "cancel": "Cancel my subscription",
+    "working": "One moment…",
+    "failed": "We could not apply the change. Try again in a few minutes.",
+    "disclosure": "If you choose nothing, you will be charged {unlimited} today and the Unlimited subscription carries on month to month. Switching to Pro applies the proration by itself. Cancelling takes two clicks from your account, and you can do it right now."
   },
   "detector": {
     "bands": {
@@ -399,7 +419,6 @@
     "windowsTitle": "Where the indications concentrate",
     "sentenceRange": "Sentences {from}–{to}",
     "gated": "The passage breakdown is available on the paid plans.",
-    "gatedCta": "See plans",
     "disclaimer": "This measures patterns of style, not authorship. Careful formal writing by a person can show indications, and well-written generated text may show none. No detector, ours included, works as evidence to accuse anyone."
   },
   "errors": {

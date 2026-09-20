@@ -7,6 +7,7 @@ import { usePostHog } from "posthog-js/react";
 import { CheckoutPanel } from "@/components/billing/checkout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { ToolId } from "@/lib/ai/tools";
 import { trialDisclosure } from "@/lib/billing/disclosure";
 import {
   PLANS,
@@ -363,5 +364,189 @@ export function QuotaPaywall({
         </>
       )}
     </PaywallDialog>
+  );
+}
+
+/**
+ * Wall C — a paid tool, opened by somebody on a free plan.
+ *
+ * Narrow, over a light veil, and it opens by saying what is still free.
+ * A wall that only lists what is locked reads as a shut door; naming the
+ * two tools that stay free, with or without an account, is what keeps it
+ * an offer.
+ */
+export function ToolPaywall({
+  tool,
+  plan,
+  onDismiss,
+}: {
+  tool: ToolId;
+  plan: PlanId;
+  onDismiss: () => void;
+}) {
+  const t = useTranslations("paywall");
+  const names = useTranslations("tools");
+  const locale = useLocale() as Locale;
+  const posthog = usePostHog();
+  const router = useRouter();
+  const accountState = accountStateOf(plan);
+  const context = {
+    trigger: "tool" as const,
+    plan,
+    accountState,
+    toolId: tool,
+  };
+
+  return (
+    <PaywallDialog
+      context={context}
+      labelledBy="paywall-tool-title"
+      width="27rem"
+      onDismiss={() => {
+        posthog?.capture("paywall_dismissed", context);
+        onDismiss();
+      }}
+    >
+      <Badge variant="brand">{t("paidPlanBadge")}</Badge>
+
+      <h2 id="paywall-tool-title" className="mt-3 text-lg font-semibold">
+        {t("toolTitle", {
+          tool: names(`${tool}.name`).toLocaleLowerCase(locale),
+        })}
+      </h2>
+      <p className="text-muted-foreground mt-2 text-sm leading-normal">
+        {t("toolBody")}
+      </p>
+
+      <div className="mt-5 flex flex-col gap-2">
+        <Button
+          size="lg"
+          onClick={() => {
+            posthog?.capture("paywall_primary_clicked", context);
+            router.push({
+              pathname: accountState === "anonymous" ? "/login" : "/checkout",
+              query:
+                accountState === "anonymous"
+                  ? { next: "/pricing" }
+                  : { plan: "unlimited", cycle: "monthly" },
+            });
+          }}
+        >
+          {t("tryUnlimited", { days: TRIAL.days })}
+        </Button>
+        <Button variant="outline" asChild>
+          <Link
+            href="/pricing"
+            onClick={() =>
+              posthog?.capture("paywall_secondary_clicked", context)
+            }
+          >
+            {t("seePlans")}
+          </Link>
+        </Button>
+      </div>
+
+      <TrialDisclosure className="mt-4" />
+    </PaywallDialog>
+  );
+}
+
+/**
+ * Wall D — a locked feature, in place.
+ *
+ * A popover anchored to the lock rather than a modal: this is the lightest
+ * wall in the set and the reader should not have to leave the result they
+ * are looking at to read it. No disclosure, because the only action here
+ * goes to the pricing page and starts no charge. No trial either: the
+ * natural step up from one locked feature is Pro, not the top plan.
+ */
+export function FeatureLock({
+  feature,
+  plan,
+  label,
+}: {
+  feature: "history" | "breakdown";
+  plan: PlanId;
+  /** What the lock itself says, inline where the feature would be. */
+  label: string;
+}) {
+  const t = useTranslations("paywall");
+  const detector = useTranslations("detector");
+  const posthog = usePostHog();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const title =
+    feature === "history" ? t("historyLockTitle") : detector("gated");
+  const context = {
+    trigger: "feature" as const,
+    plan,
+    accountState: accountStateOf(plan),
+    toolId: feature,
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    posthog?.capture("paywall_shown", context);
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    function onClick(event: MouseEvent) {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((was) => !was)}
+        aria-expanded={open}
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-brand/30 rounded text-xs underline underline-offset-2 focus-visible:ring-[3px] focus-visible:outline-none"
+      >
+        {label}
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label={title}
+          // Anchored to the lock on a wide screen; pinned to the margins on
+          // a narrow one, where 19rem of fixed width overflows the viewport.
+          className="bg-card absolute z-40 mt-2 w-[19rem] max-w-[calc(100vw-2rem)] rounded-xl border p-4 shadow-lg max-[420px]:fixed max-[420px]:inset-x-4 max-[420px]:w-auto"
+        >
+          <p className="text-sm font-semibold">{title}</p>
+          {/* The history gate has a second line because the privacy nuance
+              matters there: free plans keep the count, not the text. The
+              breakdown says everything it needs in one. */}
+          {feature === "history" && (
+            <p className="text-muted-foreground mt-2 text-sm leading-normal">
+              {t("historyLockBody")}
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" asChild>
+              <Link
+                href="/pricing"
+                onClick={() =>
+                  posthog?.capture("paywall_primary_clicked", context)
+                }
+              >
+                {t("unlockWithPro")}
+              </Link>
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+              {t("close")}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

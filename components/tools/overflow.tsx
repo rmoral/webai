@@ -40,6 +40,7 @@ export function EditorInput({
   ceiling,
   overflowed,
   className,
+  onReach,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -48,6 +49,8 @@ export function EditorInput({
   ceiling: number;
   overflowed: boolean;
   className?: string;
+  /** Called the first time the box is reached for, for wall C. */
+  onReach?: () => void;
 }) {
   const mirror = useRef<HTMLDivElement>(null);
 
@@ -72,6 +75,7 @@ export function EditorInput({
       <textarea
         value={value}
         onChange={handleChange}
+        onFocus={onReach}
         onScroll={(event) => {
           if (mirror.current) {
             mirror.current.scrollTop = event.currentTarget.scrollTop;
