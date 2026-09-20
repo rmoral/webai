@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { typeInto } from "./helpers";
+
 // The detector runs entirely on our own server with no model call, so unlike
 // the other tools this whole flow is exercisable in CI without any API key.
 
@@ -74,7 +76,7 @@ hacerlo con menos confianza de la que suele exhibirse en los manuales al uso.`;
  *  happens to use the same words cannot satisfy an assertion. */
 async function analyse(page: Page, text: string) {
   await page.goto("/detector-de-ia");
-  await page.getByLabel("Texto de entrada").fill(text);
+  await typeInto(page, "Texto de entrada", text);
   await page.getByRole("button", { name: "Detector de IA" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
@@ -84,7 +86,7 @@ async function analyse(page: Page, text: string) {
 /** The same flow on the English landing, at its own URL. */
 async function analyseEnglish(page: Page, text: string) {
   await page.goto("/en/ai-detector");
-  await page.getByLabel("Text to process").fill(text);
+  await typeInto(page, "Text to process", text);
   await page.getByRole("button", { name: "AI detector" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
@@ -189,7 +191,7 @@ for (const { path, name } of [
   test(`${name}: meets the paywall on reaching for the tool`, async ({
     page,
   }) => {
-    await page.goto(path);
+    await page.goto(path, { waitUntil: "networkidle" });
 
     // Not on arrival. The landing is the SEO asset and a modal over content
     // reached from a search result is an intrusive interstitial.
@@ -201,16 +203,12 @@ for (const { path, name } of [
     // Reaching for the box is the action the wall answers, and the wall
     // names the tool that was reached for.
     //
-    // Retried, because the trigger is a focus event and React does not
-    // replay those: a focus landing between the server HTML and hydration
-    // is simply lost. Against a dev server compiling the page on first
-    // request that window is wide enough to hit.
+    // Typing is the reach, and unlike a click it can be retried safely:
+    // a second click would land on the backdrop of the dialog the first
+    // one opened.
     const dialog = page.getByRole("dialog");
-    await expect(async () => {
-      await page.getByLabel("Texto de entrada").click();
-      await expect(dialog).toBeVisible({ timeout: 1_000 });
-    }).toPass({ timeout: 15_000 });
-    await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+    await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+    await expect(dialog).toBeVisible();
     await expect(
       dialog.getByText(`El ${name.toLowerCase()} está en los planes de pago`),
     ).toBeVisible();

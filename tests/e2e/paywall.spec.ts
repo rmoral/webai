@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { typeInto } from "./helpers";
+
 // Wall A — the paste is longer than the plan accepts.
 //
 // It needs no API key and no account: the notice is decided by the word
@@ -19,10 +21,7 @@ const LONG_TEXT = Array.from(
 
 async function paste(page: Page, path: string, label: string) {
   await page.goto(path);
-  const box = page.getByLabel(label);
-  await expect(box).toBeVisible();
-  await box.fill(LONG_TEXT);
-  return box;
+  return typeInto(page, label, LONG_TEXT);
 }
 
 test("names both figures and both paid ceilings, without interrupting", async ({
@@ -101,7 +100,7 @@ async function refuseWithResult(page: Page) {
 
 async function hitTheWall(page: Page) {
   await page.goto("/humanizador-de-texto-ia");
-  await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await page.getByRole("button", { name: "Humanizador" }).click();
   return page.getByRole("dialog");
 }
@@ -179,7 +178,7 @@ test("names what is still free before it names the price", async ({ page }) => {
   // reached from a search result is an intrusive interstitial.
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
-  await page.getByLabel("Texto de entrada").click();
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
 
@@ -199,7 +198,7 @@ test("leaves the tool page usable after the tool wall is closed", async ({
   page,
 }) => {
   await page.goto("/parafrasear-texto");
-  await page.getByLabel("Texto de entrada").click();
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -213,7 +212,7 @@ test("leaves the tool page usable after the tool wall is closed", async ({
 
   // Same session, same trigger: it does not come back.
   await page.reload();
-  await page.getByLabel("Texto de entrada").click();
+  await typeInto(page, "Texto de entrada", "Otro texto cualquiera.");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
@@ -243,7 +242,7 @@ test("answers the locked breakdown in place, with no charge behind it", async ({
   );
 
   await page.goto("/detector-de-ia");
-  await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await page.getByRole("button", { name: "Detector de IA" }).click();
 
   const lock = page.getByRole("button", {

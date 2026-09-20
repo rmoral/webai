@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { typeInto } from "./helpers";
+
 // Payment funnel. The steps that need a real Stripe test-mode account are
 // gated on credentials; everything before the hand-off to Stripe runs in CI.
 
@@ -32,7 +34,9 @@ test("checkout without a session sends the visitor to login", async ({
   await page.goto("/precios");
   await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
   await page.waitForURL(/\/login/);
-  await expect(page.getByText("Inicia sesión")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Vuelve a tu cuenta" }),
+  ).toBeVisible();
 });
 
 test("trial checkout with a test card, without leaving the site", async ({
@@ -186,7 +190,9 @@ test("the history is behind a session and announces its plan gate", async ({
   // needs credentials and is covered by the gated test above.
   await page.goto("/app/historial");
   await page.waitForURL(/\/login/);
-  await expect(page.getByText("Inicia sesión")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Vuelve a tu cuenta" }),
+  ).toBeVisible();
 });
 
 // Phase 3 — payment moved inside the site. These cover the parts that do
@@ -198,19 +204,36 @@ test("the pricing plans lead to the embedded checkout, not off-site", async ({
 }) => {
   await page.goto("/precios");
 
-  for (const [name, query] of [
-    ["Probar 3 días gratis", "plan=unlimited&cycle=monthly"],
-    ["Ilimitado anual", "plan=unlimited&cycle=yearly"],
-    ["Elegir Pro anual", "plan=pro&cycle=yearly"],
-    ["Pro mensual", "plan=pro&cycle=monthly"],
-  ] as const) {
-    const link = page.getByRole("link", { name, exact: true });
-    await expect(link).toBeVisible();
-    // Same origin, and carrying the plan it was pressed on: the cycle is
-    // decided here and must not be re-opened at the card field.
-    const href = await link.getAttribute("href");
-    expect(href).toContain("/pago");
-    for (const part of query.split("&")) expect(href).toContain(part);
+  // One cycle is on screen at a time -- that is the point of the toggle --
+  // so each pair is checked in the state that shows it.
+  const cycles = [
+    {
+      radio: "Mensual",
+      links: [
+        ["Probar 3 días gratis", "plan=unlimited&cycle=monthly"],
+        ["Elegir Pro mensual", "plan=pro&cycle=monthly"],
+      ],
+    },
+    {
+      radio: "Anual",
+      links: [
+        ["Elegir Ilimitado anual", "plan=unlimited&cycle=yearly"],
+        ["Elegir Pro anual", "plan=pro&cycle=yearly"],
+      ],
+    },
+  ] as const;
+
+  for (const cycle of cycles) {
+    await page.getByRole("radio", { name: cycle.radio }).click();
+    for (const [name, query] of cycle.links) {
+      const link = page.getByRole("link", { name, exact: true });
+      await expect(link).toBeVisible();
+      // Same origin, and carrying the plan it was pressed on: the cycle is
+      // decided here and must not be re-opened at the card field.
+      const href = await link.getAttribute("href");
+      expect(href).toContain("/pago");
+      for (const part of query.split("&")) expect(href).toContain(part);
+    }
   }
 });
 
@@ -222,7 +245,9 @@ test("checkout refuses to load without an account to bill", async ({
   // would fail on submit.
   await page.goto("/pago?plan=unlimited&cycle=monthly");
   await page.waitForURL(/\/login/);
-  await expect(page.getByText("Inicia sesión")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Vuelve a tu cuenta" }),
+  ).toBeVisible();
 });
 
 test("the paywall sends a signed-out reader to sign in, not to a card", async ({
@@ -245,7 +270,7 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
   );
 
   await page.goto("/humanizador-de-texto-ia");
-  await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await page.getByRole("button", { name: "Humanizador" }).click();
 
   const dialog = page.getByRole("dialog");
