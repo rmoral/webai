@@ -17,9 +17,19 @@ import { isLocale, routing } from "@/lib/i18n/routing";
 // is the one that costs most: the warning is what stops the charge being a
 // surprise, and a surprise charge is a dispute.
 //
-// Runs hourly (vercel.json). The window is wider than the interval on
-// purpose, so a missed run does not silently skip anyone; what prevents a
-// second send is the trialReminderSentAt mark, not the timing.
+// Runs once a day (vercel.json), which is what a Vercel Hobby account
+// allows -- an hourly schedule is refused at deploy time.
+//
+// The window is exactly one day wide and starts one day out, so it tiles
+// the timeline: between two runs the distance to a given trial_end drops by
+// exactly 24 hours, so each trial falls inside [24h, 48h] on exactly one
+// run. Nobody is skipped and nobody is mailed twice, and the
+// trialReminderSentAt mark covers the boundary case where a trial sits
+// exactly on 24 or 48 hours.
+//
+// The cost is precision: the warning lands somewhere between one and two
+// days before the charge rather than at 24 hours. That is why the email
+// states the date instead of saying "tomorrow" -- see emails/trial-reminder.
 
 export const dynamic = "force-dynamic";
 

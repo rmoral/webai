@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -169,5 +169,34 @@ describe("colour carries meaning and stays legible", () => {
     // Two: the mask, and its -webkit- twin.
     expect(gradients).toHaveLength(2);
     expect(paywall).toContain("maskImage");
+  });
+});
+
+describe("the scheduled job stays deployable", () => {
+  // Vercel's Hobby plan refuses anything that runs more than once a day,
+  // and it refuses it at deploy time -- so an hourly schedule does not
+  // degrade the reminder, it takes the whole site down with it. That is
+  // what happened, and this is the cheapest way for it not to happen twice.
+  const crons = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8"))
+    .crons as { path: string; schedule: string }[];
+
+  it("runs at most once a day", () => {
+    expect(crons.length).toBeGreaterThan(0);
+    for (const { path, schedule } of crons) {
+      const [minute, hour] = schedule.split(" ");
+      // A concrete minute and a concrete hour: anything else -- "*",
+      // "*/4", a list or a range -- fires more than once in a day.
+      expect(minute, `${path}: minute`).toMatch(/^\d+$/);
+      expect(hour, `${path}: hour`).toMatch(/^\d+$/);
+    }
+  });
+
+  it("points at a route that exists", () => {
+    for (const { path } of crons) {
+      expect(
+        existsSync(join(ROOT, "app", path, "route.ts")),
+        `${path} has no handler`,
+      ).toBe(true);
+    }
   });
 });
