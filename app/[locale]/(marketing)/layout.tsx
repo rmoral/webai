@@ -30,7 +30,7 @@ export default async function MarketingLayout({
       title: t("footer.product"),
       links: [
         { href: "/pricing" as const, label: t("nav.pricing") },
-        { href: "/login" as const, label: t("nav.signup") },
+        { href: "/signup" as const, label: t("nav.signup") },
       ],
     },
     {

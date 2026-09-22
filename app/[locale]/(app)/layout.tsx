@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
+import { FeatureLock } from "@/components/billing/paywall";
+import { TrialEndGate } from "@/components/billing/trial-end-gate";
 import { QuotaBar } from "@/components/billing/quota-bar";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,17 @@ export default async function AppLayout({
     : { used: 0, limit: null };
   const metered = subscriber?.plan.limits.wordsPerDay !== null;
 
+  // Wall E, on the last day of the trial and before the charge. `trialEnd`
+  // is mirrored from Stripe by the webhook, so this costs a column read
+  // rather than an API call on every page of the signed-in area.
+  //
+  // Stripe's own trial_will_end fires three days out, which on a three-day
+  // trial is the moment the trial starts -- it cannot be what triggers
+  // this, and it is not what triggers the reminder email either.
+  const trialEndsWithin24h =
+    subscriber?.trialEnd != null &&
+    subscriber.trialEnd.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+
   return (
     <div className="min-h-screen">
       <header className="border-b">
@@ -53,9 +66,22 @@ export default async function AppLayout({
                 />
               </>
             )}
-            <Link href="/app/history" className="ml-auto hover:underline">
-              {t("app.history")}
-            </Link>
+            {/* Wall D. On a free plan the history is a lock rather than a
+                link: sending someone to a page whose whole content is "you
+                cannot have this" is a worse answer than saying it here. */}
+            {subscriber && !subscriber.plan.limits.history ? (
+              <div className="ml-auto">
+                <FeatureLock
+                  feature="history"
+                  plan={subscriber.plan.id}
+                  label={t("app.history")}
+                />
+              </div>
+            ) : (
+              <Link href="/app/history" className="ml-auto hover:underline">
+                {t("app.history")}
+              </Link>
+            )}
             <Link href="/app/account" className="hover:underline">
               {t("app.account")}
             </Link>
@@ -73,6 +99,7 @@ export default async function AppLayout({
           <ToolTabs />
         </div>
       </header>
+      {trialEndsWithin24h && <TrialEndGate />}
       {children}
     </div>
   );

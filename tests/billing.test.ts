@@ -6,8 +6,21 @@ import es from "@/messages/es.json";
 
 import { checkEntitlement } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
-import { PLANS, PRICES, TOPUP, TRIAL, yearlySaving } from "@/lib/billing/plans";
-import { trialDisclosure } from "@/lib/billing/disclosure";
+import {
+  PLANS,
+  PRICES,
+  TOPUP,
+  TRIAL,
+  formatUsd,
+  trialDaysFor,
+  yearlySaving,
+} from "@/lib/billing/plans";
+import {
+  paymentDisclosure,
+  renewalDate,
+  trialDisclosure,
+} from "@/lib/billing/disclosure";
+import { subscribeRequestSchema } from "@/lib/security/validation";
 import { describeCheckoutRejection } from "@/lib/billing/stripe";
 
 describe("plan catalogue", () => {
@@ -228,5 +241,151 @@ describe("describeCheckoutRejection", () => {
       expect(code).toBe("checkout_failed");
       expect(fix).toBeNull();
     }
+  });
+});
+
+describe("trialDaysFor", () => {
+  // The rule the whole redesign turns on. A trial hanging off a yearly
+  // cycle is what made the headline price and the disclosure disagree:
+  // "3 days free" printed over a charge of $179.88.
+  it("gives the trial to Ilimitado monthly and to nothing else", () => {
+    expect(trialDaysFor("unlimited", "monthly")).toBe(TRIAL.days);
+    expect(trialDaysFor("unlimited", "yearly")).toBeNull();
+    expect(trialDaysFor("pro", "monthly")).toBeNull();
+    expect(trialDaysFor("pro", "yearly")).toBeNull();
+  });
+
+  it("reads the trial from PLANS rather than from a literal", () => {
+    // If the trial ever moves tier or length, this follows it; a hardcoded
+    // 3 here would keep passing while the product said something else.
+    expect(trialDaysFor(TRIAL.tier, TRIAL.interval)).toBe(TRIAL.days);
+  });
+});
+
+describe("paymentDisclosure", () => {
+  const when = new Date("2026-09-10T12:00:00Z");
+
+  function render(
+    locale: "es" | "en",
+    tier: "pro" | "unlimited",
+    interval: "monthly" | "yearly",
+  ) {
+    const messages = locale === "es" ? es : en;
+    const t = createTranslator({ locale, messages, namespace: "payment" });
+    const format = createFormatter({ locale });
+    return paymentDisclosure(
+      locale,
+      tier,
+      interval,
+      t,
+      (date) =>
+        format.dateTime(date, {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }),
+      when,
+    );
+  }
+
+  it("promises no charge today only when there is actually a trial", () => {
+    expect(render("es", "unlimited", "monthly")).toContain(
+      "Hoy no se te cobra nada",
+    );
+    // The yearly cycle is charged in full today and has to say so. This is
+    // the sentence whose absence was the original bug.
+    expect(render("es", "unlimited", "yearly")).toContain("Hoy se te cobran");
+    expect(render("es", "unlimited", "yearly")).not.toContain(
+      "no se te cobra nada",
+    );
+  });
+
+  it("names the amount that will actually be charged, in each cycle", () => {
+    expect(render("es", "unlimited", "monthly")).toContain("29,99");
+    expect(render("es", "unlimited", "yearly")).toContain("179,88");
+    expect(render("es", "pro", "monthly")).toContain("14,99");
+    expect(render("es", "pro", "yearly")).toContain("89,88");
+  });
+
+  it("says the card is kept, but only where a card is being kept", () => {
+    expect(render("es", "unlimited", "monthly")).toContain(
+      "Guardamos tu tarjeta",
+    );
+    expect(render("es", "unlimited", "yearly")).not.toContain(
+      "Guardamos tu tarjeta",
+    );
+  });
+
+  it("puts the month in words in English too", () => {
+    const text = render("en", "unlimited", "monthly");
+    expect(text).toContain("September");
+    expect(text).toContain("$29.99");
+    // 09/13/2026 to one reader is 13 September and to another is nothing at
+    // all; the date of a first charge cannot be ambiguous.
+    expect(text).not.toMatch(/\d{2}\/\d{2}\/\d{4}/);
+  });
+
+  it("agrees with the figure the button will show", () => {
+    // The acceptance criterion from 08-QA: the number on the button and the
+    // number in the disclosure match, in both cycles. The button renders
+    // formatUsd of the same PRICES entry, so this pins them together.
+    for (const interval of ["monthly", "yearly"] as const) {
+      const shown = formatUsd(PRICES.unlimited[interval].amount, "es");
+      expect(render("es", "unlimited", interval)).toContain(shown);
+    }
+  });
+});
+
+describe("renewalDate", () => {
+  it("moves a month or a year, per cycle", () => {
+    const now = new Date("2026-09-10T12:00:00Z");
+    expect(renewalDate("monthly", now).toISOString()).toContain("2026-10-10");
+    expect(renewalDate("yearly", now).toISOString()).toContain("2027-09-10");
+  });
+});
+
+describe("subscribeRequestSchema", () => {
+  const valid = {
+    plan: "unlimited",
+    cycle: "monthly",
+    locale: "es",
+    consent: true,
+  };
+
+  it("accepts a well-formed request", () => {
+    expect(subscribeRequestSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("refuses to be told the price", () => {
+    // The classic hole: a browser that can state the amount can state zero.
+    // Extra keys are dropped rather than honoured, so the parsed body never
+    // carries one.
+    const parsed = subscribeRequestSchema.safeParse({
+      ...valid,
+      amount: 1,
+      price: "price_free",
+      trial_period_days: 365,
+    });
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && parsed.data).toEqual(valid);
+  });
+
+  it("will not proceed without the consent tick", () => {
+    expect(
+      subscribeRequestSchema.safeParse({ ...valid, consent: false }).success,
+    ).toBe(false);
+    expect(
+      subscribeRequestSchema.safeParse({
+        plan: valid.plan,
+        cycle: valid.cycle,
+        locale: valid.locale,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a plan that is not for sale", () => {
+    expect(
+      subscribeRequestSchema.safeParse({ ...valid, plan: "free" }).success,
+    ).toBe(false);
   });
 });

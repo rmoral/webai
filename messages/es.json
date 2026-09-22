@@ -326,7 +326,64 @@
     "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
     "topupCta": "Comprar recarga",
     "taxNote": "Precios en dólares estadounidenses, sin impuestos incluidos; los impuestos aplicables —incluido el impuesto sobre ventas de EE. UU. o el IVA de tu país cuando corresponda— se calculan en el pago. La renovación es automática y puedes cancelar en línea, en cualquier momento, desde tu cuenta. Consulta los",
-    "taxNoteLink": "términos del servicio"
+    "taxNoteLink": "términos del servicio",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "twoMonthsFree": "Dos meses gratis frente al mensual.",
+    "yearlyTotal": "{amount} al año",
+    "billingFree": "Sin tarjeta. Para siempre.",
+    "billingProMonthly": "Se te cobran {amount} hoy y cada mes.",
+    "billingProYearly": "Se te cobran {amount} hoy, una vez al año. Ahorras {saving}.",
+    "billingUnlimitedMonthly": "{days} días de prueba. Después, {amount}/mes.",
+    "billingUnlimitedYearly": "Se te cobran {amount} hoy, una vez al año. Ahorras {saving}.",
+    "chooseProMonthly": "Elegir Pro mensual",
+    "chooseProYearly": "Elegir Pro anual",
+    "chooseUnlimitedYearly": "Elegir Ilimitado anual",
+    "annualNoTrial": "El plan anual se cobra hoy, entero: {amount}. No lleva prueba gratuita — la prueba de {days} días solo existe en el ciclo mensual, para que nadie acabe con un cargo anual que no esperaba.",
+    "guarantee": "Cancela online en dos clics, cuando quieras. Sin llamadas ni correos.",
+    "compareTitle": "Qué incluye cada plan",
+    "rowWordsDay": "Palabras al día",
+    "rowWordsMonth": "Palabras al mes",
+    "rowPerRequest": "Palabras por petición",
+    "rowTools": "Herramientas",
+    "rowHistory": "Historial cifrado",
+    "rowBreakdown": "Desglose por pasajes",
+    "rowPriority": "Prioridad de cola",
+    "rowTopup": "Recarga de palabras",
+    "valueNone": "—",
+    "valueYes": "Sí",
+    "valueNo": "No",
+    "valueFreeTools": "Humanizador y detector",
+    "valueAllTools": "Las cuatro",
+    "valueTopup": "{amount} por {words}, sin caducidad",
+    "valueTopupNeedsPlan": "Requiere un plan de pago",
+    "faqTitle": "Preguntas sobre la facturación",
+    "faq": [
+      {
+        "q": "¿Cuándo se me cobra?",
+        "a": "En Pro y en Ilimitado anual, hoy mismo al completar el pago. En la prueba de Ilimitado, al cuarto día: los tres primeros no se cobra nada y verás la fecha exacta antes de dar la tarjeta."
+      },
+      {
+        "q": "¿Cómo cancelo?",
+        "a": "Desde tu cuenta, en dos clics, cuando quieras. No hay que llamar ni escribir un correo. Si cancelas durante la prueba, no se cobra nada."
+      },
+      {
+        "q": "¿Qué pasa cuando termina la prueba?",
+        "a": "El día 3, al entrar, te preguntamos qué quieres hacer: seguir en Ilimitado, bajar a Pro con prorrateo o cancelar. Si no haces nada, se renueva en Ilimitado."
+      },
+      {
+        "q": "¿Las palabras caducan?",
+        "a": "Las del plan se reinician cada mes. Las de una recarga no caducan mientras tengas una suscripción activa."
+      },
+      {
+        "q": "¿Los precios llevan impuestos?",
+        "a": "No. Son en dólares y sin impuestos; el impuesto sobre ventas de EE. UU. o el IVA de tu país, cuando corresponda, se calcula en el pago."
+      },
+      {
+        "q": "¿Hacéis reembolsos?",
+        "a": "Si algo ha ido mal, escríbenos y lo miramos caso por caso. La prueba de 3 días existe precisamente para que no tengas que pedir uno."
+      }
+    ]
   },
   "plans": {
     "anonymous": "Anónimo",
@@ -343,9 +400,7 @@
     "analysisHere": "El análisis aparecerá aquí",
     "writing": "Escribiendo…",
     "analyzing": "Analizando…",
-    "paywall": "{tool} está en los planes de pago.",
     "paywallCta": "Requiere un plan de pago",
-    "freeNote": "Puedes probar gratis el humanizador y el detector de IA sin crear cuenta.",
     "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
     "processing": "Procesando…",
     "copyResult": "Copiar resultado",
@@ -369,7 +424,29 @@
     "tryUnlimited": "Probar Ilimitado {days} días gratis",
     "createAccount": "Crear cuenta gratis — {words} palabras al día",
     "seePro": "Ver Pro — {price}/mes",
-    "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento"
+    "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento",
+    "paidPlanBadge": "Plan de pago",
+    "toolTitle": "El {tool} está en los planes de pago",
+    "toolBody": "El humanizador y el detector siguen siendo gratis, con o sin cuenta. El resto de herramientas entran con Pro o Ilimitado.",
+    "historyLockTitle": "El historial es de los planes de pago",
+    "historyLockBody": "Pro guarda tus textos cifrados y te deja volver a cualquier resultado. En los planes gratuitos no se almacena el texto, solo el recuento.",
+    "unlockWithPro": "Desbloquear con Pro",
+    "close": "Cerrar",
+    "breakdownLock": "Ver el desglose por pasajes"
+  },
+  "trialEnd": {
+    "badge": "Tu prueba termina hoy",
+    "title": "Elige cómo sigues. Hoy todavía no se te ha cobrado nada.",
+    "body": "Has usado Ilimitado durante {days} días. Puedes continuar, bajar a Pro o cancelar: las tres opciones están aquí y ninguna requiere escribirnos.",
+    "perMonth": "/mes",
+    "unlimitedBody": "{month} palabras al mes, {request} por petición y prioridad de cola.",
+    "proBody": "{month} palabras al mes, {request} por petición. Todas las herramientas e historial.",
+    "continueUnlimited": "Continuar en Ilimitado",
+    "switchToPro": "Cambiar a Pro",
+    "cancel": "Cancelar mi suscripción",
+    "working": "Un momento…",
+    "failed": "No hemos podido aplicar el cambio. Vuelve a intentarlo en unos minutos.",
+    "disclosure": "Si no eliges nada, hoy se te cobrarán {unlimited} y la suscripción de Ilimitado seguirá activa mes a mes. Cambiar a Pro aplica el prorrateo automáticamente. Cancelar lleva dos clics desde tu cuenta y puedes hacerlo ahora mismo."
   },
   "detector": {
     "bands": {
@@ -399,7 +476,6 @@
     "windowsTitle": "Dónde se concentran los indicios",
     "sentenceRange": "Frases {from}–{to}",
     "gated": "El desglose por pasajes está disponible en los planes de pago.",
-    "gatedCta": "Ver planes",
     "disclaimer": "Esto mide patrones de estilo, no autoría. Un texto humano muy formal puede dar indicios y un texto generado con buen estilo puede no dar ninguno. Ningún detector, el nuestro incluido, sirve como prueba para acusar a nadie."
   },
   "errors": {
@@ -443,16 +519,29 @@
     "confirm": "Confirmar",
     "cancel": "Cancelar"
   },
-  "login": {
-    "title": "Inicia sesión",
-    "description": "Con Google o con un enlace mágico a tu correo. Sin contraseñas.",
+  "auth": {
+    "signupTitle": "Tu cuenta gratis: {words} palabras al día e historial de sesión",
+    "signupLede": "Sin contraseña y sin tarjeta. Tardas menos que en leer esta frase.",
+    "signinTitle": "Vuelve a tu cuenta",
+    "signinLede": "Entra con Google o pídenos un enlace de acceso. Nunca hubo contraseña que recordar.",
+    "benefitWords": "De {from} a {to} palabras al día, hoy mismo.",
+    "benefitTools": "Humanizador y detector completos, sin coste.",
     "google": "Continuar con Google",
     "or": "o",
     "emailPlaceholder": "tu@correo.com",
-    "send": "Enviarme el enlace",
+    "send": "Enviarme un enlace de acceso",
     "sending": "Enviando…",
-    "sent": "Revisa tu correo: te hemos enviado un enlace para entrar.",
+    "sent": "Te hemos enviado un enlace a {email}. Ábrelo desde este mismo dispositivo y vuelves justo donde estabas.",
     "error": "No se pudo enviar el enlace. Inténtalo de nuevo.",
+    "textKept": "Tu texto sigue en el editor. Al volver lo encuentras tal cual, sin recuperar nada.",
+    "privacy": "No guardamos tus textos en el plan gratuito: solo el recuento de palabras para aplicar los límites. Sin tarjeta.",
+    "crossToSignin": "¿Ya tienes cuenta? Iniciar sesión",
+    "crossToSignup": "¿Aún no tienes cuenta? Crear cuenta gratis",
+    "legal": "Al crear la cuenta aceptas los términos del servicio y la política de privacidad.",
+    "signupMetaTitle": "Crear cuenta gratis",
+    "signinMetaTitle": "Iniciar sesión"
+  },
+  "login": {
     "finishing": "Entrando…",
     "finishFailed": "No hemos podido completar el acceso.",
     "finishRetry": "Inténtalo de nuevo"
@@ -497,10 +586,55 @@
     "invalid_request": "La solicitud no era válida. Recarga la página.",
     "default": "No se pudo abrir el pago. Inténtalo de nuevo.",
     "reference": "{message} (ref: {code})",
-    "disclosure": "Hoy no se te cobra nada. El {date}, al terminar los {days} días de prueba, se te cobrarán {unlimited}/mes salvo que canceles antes. Puedes cancelar o cambiar a Pro ({pro}/mes) en dos clics desde tu cuenta."
+    "disclosure": "Hoy no se te cobra nada. El {date}, al terminar los {days} días de prueba, se te cobrarán {unlimited}/mes salvo que canceles antes. Puedes cancelar o cambiar a Pro ({pro}/mes) en dos clics desde tu cuenta.",
+    "modalTitle": "Pagar sin salir de aquí",
+    "pageTitle": "Completa tu suscripción",
+    "pageLede": "Se paga aquí mismo. No te mandamos a ninguna otra página.",
+    "summaryNote": "Se activa en cuanto confirmes el pago, sin salir de esta página.",
+    "trialLine": "Prueba de {days} días",
+    "taxes": "Impuestos",
+    "taxesValue": "Se calculan al pagar",
+    "dueToday": "Hoy pagas",
+    "back": "Volver",
+    "close": "Cerrar",
+    "howToCancel": "¿Cómo cancelo?",
+    "howToCancelTitle": "Dos pasos, sin escribirnos",
+    "cancelStep1": "Entra en Mi cuenta → Suscripción.",
+    "cancelStep2": "Pulsa «Cancelar suscripción» y confirma.",
+    "successTrialBadge": "Prueba activa",
+    "successPaidBadge": "Suscripción activa",
+    "successTrialTitle": "Tu prueba de Ilimitado empieza ahora",
+    "successPaidTitle": "Ya estás en {plan}",
+    "successTrialBody": "Tienes {days} días con todo desbloqueado. No se te ha cobrado nada todavía.",
+    "firstCharge": "Primer cobro",
+    "nextRenewal": "Próxima renovación",
+    "chargeNoteTrial": "{amount}/mes, salvo que canceles antes",
+    "chargeNotePaid": "{amount}, con renovación automática",
+    "rowPlan": "Plan",
+    "rowPaidToday": "Hoy has pagado",
+    "resume": "Seguir donde estaba",
+    "manage": "Gestionar suscripción",
+    "goToApp": "Ir a la app",
+    "successClose": "Te hemos enviado un correo con la fecha y el importe exactos. El día antes del cobro te avisamos otra vez. Puedes cancelar en dos clics desde tu cuenta, sin llamadas ni correos.",
+    "monthly": "Mensual",
+    "yearly": "Anual"
+  },
+  "payment": {
+    "formDisclosureTrial": "Hoy no se te cobra nada. Guardamos tu tarjeta y el {date}, al terminar los {days} días de prueba, se te cobrarán {amount}/mes. La suscripción se renueva automáticamente cada mes hasta que la canceles, en dos clics desde tu cuenta y también durante la prueba.",
+    "formDisclosureCharge": "Hoy se te cobran {amount}. La suscripción se renueva automáticamente el {date} por {amount} y se repite cada ciclo hasta que la canceles. Puedes cancelar en dos clics desde tu cuenta.",
+    "consent": "Entiendo que la suscripción se renueva automáticamente y que puedo cancelarla online en cualquier momento.",
+    "startTrialCta": "Empezar la prueba — {amount} hoy",
+    "payCta": "Pagar — {amount} hoy",
+    "processing": "Procesando el pago…",
+    "declined": "Tu banco ha rechazado la tarjeta.",
+    "nothingCharged": "No se te ha cobrado nada.",
+    "failed": "No hemos podido completar el pago por un problema nuestro. Vuelve a intentarlo en unos minutos.",
+    "already": "Ya tienes una suscripción activa. Puedes gestionarla desde tu cuenta.",
+    "unavailable": "El pago no está disponible ahora mismo por un problema de configuración nuestro. Ya estamos en ello.",
+    "securityNote": "El pago lo procesa Stripe. Los datos de tu tarjeta viajan cifrados directamente a ellos y no pasan por nuestros servidores."
   },
   "legal": {
-    "updated": "Última actualización: 17 de septiembre de 2026.",
+    "updated": "Última actualización: {date}.",
     "legalNotice": {
       "title": "Información legal",
       "sections": [
@@ -648,19 +782,30 @@
     "jurisdiction": "sociedad de responsabilidad limitada constituida en el estado de Florida (Estados Unidos)"
   },
   "emails": {
-    "welcomeSubject": "Tu prueba de Verbalyx ya está activa",
-    "welcomePreview": "Tu prueba de Verbalyx Ilimitado ya está activa",
-    "welcomeHeading": "¡Bienvenido a Verbalyx!",
-    "welcomeBody": "Tu periodo de prueba de {days} días ya está activo. Desde ahora puedes usar todas las herramientas sin límite diario y con hasta {words} palabras por petición.",
-    "welcomeCta": "Ir a mis herramientas →",
-    "welcomeNote": "Puedes cancelar en cualquier momento desde tu cuenta. Si cancelas antes de que termine la prueba, no se te cobrará nada.",
-    "trialSubject": "Tu prueba de Verbalyx termina mañana",
-    "trialPreview": "Tu prueba de Verbalyx termina mañana",
-    "trialHeading": "Tu prueba termina mañana",
-    "trialBody": "Mañana finaliza tu periodo de prueba y se activará tu suscripción. Si quieres seguir, no tienes que hacer nada.",
-    "trialCancelBefore": "Si prefieres cancelar, puedes hacerlo en un clic desde",
-    "trialAccount": "tu cuenta",
-    "trialCancelAfter": "y no se te cobrará nada."
+    "confirmSubject": "Tu prueba de Verbalyx empieza hoy — primer cobro el {date}",
+    "confirmPaidSubject": "Tu suscripción de Verbalyx está activa — próxima renovación el {date}",
+    "confirmTrialPreview": "Hoy no se te cobra nada. El primer cobro es el {date}: {amount}.",
+    "confirmPaidPreview": "Hoy se te han cobrado {amount}. La próxima renovación es el {date}.",
+    "confirmTrialHeading": "Tu prueba de Ilimitado empieza hoy",
+    "confirmPaidHeading": "Tu suscripción está activa",
+    "confirmTrialBody": "Tienes {days} días con todo desbloqueado. Hoy no se te ha cobrado nada, y te decimos exactamente cuándo y cuánto se te cobrará.",
+    "confirmPaidBody": "Hoy se te han cobrado {amount}. Abajo tienes la fecha exacta de la próxima renovación.",
+    "confirmTrialCancel": "Cancelar lleva dos clics y puedes hacerlo durante la prueba: Mi cuenta → Suscripción → Cancelar. Si cancelas antes del {date}, no se te cobra nada. También puedes cambiar a Pro desde el mismo sitio.",
+    "confirmPaidCancel": "Cancelar lleva dos clics, cuando quieras: Mi cuenta → Suscripción → Cancelar. Sin llamadas ni correos.",
+    "confirmTrialReminder": "Te avisaremos otra vez 24 horas antes del cobro.",
+    "reminderSubject": "Mañana se te cobran {amount} — cancela hoy si no quieres continuar",
+    "reminderPreview": "Mañana se te cobran {amount}. Si no quieres continuar, cancela hoy en dos clics.",
+    "reminderHeading": "Mañana se te cobran {amount}",
+    "reminderBody": "Tu prueba de Ilimitado termina el {date}. Te avisamos hoy para que decidas sin prisa: continuar, bajar a Pro o cancelar.",
+    "reminderStay": "Seguir en Ilimitado. No hagas nada.",
+    "reminderDowngrade": "Bajar a Pro, {amount}/mes. El prorrateo se aplica solo.",
+    "reminderCancel": "Cancelar. Sin cargo y sin explicaciones. Conservas el acceso hasta mañana.",
+    "firstCharge": "Primer cobro",
+    "nextRenewal": "Próxima renovación",
+    "goToApp": "Ir a la app",
+    "manageOrCancel": "Gestionar o cancelar",
+    "footerCompany": "YBB Solutions, LLC — Verbalyx",
+    "footerNotice": "Recibes este correo porque tienes una suscripción activa en Verbalyx. Es un aviso de facturación, no publicidad."
   },
   "detectorSignals": {
     "raya_espaciada": {

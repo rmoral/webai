@@ -3,22 +3,40 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
-import { emailTranslator } from "@/emails/translator";
-import { TrialEndingEmail } from "@/emails/trial-ending";
-import { WelcomeEmail } from "@/emails/welcome";
+import { sendSubscriptionConfirmation } from "@/lib/billing/notify";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
 import { TOPUP } from "@/lib/billing/plans";
 import { getStripe } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events, stripeEvents, subscriptions, users } from "@/lib/db/schema";
-import { sendEmail } from "@/lib/email";
 import { isLocale, routing, type Locale } from "@/lib/i18n/routing";
 import { addTopupWords } from "@/lib/usage/quotas";
 
-// The seven events of study §3.4. Idempotency is enforced by inserting the
-// event id first; the mark is rolled back if the handler throws, so Stripe
-// retries a failed delivery instead of skipping it as a duplicate.
+// The events of study §3.4, less customer.subscription.trial_will_end and
+// plus setup_intent.succeeded.
+//
+// trial_will_end fires three days before a trial ends, which on a
+// three-day trial is the moment it is created: it was sending "your trial
+// ends tomorrow" on day zero. The 24-hour warning is a cron of ours
+// (app/api/cron/trial-reminder), which is the only way to get it right. Idempotency is
+// enforced by inserting the event id first; the mark is rolled back if the
+// handler throws, so Stripe retries a failed delivery instead of skipping it
+// as a duplicate.
+//
+// Which event confirms a sale moved with the embedded payment flow. There is
+// no checkout session any more, so it can no longer be the thing that sends
+// the confirmation email -- and it could never have been, for a trial, since
+// a trial has no session and no invoice. The two moments that do exist in
+// both flows are:
+//
+//   setup_intent.succeeded   a card was saved: the trial is real and will be
+//                            able to convert.
+//   invoice.paid             money moved. Only the first invoice of a
+//                            subscription is a sale; the rest are renewals.
+//
+// Sending from those two, and from nowhere else, is what keeps a customer
+// who paid through either door from getting the email twice or not at all.
 
 function timestampToDate(seconds: number | null | undefined): Date | null {
   return seconds ? new Date(seconds * 1000) : null;
@@ -56,6 +74,9 @@ async function subscriptionFields(sub: Stripe.Subscription) {
     status: sub.status as typeof subscriptions.$inferInsert.status,
     currentPeriodStart: timestampToDate(item?.current_period_start),
     currentPeriodEnd: timestampToDate(item?.current_period_end),
+    // Read by the end-of-trial wall, which has to appear before the charge,
+    // and by the 24-hour reminder. Neither can call Stripe on the hot path.
+    trialEnd: timestampToDate(sub.trial_end),
     cancelAtPeriodEnd: sub.cancel_at_period_end ? 1 : 0,
     updatedAt: new Date(),
   };
@@ -205,15 +226,9 @@ export async function POST(request: NextRequest) {
           const sub = await getStripe().subscriptions.retrieve(
             session.subscription as string,
           );
+          // The email is sent by invoice.paid or setup_intent.succeeded,
+          // whichever applies; both fire for a hosted session too.
           await upsertSubscription(userId, sub);
-          if (email) {
-            const locale = localeOf(sub.metadata);
-            await sendEmail({
-              to: email,
-              subject: emailTranslator(locale)("welcomeSubject"),
-              react: WelcomeEmail({ appUrl, locale }),
-            });
-          }
         }
 
         // Mirrored for the Google Ads conversion (gclid wiring, sprint 4).
@@ -229,16 +244,33 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // 2. Reminder 24 h before the trial converts (required by §6.5).
-      case "customer.subscription.trial_will_end": {
-        const sub = event.data.object;
-        const email = await customerEmail(sub.customer as string);
-        if (email) {
-          const locale = localeOf(sub.metadata);
-          await sendEmail({
-            to: email,
-            subject: emailTranslator(locale)("trialSubject"),
-            react: TrialEndingEmail({ appUrl, locale }),
+      // 2. The card was saved during a trial. Nothing is owed yet, so no
+      // invoice event will arrive -- this is the only confirmation that the
+      // trial will actually be able to convert, rather than cancelling
+      // itself for want of a payment method.
+      case "setup_intent.succeeded": {
+        const intent = event.data.object;
+        const customer = intent.customer;
+        if (!customer) break;
+        const subscription = await getStripe().subscriptions.list({
+          customer: typeof customer === "string" ? customer : customer.id,
+          status: "trialing",
+          limit: 1,
+        });
+        const sub = subscription.data[0];
+        if (!sub) break;
+        await applySubscription(sub);
+
+        const trialEmail = await customerEmail(
+          typeof customer === "string" ? customer : customer.id,
+        );
+        if (trialEmail) {
+          await sendSubscriptionConfirmation({
+            subscription: sub,
+            to: trialEmail,
+            locale: localeOf(sub.metadata),
+            appUrl,
+            paidTodayCents: 0,
           });
         }
         break;
@@ -272,13 +304,34 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object;
         const subscriptionId = invoice.lines?.data[0]?.subscription;
         if (!subscriptionId) break;
-        await applySubscription(
-          await getStripe().subscriptions.retrieve(
-            typeof subscriptionId === "string"
-              ? subscriptionId
-              : subscriptionId.id,
-          ),
+        const paidSub = await getStripe().subscriptions.retrieve(
+          typeof subscriptionId === "string"
+            ? subscriptionId
+            : subscriptionId.id,
         );
+        await applySubscription(paidSub);
+
+        // A renewal is not a sale, and a customer who gets "welcome" every
+        // month stops reading the ones that matter.
+        if (
+          invoice.billing_reason === "subscription_create" &&
+          invoice.customer
+        ) {
+          const buyer = await customerEmail(
+            typeof invoice.customer === "string"
+              ? invoice.customer
+              : invoice.customer.id,
+          );
+          if (buyer) {
+            await sendSubscriptionConfirmation({
+              subscription: paidSub,
+              to: buyer,
+              locale: localeOf(paidSub.metadata),
+              appUrl,
+              paidTodayCents: invoice.amount_paid ?? 0,
+            });
+          }
+        }
         break;
       }
 

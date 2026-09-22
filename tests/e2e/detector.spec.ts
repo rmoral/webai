@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { typeInto } from "./helpers";
+
 // The detector runs entirely on our own server with no model call, so unlike
 // the other tools this whole flow is exercisable in CI without any API key.
 
@@ -74,7 +76,7 @@ hacerlo con menos confianza de la que suele exhibirse en los manuales al uso.`;
  *  happens to use the same words cannot satisfy an assertion. */
 async function analyse(page: Page, text: string) {
   await page.goto("/detector-de-ia");
-  await page.getByLabel("Texto de entrada").fill(text);
+  await typeInto(page, "Texto de entrada", text);
   await page.getByRole("button", { name: "Detector de IA" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
@@ -84,7 +86,7 @@ async function analyse(page: Page, text: string) {
 /** The same flow on the English landing, at its own URL. */
 async function analyseEnglish(page: Page, text: string) {
   await page.goto("/en/ai-detector");
-  await page.getByLabel("Text to process").fill(text);
+  await typeInto(page, "Text to process", text);
   await page.getByRole("button", { name: "AI detector" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
@@ -163,12 +165,20 @@ test("refuses to score a sample too short to mean anything", async ({
 test("gates the passage breakdown behind the paid plans", async ({ page }) => {
   const result = await analyse(page, GENERADO);
 
-  await expect(
-    result.getByText(/desglose por pasajes está disponible/),
-  ).toBeVisible();
+  // The gate is now a lock answered in place (wall D) rather than a line of
+  // prose: the reader keeps the result they are looking at on screen.
+  const lock = result.getByRole("button", {
+    name: "Ver el desglose por pasajes",
+  });
+  await expect(lock).toBeVisible();
   await expect(
     result.getByText("Dónde se concentran los indicios", { exact: true }),
   ).toHaveCount(0);
+
+  await lock.click();
+  await expect(
+    page.getByRole("dialog").getByText(/desglose por pasajes está disponible/),
+  ).toBeVisible();
 });
 
 // Paraphraser and proofreader are paid-only (lib/billing/plans.ts FREE_TOOLS),
@@ -178,23 +188,35 @@ for (const { path, name } of [
   { path: "/parafrasear-texto", name: "Parafraseador" },
   { path: "/corrector-ortografico-gramatical", name: "Corrector" },
 ]) {
-  test(`${name}: shows the paywall up front to a free visitor`, async ({
+  test(`${name}: meets the paywall on reaching for the tool`, async ({
     page,
   }) => {
-    await page.goto(path);
-    // Exact, because the landing's own FAQ now answers the same question in
-    // almost the same words and an unscoped match finds both.
-    await expect(
-      page.getByText(`${name} está en los planes de pago.`, { exact: true }),
-    ).toBeVisible();
+    await page.goto(path, { waitUntil: "networkidle" });
+
+    // Not on arrival. The landing is the SEO asset and a modal over content
+    // reached from a search result is an intrusive interstitial.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     const run = page.getByRole("button", { name: "Requiere un plan de pago" });
     await expect(run).toBeVisible();
-    await expect(run).toBeDisabled();
 
-    // Typing must not enable it: the plan, not the input, is the gate.
-    await page.getByLabel("Texto de entrada").fill("Un texto cualquiera.");
-    await expect(run).toBeDisabled();
+    // Reaching for the box is the action the wall answers, and the wall
+    // names the tool that was reached for.
+    //
+    // Typing is the reach, and unlike a click it can be retried safely:
+    // a second click would land on the backdrop of the dialog the first
+    // one opened.
+    const dialog = page.getByRole("dialog");
+    await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText(`El ${name.toLowerCase()} está en los planes de pago`),
+    ).toBeVisible();
+
+    // Dismissing never runs it: the plan is the gate, not the input.
+    await page.keyboard.press("Escape");
+    await run.click();
+    await expect(page.getByTestId("detector-result")).toHaveCount(0);
   });
 }
 

@@ -1,0 +1,281 @@
+"use client";
+
+import { useState } from "react";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+
+import { TrialDisclosure } from "@/components/billing/paywall";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import {
+  PLANS,
+  PRICES,
+  TRIAL,
+  formatUsd,
+  trialDaysFor,
+  yearlySaving,
+  type BillingInterval,
+} from "@/lib/billing/plans";
+import { Link } from "@/lib/i18n/navigation";
+import type { Locale } from "@/lib/i18n/routing";
+
+// The three plans, with the cycle as a toggle.
+//
+// The toggle moves the big number inside each card. It used to show the
+// yearly equivalent as the headline and the monthly price underneath, so
+// Unlimited read "$14.99/month" while the disclosure under it said the
+// customer would be charged $29.99 -- two prices competing in one card,
+// and the single most expensive confusion on the site.
+//
+// And the rule that closes it: the trial exists on Unlimited monthly and
+// nowhere else, so the badge, the button and the disclosure all change
+// with the cycle rather than only the price.
+
+export function PricingPlans() {
+  const t = useTranslations("pricing");
+  const plans = useTranslations("plans");
+  const locale = useLocale() as Locale;
+  const format = useFormatter();
+  // Monthly by default. Yearly is the better deal and the toggle says so,
+  // but defaulting to it hides the trial -- the strongest thing this page
+  // has to offer -- behind a click.
+  const [interval, setInterval] = useState<BillingInterval>("monthly");
+
+  const yearly = interval === "yearly";
+  const n = (value: number) => format.number(value);
+
+  return (
+    <>
+      <div
+        role="radiogroup"
+        aria-label={t("compareTitle")}
+        className="mt-6 flex flex-wrap items-center gap-2"
+      >
+        {(["monthly", "yearly"] as const).map((option) => (
+          <Chip
+            key={option}
+            role="radio"
+            aria-checked={interval === option}
+            pressed={interval === option}
+            onClick={() => setInterval(option)}
+          >
+            {t(option)}
+          </Chip>
+        ))}
+        {yearly && (
+          <span className="text-muted-foreground text-sm">
+            {t("twoMonthsFree")}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        <Card
+          title={plans("free")}
+          price={formatUsd(0, locale)}
+          billing={t("billingFree")}
+          features={[
+            t("wordsPerDay", { words: n(PLANS.free.limits.wordsPerDay ?? 0) }),
+            t("perRequest", { words: n(PLANS.free.limits.maxWordsPerRequest) }),
+            t("freeTools"),
+          ]}
+          cta={
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/signup">{t("signup")}</Link>
+            </Button>
+          }
+        />
+
+        <Card
+          title={plans("pro")}
+          price={formatUsd(PRICES.pro[interval].monthlyEquivalent, locale)}
+          suffix={t("perMonth")}
+          total={
+            yearly
+              ? t("yearlyTotal", {
+                  amount: formatUsd(PRICES.pro.yearly.amount, locale),
+                })
+              : undefined
+          }
+          billing={
+            yearly
+              ? t("billingProYearly", {
+                  amount: formatUsd(PRICES.pro.yearly.amount, locale),
+                  saving: formatUsd(yearlySaving("pro"), locale),
+                })
+              : t("billingProMonthly", {
+                  amount: formatUsd(PRICES.pro.monthly.amount, locale),
+                })
+          }
+          features={[
+            t("wordsPerMonth", {
+              words: n(PLANS.pro.limits.wordsPerMonth ?? 0),
+            }),
+            t("perRequest", { words: n(PLANS.pro.limits.maxWordsPerRequest) }),
+            t("proTools"),
+          ]}
+          cta={
+            <Button className="w-full" asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "pro", cycle: interval },
+                }}
+              >
+                {yearly ? t("chooseProYearly") : t("chooseProMonthly")}
+              </Link>
+            </Button>
+          }
+        />
+
+        <Card
+          highlighted
+          title={plans("unlimited")}
+          // The badge is tied to the rule, not to the plan: an annual cycle
+          // has no trial and must not advertise one.
+          badge={
+            trialDaysFor("unlimited", interval) !== null
+              ? t("trialBadge", { days: TRIAL.days })
+              : undefined
+          }
+          price={formatUsd(
+            PRICES.unlimited[interval].monthlyEquivalent,
+            locale,
+          )}
+          suffix={t("perMonth")}
+          total={
+            yearly
+              ? t("yearlyTotal", {
+                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                })
+              : undefined
+          }
+          billing={
+            yearly
+              ? t("billingUnlimitedYearly", {
+                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                  saving: formatUsd(yearlySaving("unlimited"), locale),
+                })
+              : t("billingUnlimitedMonthly", {
+                  days: TRIAL.days,
+                  amount: formatUsd(PRICES.unlimited.monthly.amount, locale),
+                })
+          }
+          features={[
+            t("wordsPerMonth", {
+              words: n(PLANS.unlimited.limits.wordsPerMonth ?? 0),
+            }),
+            t("perRequest", {
+              words: n(PLANS.unlimited.limits.maxWordsPerRequest),
+            }),
+            t("priority"),
+          ]}
+          cta={
+            <Button className="w-full" asChild>
+              <Link
+                href={{
+                  pathname: "/checkout",
+                  query: { plan: "unlimited", cycle: interval },
+                }}
+              >
+                {yearly
+                  ? t("chooseUnlimitedYearly")
+                  : t("tryFree", { days: TRIAL.days })}
+              </Link>
+            </Button>
+          }
+          disclosure={
+            yearly ? (
+              // Explaining why there is no trial here turns an absence into
+              // the reason it exists.
+              <p
+                className="border-brand-line bg-brand-softer text-brand-ink mt-3 rounded-xl border p-3 text-sm leading-normal"
+                data-testid="trial-disclosure"
+              >
+                {t("annualNoTrial", {
+                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                  days: TRIAL.days,
+                })}
+              </p>
+            ) : (
+              <TrialDisclosure
+                className="mt-3"
+                data-testid="trial-disclosure"
+              />
+            )
+          }
+        />
+      </div>
+    </>
+  );
+}
+
+function Card({
+  title,
+  badge,
+  price,
+  suffix,
+  total,
+  billing,
+  features,
+  cta,
+  disclosure,
+  highlighted = false,
+}: {
+  title: string;
+  badge?: string;
+  price: string;
+  suffix?: string;
+  /** The amount actually charged, when it differs from the headline. */
+  total?: string;
+  billing: string;
+  features: string[];
+  cta: React.ReactNode;
+  disclosure?: React.ReactNode;
+  highlighted?: boolean;
+}) {
+  return (
+    <section
+      className={`flex flex-col rounded-xl border p-5 ${
+        highlighted ? "border-brand ring-brand ring-1" : ""
+      }`}
+    >
+      <h2 className="flex items-center gap-2 font-semibold">
+        {title}
+        {badge && <Badge variant="brand">{badge}</Badge>}
+      </h2>
+
+      {/* One number, big. Anything else about money goes below it, as a
+          sentence about when it is taken. */}
+      <p
+        data-testid="plan-price"
+        className="mt-2 text-3xl font-semibold tracking-tight"
+      >
+        {price}
+        {suffix && (
+          <span className="text-muted-foreground text-base font-normal">
+            {" "}
+            {suffix}
+          </span>
+        )}
+      </p>
+      {total && (
+        <p data-testid="plan-total" className="text-muted-foreground text-sm">
+          {total}
+        </p>
+      )}
+      <p className="text-muted-foreground mt-2 text-sm leading-normal">
+        {billing}
+      </p>
+
+      <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
+        {features.map((feature) => (
+          <li key={feature}>{feature}</li>
+        ))}
+      </ul>
+
+      <div className="mt-5">{cta}</div>
+      {disclosure}
+    </section>
+  );
+}

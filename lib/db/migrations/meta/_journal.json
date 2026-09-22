@@ -36,6 +36,13 @@
       "when": 1789456353603,
       "tag": "0004_blue_master_chief",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789892891681,
+      "tag": "0005_known_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

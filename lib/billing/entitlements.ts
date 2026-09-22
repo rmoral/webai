@@ -21,14 +21,27 @@ export interface Subscriber {
   topupWords: number;
   /** Start of the current billing period; anchors the monthly quota. */
   periodStart: Date | null;
+  /** End of the current period: when the next charge falls, absent a trial. */
+  periodEnd: Date | null;
+  /** The cycle being billed, as Stripe reports it. */
+  interval: "month" | "year" | null;
   subscriptionId: string | null;
+  /**
+   * End of the free trial, or null when there is no trial running. Read by
+   * the end-of-trial wall, which has to appear before the charge; mirrored
+   * from Stripe by the webhook so no page has to call the API to know.
+   */
+  trialEnd: Date | null;
 }
 
 const FREE_SUBSCRIBER: Subscriber = {
   plan: PLANS.free,
   topupWords: 0,
   periodStart: null,
+  periodEnd: null,
+  interval: null,
   subscriptionId: null,
+  trialEnd: null,
 };
 
 /**
@@ -71,7 +84,18 @@ export async function getSubscriber(
     plan: active ? planFromRow(row.plan, row.entitlements) : PLANS.free,
     topupWords: active ? row.topupWords : 0,
     periodStart: row.currentPeriodStart,
+    periodEnd: row.currentPeriodEnd,
+    interval:
+      row.interval === "year"
+        ? "year"
+        : row.interval === "month"
+          ? "month"
+          : null,
     subscriptionId: row.stripeSubscriptionId,
+    // Only while the trial is actually running: a stale date on an active
+    // subscription would put the end-of-trial wall in front of somebody
+    // who already resolved it.
+    trialEnd: row.status === "trialing" ? row.trialEnd : null,
   };
 }
 

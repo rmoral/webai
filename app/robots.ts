@@ -10,7 +10,20 @@ export default function robots(): MetadataRoute.Robots {
       // The signed-in area, the admin panel and the auth hand-off have
       // nothing to index and would leak query parameters into search
       // results. The legal pages carry their own noindex.
-      disallow: ["/api/", "/app", "/en/app", "/admin", "/en/admin", "/auth/"],
+      disallow: [
+        "/api/",
+        "/app",
+        "/en/app",
+        "/admin",
+        "/en/admin",
+        "/auth/",
+        "/pago",
+        "/en/checkout",
+        "/registro",
+        "/en/signup",
+        "/login",
+        "/en/login",
+      ],
     },
     sitemap: new URL("/sitemap.xml", base).toString(),
   };

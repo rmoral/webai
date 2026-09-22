@@ -326,7 +326,64 @@
     "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
     "topupCta": "Buy a top-up",
     "taxNote": "Prices are in US dollars, exclusive of tax; applicable taxes — including US sales tax or your country's VAT where it applies — are calculated at checkout. Renewal is automatic and you can cancel online, at any time, from your account. See the",
-    "taxNoteLink": "terms of service"
+    "taxNoteLink": "terms of service",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "twoMonthsFree": "Two months free against the monthly price.",
+    "yearlyTotal": "{amount} a year",
+    "billingFree": "No card. Ever.",
+    "billingProMonthly": "You are charged {amount} today and every month.",
+    "billingProYearly": "You are charged {amount} today, once a year. You save {saving}.",
+    "billingUnlimitedMonthly": "{days}-day trial. After that, {amount}/month.",
+    "billingUnlimitedYearly": "You are charged {amount} today, once a year. You save {saving}.",
+    "chooseProMonthly": "Choose Pro monthly",
+    "chooseProYearly": "Choose Pro yearly",
+    "chooseUnlimitedYearly": "Choose Unlimited yearly",
+    "annualNoTrial": "The yearly plan is charged today, in full: {amount}. It carries no free trial — the {days}-day trial exists only on the monthly cycle, so that nobody ends up with a yearly charge they did not expect.",
+    "guarantee": "Cancel online in two clicks, whenever you like. No calls, no emails.",
+    "compareTitle": "What each plan includes",
+    "rowWordsDay": "Words a day",
+    "rowWordsMonth": "Words a month",
+    "rowPerRequest": "Words per request",
+    "rowTools": "Tools",
+    "rowHistory": "Encrypted history",
+    "rowBreakdown": "Passage breakdown",
+    "rowPriority": "Queue priority",
+    "rowTopup": "Word top-up",
+    "valueNone": "—",
+    "valueYes": "Yes",
+    "valueNo": "No",
+    "valueFreeTools": "Humanizer and detector",
+    "valueAllTools": "All four",
+    "valueTopup": "{amount} for {words}, no expiry",
+    "valueTopupNeedsPlan": "Needs a paid plan",
+    "faqTitle": "Questions about billing",
+    "faq": [
+      {
+        "q": "When am I charged?",
+        "a": "On Pro and on Unlimited yearly, today, as soon as the payment goes through. On the Unlimited trial, on the fourth day: nothing is charged for the first three, and you see the exact date before handing over a card."
+      },
+      {
+        "q": "How do I cancel?",
+        "a": "From your account, in two clicks, whenever you like. No call, no email. Cancel during the trial and nothing is charged."
+      },
+      {
+        "q": "What happens when the trial ends?",
+        "a": "On day 3, when you open the app, we ask what you want to do: stay on Unlimited, step down to Pro with proration, or cancel. Do nothing and it renews on Unlimited."
+      },
+      {
+        "q": "Do the words expire?",
+        "a": "The plan's words reset every month. Top-up words do not expire while you have an active subscription."
+      },
+      {
+        "q": "Do the prices include tax?",
+        "a": "No. They are in dollars and exclude tax; US sales tax or your country's VAT, where it applies, is calculated at payment."
+      },
+      {
+        "q": "Do you give refunds?",
+        "a": "If something went wrong, write to us and we look at it case by case. The 3-day trial exists precisely so that you do not have to ask for one."
+      }
+    ]
   },
   "plans": {
     "anonymous": "Anonymous",
@@ -343,9 +400,7 @@
     "analysisHere": "The analysis will appear here",
     "writing": "Writing…",
     "analyzing": "Analysing…",
-    "paywall": "{tool} is on the paid plans.",
     "paywallCta": "Requires a paid plan",
-    "freeNote": "You can try the humanizer and the AI detector free, without an account.",
     "genericError": "Something went wrong. Try again.",
     "processing": "Working…",
     "copyResult": "Copy result",
@@ -369,7 +424,29 @@
     "tryUnlimited": "Try Unlimited free for {days} days",
     "createAccount": "Create a free account — {words} words a day",
     "seePro": "See Pro — {price}/month",
-    "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count"
+    "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count",
+    "paidPlanBadge": "Paid plan",
+    "toolTitle": "The {tool} is on the paid plans",
+    "toolBody": "The humanizer and the detector stay free, with or without an account. The other tools come with Pro or Unlimited.",
+    "historyLockTitle": "History is on the paid plans",
+    "historyLockBody": "Pro keeps your texts encrypted and lets you go back to any result. On the free plans no text is stored, only the word count.",
+    "unlockWithPro": "Unlock with Pro",
+    "close": "Close",
+    "breakdownLock": "See the passage breakdown"
+  },
+  "trialEnd": {
+    "badge": "Your trial ends today",
+    "title": "Choose how you carry on. Nothing has been charged yet.",
+    "body": "You have had Unlimited for {days} days. You can continue, step down to Pro, or cancel — all three are here and none of them needs an email to us.",
+    "perMonth": "/month",
+    "unlimitedBody": "{month} words a month, {request} per request, and queue priority.",
+    "proBody": "{month} words a month, {request} per request. Every tool, and history.",
+    "continueUnlimited": "Stay on Unlimited",
+    "switchToPro": "Switch to Pro",
+    "cancel": "Cancel my subscription",
+    "working": "One moment…",
+    "failed": "We could not apply the change. Try again in a few minutes.",
+    "disclosure": "If you choose nothing, you will be charged {unlimited} today and the Unlimited subscription carries on month to month. Switching to Pro applies the proration by itself. Cancelling takes two clicks from your account, and you can do it right now."
   },
   "detector": {
     "bands": {
@@ -399,7 +476,6 @@
     "windowsTitle": "Where the indications concentrate",
     "sentenceRange": "Sentences {from}–{to}",
     "gated": "The passage breakdown is available on the paid plans.",
-    "gatedCta": "See plans",
     "disclaimer": "This measures patterns of style, not authorship. Careful formal writing by a person can show indications, and well-written generated text may show none. No detector, ours included, works as evidence to accuse anyone."
   },
   "errors": {
@@ -443,16 +519,29 @@
     "confirm": "Confirm",
     "cancel": "Cancel"
   },
-  "login": {
-    "title": "Sign in",
-    "description": "With Google or a magic link to your inbox. No passwords.",
+  "auth": {
+    "signupTitle": "Your free account: {words} words a day and session history",
+    "signupLede": "No password and no card. It takes less time than reading this sentence.",
+    "signinTitle": "Back to your account",
+    "signinLede": "Sign in with Google, or ask us for a link. There was never a password to remember.",
+    "benefitWords": "From {from} to {to} words a day, starting now.",
+    "benefitTools": "The humanizer and the detector in full, at no cost.",
     "google": "Continue with Google",
     "or": "or",
-    "emailPlaceholder": "you@example.com",
-    "send": "Send me the link",
+    "emailPlaceholder": "you@email.com",
+    "send": "Send me a sign-in link",
     "sending": "Sending…",
-    "sent": "Check your inbox: we have sent you a link to sign in.",
+    "sent": "We have sent a link to {email}. Open it on this device and you land back where you were.",
     "error": "We could not send the link. Try again.",
+    "textKept": "Your text is still in the editor. Come back and it is there as you left it, with nothing to restore.",
+    "privacy": "We keep no text on the free plan: only the word count, to apply the limits. No card.",
+    "crossToSignin": "Already have an account? Sign in",
+    "crossToSignup": "No account yet? Create a free one",
+    "legal": "Creating an account means accepting the terms of service and the privacy policy.",
+    "signupMetaTitle": "Create a free account",
+    "signinMetaTitle": "Sign in"
+  },
+  "login": {
     "finishing": "Signing you in…",
     "finishFailed": "We could not complete the sign-in.",
     "finishRetry": "Try again"
@@ -497,10 +586,55 @@
     "invalid_request": "That request was not valid. Reload the page.",
     "default": "Checkout could not be opened. Try again.",
     "reference": "{message} (ref: {code})",
-    "disclosure": "You are not charged today. On {date}, when the {days}-day trial ends, you will be charged {unlimited}/month unless you cancel first. You can cancel or switch to Pro ({pro}/month) in two clicks from your account."
+    "disclosure": "You are not charged today. On {date}, when the {days}-day trial ends, you will be charged {unlimited}/month unless you cancel first. You can cancel or switch to Pro ({pro}/month) in two clicks from your account.",
+    "modalTitle": "Pay without leaving this page",
+    "pageTitle": "Complete your subscription",
+    "pageLede": "You pay right here. We do not send you anywhere else.",
+    "summaryNote": "It is active the moment you confirm, without leaving this page.",
+    "trialLine": "{days}-day trial",
+    "taxes": "Tax",
+    "taxesValue": "Calculated at payment",
+    "dueToday": "You pay today",
+    "back": "Back",
+    "close": "Close",
+    "howToCancel": "How do I cancel?",
+    "howToCancelTitle": "Two steps, and no writing to us",
+    "cancelStep1": "Go to My account → Subscription.",
+    "cancelStep2": "Press “Cancel subscription” and confirm.",
+    "successTrialBadge": "Trial active",
+    "successPaidBadge": "Subscription active",
+    "successTrialTitle": "Your Unlimited trial starts now",
+    "successPaidTitle": "You are on {plan}",
+    "successTrialBody": "You have {days} days with everything unlocked. Nothing has been charged yet.",
+    "firstCharge": "First charge",
+    "nextRenewal": "Next renewal",
+    "chargeNoteTrial": "{amount}/month, unless you cancel first",
+    "chargeNotePaid": "{amount}, renewing automatically",
+    "rowPlan": "Plan",
+    "rowPaidToday": "Paid today",
+    "resume": "Back to what I was doing",
+    "manage": "Manage subscription",
+    "goToApp": "Go to the app",
+    "successClose": "We have emailed you the exact date and amount. We will remind you again the day before the charge. You can cancel in two clicks from your account — no calls, no emails.",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "payment": {
+    "formDisclosureTrial": "You are not charged today. We keep your card, and on {date}, when the {days}-day trial ends, you will be charged {amount}/month. The subscription renews automatically each month until you cancel — two clicks from your account, during the trial as well.",
+    "formDisclosureCharge": "You are charged {amount} today. The subscription renews automatically on {date} for {amount}, and every cycle after that until you cancel. You can cancel in two clicks from your account.",
+    "consent": "I understand the subscription renews automatically and that I can cancel it online at any time.",
+    "startTrialCta": "Start the trial — {amount} today",
+    "payCta": "Pay — {amount} today",
+    "processing": "Taking payment…",
+    "declined": "Your bank declined the card.",
+    "nothingCharged": "Nothing has been charged.",
+    "failed": "We could not complete the payment, and that is a problem on our side. Try again in a few minutes.",
+    "already": "You already have an active subscription. You can manage it from your account.",
+    "unavailable": "Payment is unavailable right now because of a configuration problem on our side. We are on it.",
+    "securityNote": "Stripe processes the payment. Your card details go to them encrypted and never pass through our servers."
   },
   "legal": {
-    "updated": "Last updated: 17 September 2026.",
+    "updated": "Last updated: {date}.",
     "legalNotice": {
       "title": "Legal notice",
       "sections": [
@@ -648,19 +782,30 @@
     "jurisdiction": "a limited liability company organised in the State of Florida, United States"
   },
   "emails": {
-    "welcomeSubject": "Your Verbalyx trial is active",
-    "welcomePreview": "Your Verbalyx Unlimited trial is active",
-    "welcomeHeading": "Welcome to Verbalyx",
-    "welcomeBody": "Your {days}-day trial is now active. From here you can use every tool with no daily limit and up to {words} words per request.",
-    "welcomeCta": "Go to my tools →",
-    "welcomeNote": "You can cancel at any time from your account. If you cancel before the trial ends, you are not charged anything.",
-    "trialSubject": "Your Verbalyx trial ends tomorrow",
-    "trialPreview": "Your Verbalyx trial ends tomorrow",
-    "trialHeading": "Your trial ends tomorrow",
-    "trialBody": "Your trial period ends tomorrow and your subscription starts. If you want to carry on, there is nothing to do.",
-    "trialCancelBefore": "If you would rather cancel, you can do it in one click from",
-    "trialAccount": "your account",
-    "trialCancelAfter": "and you will not be charged."
+    "confirmSubject": "Your Verbalyx trial starts today — first charge on {date}",
+    "confirmPaidSubject": "Your Verbalyx subscription is active — next renewal on {date}",
+    "confirmTrialPreview": "Nothing is charged today. The first charge is on {date}: {amount}.",
+    "confirmPaidPreview": "You were charged {amount} today. The next renewal is on {date}.",
+    "confirmTrialHeading": "Your Unlimited trial starts today",
+    "confirmPaidHeading": "Your subscription is active",
+    "confirmTrialBody": "You have {days} days with everything unlocked. Nothing has been charged today, and we are telling you exactly when and how much you will be charged.",
+    "confirmPaidBody": "You were charged {amount} today. The exact date of the next renewal is below.",
+    "confirmTrialCancel": "Cancelling takes two clicks and you can do it during the trial: My account → Subscription → Cancel. Cancel before {date} and nothing is charged. You can also switch to Pro from the same place.",
+    "confirmPaidCancel": "Cancelling takes two clicks, whenever you like: My account → Subscription → Cancel. No calls, no emails.",
+    "confirmTrialReminder": "We will remind you again 24 hours before the charge.",
+    "reminderSubject": "You will be charged {amount} tomorrow — cancel today if you do not want to continue",
+    "reminderPreview": "You will be charged {amount} tomorrow. If you do not want to continue, cancel today in two clicks.",
+    "reminderHeading": "You will be charged {amount} tomorrow",
+    "reminderBody": "Your Unlimited trial ends on {date}. We are telling you today so you can decide without rushing: continue, step down to Pro, or cancel.",
+    "reminderStay": "Stay on Unlimited. Do nothing.",
+    "reminderDowngrade": "Step down to Pro, {amount}/month. The proration applies by itself.",
+    "reminderCancel": "Cancel. No charge and no explanation needed. You keep access until tomorrow.",
+    "firstCharge": "First charge",
+    "nextRenewal": "Next renewal",
+    "goToApp": "Go to the app",
+    "manageOrCancel": "Manage or cancel",
+    "footerCompany": "YBB Solutions, LLC — Verbalyx",
+    "footerNotice": "You are receiving this because you have an active Verbalyx subscription. It is a billing notice, not marketing."
   },
   "detectorSignals": {
     "raya_espaciada": {

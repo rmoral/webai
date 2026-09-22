@@ -5,6 +5,17 @@ import type { Locale } from "./routing";
 // each document carries its own slug per language and the page resolves the
 // incoming slug back to the document id.
 
+/**
+ * The version of the terms on screen, recorded with every consent to be
+ * charged. Bump it whenever the legal copy changes in either language:
+ * a dispute is answered with "these were the terms they accepted", and a
+ * version that never moves cannot say which ones those were.
+ *
+ * It is also what the legal pages print as their last-updated date, so the
+ * two can never drift apart.
+ */
+export const TERMS_VERSION = "2026-09-17";
+
 export const LEGAL_DOCS = [
   "legalNotice",
   "terms",

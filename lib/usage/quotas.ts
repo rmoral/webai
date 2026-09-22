@@ -263,7 +263,15 @@ export async function consumeDailyWords(
 ): Promise<QuotaResult> {
   return consumeWords(
     subject,
-    { plan, topupWords: 0, periodStart: null, subscriptionId: null },
+    {
+      plan,
+      topupWords: 0,
+      periodStart: null,
+      periodEnd: null,
+      interval: null,
+      subscriptionId: null,
+      trialEnd: null,
+    },
     words,
   );
 }
