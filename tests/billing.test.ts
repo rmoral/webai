@@ -21,6 +21,7 @@ import {
   trialDisclosure,
 } from "@/lib/billing/disclosure";
 import { subscribeRequestSchema } from "@/lib/security/validation";
+import { subscriptionParams } from "@/lib/billing/subscribe";
 import { describeCheckoutRejection } from "@/lib/billing/stripe";
 
 describe("plan catalogue", () => {
@@ -387,5 +388,100 @@ describe("subscribeRequestSchema", () => {
     expect(
       subscribeRequestSchema.safeParse({ ...valid, plan: "free" }).success,
     ).toBe(false);
+  });
+});
+
+describe("subscriptionParams", () => {
+  const base = {
+    customerId: "cus_123",
+    priceId: "price_123",
+    userId: "user-123",
+    locale: "es" as const,
+  };
+
+  it("always calculates tax", () => {
+    // Prices are tax-inclusive, so this changes nobody's total -- it splits
+    // the amount into net and tax. Without it the whole 29,99 is booked as
+    // revenue and the VAT on an EU sale leaves the margin unrecorded, while
+    // the page goes on saying tax is calculated at payment.
+    for (const tier of ["pro", "unlimited"] as const) {
+      for (const interval of ["monthly", "yearly"] as const) {
+        const params = subscriptionParams({ ...base, tier, interval });
+        expect(params.automatic_tax, `${tier} ${interval}`).toEqual({
+          enabled: true,
+        });
+      }
+    }
+  });
+
+  it("asks for a trial on Ilimitado monthly and nowhere else", () => {
+    expect(
+      subscriptionParams({ ...base, tier: "unlimited", interval: "monthly" })
+        .trial_period_days,
+    ).toBe(TRIAL.days);
+
+    for (const [tier, interval] of [
+      ["unlimited", "yearly"],
+      ["pro", "monthly"],
+      ["pro", "yearly"],
+    ] as const) {
+      expect(
+        subscriptionParams({ ...base, tier, interval }).trial_period_days,
+        `${tier} ${interval}`,
+      ).toBeUndefined();
+    }
+  });
+
+  it("expands the field each charging mechanism actually uses", () => {
+    // A trial owes nothing today, so there is no invoice and the browser
+    // confirms a SetupIntent. Everything else has an invoice from the first
+    // minute, and its secret lives on confirmation_secret -- payment_intent
+    // was removed from the API version this SDK pins and reads as undefined.
+    expect(
+      subscriptionParams({ ...base, tier: "unlimited", interval: "monthly" })
+        .expand,
+    ).toEqual(["pending_setup_intent"]);
+    expect(
+      subscriptionParams({ ...base, tier: "pro", interval: "yearly" }).expand,
+    ).toEqual(["latest_invoice.confirmation_secret"]);
+  });
+
+  it("cancels a trial that never got a card, rather than leaving it unbillable", () => {
+    const params = subscriptionParams({
+      ...base,
+      tier: "unlimited",
+      interval: "monthly",
+    });
+    expect(params.trial_settings?.end_behavior?.missing_payment_method).toBe(
+      "cancel",
+    );
+  });
+
+  it("carries the user, the plan and the language into the metadata", () => {
+    // The webhook has no request to read: everything it needs to attribute
+    // a payment and answer in the right language travels here.
+    const params = subscriptionParams({
+      ...base,
+      tier: "pro",
+      interval: "monthly",
+      locale: "en",
+    });
+    expect(params.metadata).toEqual({
+      user_id: "user-123",
+      plan: "pro",
+      cycle: "monthly",
+      locale: "en",
+    });
+  });
+
+  it("never lets the browser name the price", () => {
+    // The amount comes from the resolved Stripe price, never from anything
+    // the client sent.
+    const params = subscriptionParams({
+      ...base,
+      tier: "pro",
+      interval: "monthly",
+    });
+    expect(params.items).toEqual([{ price: "price_123" }]);
   });
 });

@@ -325,7 +325,7 @@
     "topupTitle": "Word top-up",
     "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
     "topupCta": "Buy a top-up",
-    "taxNote": "Prices are in US dollars, exclusive of tax; applicable taxes — including US sales tax or your country's VAT where it applies — are calculated at checkout. Renewal is automatic and you can cancel online, at any time, from your account. See the",
+    "taxNote": "Prices are in US dollars, tax included: US sales tax or your country's VAT, where it applies, is already inside the price you see. Renewal is automatic and you can cancel online, at any time, from your account. See the",
     "taxNoteLink": "terms of service",
     "monthly": "Monthly",
     "yearly": "Yearly",
@@ -377,7 +377,7 @@
       },
       {
         "q": "Do the prices include tax?",
-        "a": "No. They are in dollars and exclude tax; US sales tax or your country's VAT, where it applies, is calculated at payment."
+        "a": "Yes. The price you see is the price charged: US sales tax or your country's VAT, where it applies, is already included. Nothing is added at the last step."
       },
       {
         "q": "Do you give refunds?",
@@ -593,7 +593,7 @@
     "summaryNote": "It is active the moment you confirm, without leaving this page.",
     "trialLine": "{days}-day trial",
     "taxes": "Tax",
-    "taxesValue": "Calculated at payment",
+    "taxesValue": "Included in the price",
     "dueToday": "You pay today",
     "back": "Back",
     "close": "Close",
