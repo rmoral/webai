@@ -7,6 +7,7 @@ import es from "@/messages/es.json";
 import { checkEntitlement } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
 import {
+  PAYMENT_METHOD_TYPES,
   PLANS,
   PRICES,
   TOPUP,
@@ -410,6 +411,23 @@ describe("subscriptionParams", () => {
         expect(params.automatic_tax, `${tier} ${interval}`).toEqual({
           enabled: true,
         });
+      }
+    }
+  });
+
+  it("names the payment methods instead of leaving them automatic", () => {
+    // The Element is built from the same constant. An Element without it
+    // collects through automatic payment methods, and Stripe.js then
+    // refuses to confirm against an intent that names its types -- in the
+    // browser, so the server logs stay empty and the customer is just told
+    // the payment did not go through.
+    for (const tier of ["pro", "unlimited"] as const) {
+      for (const interval of ["monthly", "yearly"] as const) {
+        const params = subscriptionParams({ ...base, tier, interval });
+        expect(
+          params.payment_settings?.payment_method_types,
+          `${tier} ${interval}`,
+        ).toEqual([...PAYMENT_METHOD_TYPES]);
       }
     }
   });

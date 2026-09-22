@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { paymentDisclosure } from "@/lib/billing/disclosure";
 import {
   CURRENCY,
+  PAYMENT_METHOD_TYPES,
   PRICES,
   formatUsd,
   trialDaysFor,
@@ -112,6 +113,9 @@ export function PaymentPanel({
               currency: CURRENCY.toLowerCase(),
               // The card is kept for the charge at the end of the trial.
               setupFutureUsage: "off_session",
+              // Named rather than automatic: the subscription names them
+              // too, and Stripe.js will not confirm across that gap.
+              paymentMethodTypes: [...PAYMENT_METHOD_TYPES],
               appearance,
               locale,
             }
@@ -119,6 +123,7 @@ export function PaymentPanel({
               mode: "subscription",
               amount: amountCents,
               currency: CURRENCY.toLowerCase(),
+              paymentMethodTypes: [...PAYMENT_METHOD_TYPES],
               appearance,
               locale,
             }

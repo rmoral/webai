@@ -154,6 +154,22 @@ export const TOPUP = {
 
 export const CURRENCY = "USD";
 
+/**
+ * The payment methods the Element offers and the subscription accepts.
+ *
+ * Pinned, and pinned in one place, because the two sides have to agree:
+ * an Element built without this list collects through Stripe's automatic
+ * payment methods, and Stripe.js then refuses to confirm it against an
+ * intent that names its types -- which is what Billing always does, since
+ * a subscription has no automatic-payment-methods switch. The failure is
+ * a client-side refusal, so nothing reaches our logs and the customer
+ * just sees the payment not go through.
+ *
+ * Adding a method means adding it here and enabling it in the Stripe
+ * dashboard; the Element will not show one the subscription cannot take.
+ */
+export const PAYMENT_METHOD_TYPES = ["card"] as const;
+
 /** The trial runs on Ilimitado so the user sees the ceiling of the product. */
 export const TRIAL = {
   tier: "unlimited" as const,
