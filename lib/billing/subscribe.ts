@@ -189,6 +189,21 @@ export function subscriptionParams(args: {
   };
 }
 
+/**
+ * Removes a subscription this request created and could not finish.
+ *
+ * A trial subscription is live from the moment it exists, so one left
+ * behind is not litter: the webhook writes it to our table, and from then
+ * on every further attempt is refused as `already_subscribed` -- locking
+ * out an account that never got as far as entering a card. Best effort,
+ * because the failure that brought us here is the one worth reporting.
+ */
+export async function undoSubscription(subscriptionId: string) {
+  await getStripe()
+    .subscriptions.cancel(subscriptionId)
+    .catch(() => {});
+}
+
 export async function createSubscription(args: {
   userId: string;
   customerId: string;
@@ -223,11 +238,8 @@ export async function createSubscription(args: {
 
   if (!clientSecret) {
     // Recoverable for the customer -- nothing was charged -- but not for
-    // this request. Leaving the incomplete subscription behind would block
-    // their next attempt on `already_subscribed`, so it goes.
-    await getStripe()
-      .subscriptions.cancel(subscription.id)
-      .catch(() => {});
+    // this request.
+    await undoSubscription(subscription.id);
     throw new SubscribeError("no_client_secret");
   }
 

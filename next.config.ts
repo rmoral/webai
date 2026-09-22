@@ -3,15 +3,19 @@ import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from "next-intl/plugin";
 
 // CSP must be extended when adding third-party scripts (GTM, Stripe.js…).
+// hooks.stripe.com is where the 3-D Secure challenge is framed: without it
+// every card that asks for authentication -- which in the EU is most of
+// them -- fails at the last step. *.js.stripe.com is the set of origins
+// Stripe.js spreads the Element frames over.
 // 'unsafe-inline' is required by Next.js hydration; 'unsafe-eval' only in dev.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com https://js.stripe.com`,
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com https://js.stripe.com https://*.js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://eu.i.posthog.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://challenges.cloudflare.com https://api.stripe.com",
-  "frame-src https://challenges.cloudflare.com https://js.stripe.com https://checkout.stripe.com",
+  "frame-src https://challenges.cloudflare.com https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
