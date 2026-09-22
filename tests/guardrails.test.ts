@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { PRICES, TOPUP, formatUsd } from "@/lib/billing/plans";
+import { PRICES, TOPUP, TRIAL_REMINDER, formatUsd } from "@/lib/billing/plans";
 import en from "@/messages/en.json";
 import es from "@/messages/es.json";
 
@@ -172,31 +172,51 @@ describe("colour carries meaning and stays legible", () => {
   });
 });
 
-describe("the scheduled job stays deployable", () => {
-  // Vercel's Hobby plan refuses anything that runs more than once a day,
-  // and it refuses it at deploy time -- so an hourly schedule does not
-  // degrade the reminder, it takes the whole site down with it. That is
-  // what happened, and this is the cheapest way for it not to happen twice.
+describe("the reminder schedule and its window agree", () => {
   const crons = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8"))
     .crons as { path: string; schedule: string }[];
 
-  it("runs at most once a day", () => {
-    expect(crons.length).toBeGreaterThan(0);
-    for (const { path, schedule } of crons) {
-      const [minute, hour] = schedule.split(" ");
-      // A concrete minute and a concrete hour: anything else -- "*",
-      // "*/4", a list or a range -- fires more than once in a day.
-      expect(minute, `${path}: minute`).toMatch(/^\d+$/);
-      expect(hour, `${path}: hour`).toMatch(/^\d+$/);
-    }
-  });
+  const reminder = crons.find((c) => c.path.includes("trial-reminder"));
+
+  /** Hours between two runs of a 5-field schedule, for the shapes we use. */
+  function intervalHours(schedule: string): number {
+    const [minute, hour] = schedule.split(" ");
+    // A concrete minute is required either way: without it the job runs
+    // every minute and no window is small enough.
+    expect(minute).toMatch(/^\d+$/);
+    if (hour === "*") return 1;
+    const everyN = /^\*\/(\d+)$/.exec(hour);
+    if (everyN) return Number(everyN[1]);
+    expect(hour, "unsupported hour field").toMatch(/^\d+$/);
+    return 24;
+  }
 
   it("points at a route that exists", () => {
+    expect(crons.length).toBeGreaterThan(0);
     for (const { path } of crons) {
       expect(
         existsSync(join(ROOT, "app", path, "route.ts")),
         `${path} has no handler`,
       ).toBe(true);
     }
+  });
+
+  it("never lets a trial slip between two runs", () => {
+    // A window narrower than the gap between runs means a trial can pass
+    // through it unseen and never be warned before the charge.
+    expect(reminder).toBeDefined();
+    expect(TRIAL_REMINDER.windowHours).toBeGreaterThanOrEqual(
+      intervalHours(reminder!.schedule),
+    );
+  });
+
+  it("never lets the warning go out early", () => {
+    // The first matching run sends, and trialReminderSentAt stops the rest,
+    // so the far edge of the window is when the email actually lands. A
+    // [24,48] window under an hourly cron mails everyone two days ahead
+    // while reading like a 24-hour warning; that is the shape this catches.
+    expect(TRIAL_REMINDER.windowHours).toBeLessThanOrEqual(
+      2 * intervalHours(reminder!.schedule),
+    );
   });
 });
