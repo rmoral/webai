@@ -250,3 +250,21 @@ describe("the CSP lets the payment finish", () => {
     expect(directive("connect-src")).toContain("https://api.stripe.com");
   });
 });
+
+describe("the Element and the subscription offer the same payment methods", () => {
+  it("builds the Element from the shared list", () => {
+    // Two literals that must match are a bug waiting for whoever edits one
+    // of them. The failure is silent on the server: Stripe.js refuses in
+    // the browser, so nothing is logged and the customer only sees that
+    // the payment did not go through.
+    const form = readFileSync(
+      join(ROOT, "components/billing/payment-form.tsx"),
+      "utf8",
+    );
+    const uses = form.match(
+      /paymentMethodTypes: \[\.\.\.PAYMENT_METHOD_TYPES\]/g,
+    );
+    // One for the trial's setup mode, one for the immediate charge.
+    expect(uses?.length).toBe(2);
+  });
+});

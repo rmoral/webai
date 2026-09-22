@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import {
+  PAYMENT_METHOD_TYPES,
   PRICES,
   trialDaysFor,
   type BillingInterval,
@@ -163,7 +164,11 @@ export function subscriptionParams(args: {
     customer: args.customerId,
     items: [{ price: args.priceId }],
     payment_behavior: "default_incomplete",
-    payment_settings: { save_default_payment_method: "on_subscription" },
+    payment_settings: {
+      save_default_payment_method: "on_subscription",
+      // The Element is built from the same list; see PAYMENT_METHOD_TYPES.
+      payment_method_types: [...PAYMENT_METHOD_TYPES],
+    },
     // Prices are tax-inclusive, so this does not change what anybody pays:
     // it splits the amount into net and tax so the invoice is correct and
     // the tax is actually declared. Without it the whole 29,99 is booked as
