@@ -68,32 +68,75 @@ async function ensureProduct(
   return created;
 }
 
+/**
+ * Prices include tax.
+ *
+ * The product promises that the figure on the button is the figure charged
+ * -- that is the whole point of the redesign -- and an exclusive price
+ * cannot keep that promise: the total would depend on where the reader
+ * lives, and would not be knowable until they told us. Inclusive pricing
+ * makes 29,99 US$ true for everyone and moves the variation into the
+ * margin, where it belongs.
+ */
+const TAX_BEHAVIOR = "inclusive" as const;
+
+/**
+ * The price for a lookup key, created or replaced.
+ *
+ * A Stripe price is immutable: neither its amount nor its tax_behavior can
+ * be edited once set. So when either drifts from plans.ts the key is moved
+ * onto a new price (`transfer_lookup_key`) and the old one is archived.
+ *
+ * Skipping that -- returning early whenever a price with the key existed,
+ * as this did -- meant a changed amount in plans.ts showed on the site and
+ * never reached Stripe: the page said one number and the customer was
+ * charged another, silently and forever. Existing subscriptions keep
+ * billing on the archived price, which is the correct answer for anyone
+ * who already bought.
+ */
 async function ensurePrice(
   product: Stripe.Product,
   lookupKey: string,
   amount: number,
   recurring?: BillingInterval,
 ): Promise<Stripe.Price> {
+  const unitAmount = Math.round(amount * 100);
   const { data } = await stripe.prices.list({
     lookup_keys: [lookupKey],
     limit: 1,
   });
-  if (data[0]) {
-    console.log(`  · precio ${lookupKey}: ya existe (${data[0].id})`);
-    return data[0];
+
+  const current = data[0];
+  if (
+    current &&
+    current.unit_amount === unitAmount &&
+    current.tax_behavior === TAX_BEHAVIOR
+  ) {
+    console.log(`  · precio ${lookupKey}: ya existe (${current.id})`);
+    return current;
   }
+
   const price = await stripe.prices.create({
     product: product.id,
     lookup_key: lookupKey,
-    unit_amount: Math.round(amount * 100),
+    // Moves the key off the old price, so findPrice() resolves to this one.
+    transfer_lookup_key: true,
+    unit_amount: unitAmount,
     currency: "usd",
-    // US prices are quoted without tax; Stripe Tax adds it at checkout.
-    tax_behavior: "exclusive",
+    tax_behavior: TAX_BEHAVIOR,
     ...(recurring
       ? { recurring: { interval: recurring === "yearly" ? "year" : "month" } }
       : {}),
   });
-  console.log(`  · precio ${lookupKey}: creado (${price.id})`);
+
+  if (current) {
+    await stripe.prices.update(current.id, { active: false });
+    console.log(
+      `  · precio ${lookupKey}: reemplazado (${current.id} → ${price.id}); el anterior queda archivado y sigue facturando a quien ya lo tenía`,
+    );
+  } else {
+    console.log(`  · precio ${lookupKey}: creado (${price.id})`);
+  }
   return price;
 }
 

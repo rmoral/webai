@@ -325,7 +325,7 @@
     "topupTitle": "Recarga de palabras",
     "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
     "topupCta": "Comprar recarga",
-    "taxNote": "Precios en dólares estadounidenses, sin impuestos incluidos; los impuestos aplicables —incluido el impuesto sobre ventas de EE. UU. o el IVA de tu país cuando corresponda— se calculan en el pago. La renovación es automática y puedes cancelar en línea, en cualquier momento, desde tu cuenta. Consulta los",
+    "taxNote": "Precios en dólares estadounidenses, impuestos incluidos: el impuesto sobre ventas de EE. UU. o el IVA de tu país, cuando corresponda, ya está dentro del precio que ves. La renovación es automática y puedes cancelar en línea, en cualquier momento, desde tu cuenta. Consulta los",
     "taxNoteLink": "términos del servicio",
     "monthly": "Mensual",
     "yearly": "Anual",
@@ -377,7 +377,7 @@
       },
       {
         "q": "¿Los precios llevan impuestos?",
-        "a": "No. Son en dólares y sin impuestos; el impuesto sobre ventas de EE. UU. o el IVA de tu país, cuando corresponda, se calcula en el pago."
+        "a": "Sí. El precio que ves es el que se cobra: el impuesto sobre ventas de EE. UU. o el IVA de tu país, cuando corresponda, ya está incluido. No hay sorpresas en el último paso."
       },
       {
         "q": "¿Hacéis reembolsos?",
@@ -593,7 +593,7 @@
     "summaryNote": "Se activa en cuanto confirmes el pago, sin salir de esta página.",
     "trialLine": "Prueba de {days} días",
     "taxes": "Impuestos",
-    "taxesValue": "Se calculan al pagar",
+    "taxesValue": "Incluidos en el precio",
     "dueToday": "Hoy pagas",
     "back": "Volver",
     "close": "Cerrar",

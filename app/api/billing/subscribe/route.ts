@@ -46,8 +46,13 @@ export async function POST(request: NextRequest) {
     return error(409, "already_subscribed");
   }
 
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+
   try {
-    const customerId = await ensureCustomer(user.id, user.email ?? null);
+    // The IP goes to Stripe so it can work out the tax jurisdiction, and
+    // into our own row only as a hash (below).
+    const customerId = await ensureCustomer(user.id, user.email ?? null, ip);
     const result = await createSubscription({
       userId: user.id,
       customerId,
@@ -64,10 +69,7 @@ export async function POST(request: NextRequest) {
       .insert(billingConsents)
       .values({
         userId: user.id,
-        ipHash: hashIp(
-          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-            "0.0.0.0",
-        ),
+        ipHash: hashIp(ip ?? "0.0.0.0"),
         userAgent: request.headers.get("user-agent")?.slice(0, 500) ?? null,
         termsVersion: TERMS_VERSION,
         plan,
