@@ -2,7 +2,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { PRICES, TOPUP, TRIAL_REMINDER, formatUsd } from "@/lib/billing/plans";
+import {
+  PAYMENT_METHOD_TYPES,
+  PRICES,
+  TOPUP,
+  TRIAL_REMINDER,
+  formatUsd,
+} from "@/lib/billing/plans";
 import en from "@/messages/en.json";
 import es from "@/messages/es.json";
 
@@ -252,6 +258,16 @@ describe("the CSP lets the payment finish", () => {
 });
 
 describe("the Element and the subscription offer the same payment methods", () => {
+  it("keeps the wallets out of the list", () => {
+    // Apple Pay and Google Pay are not payment method types: they are
+    // wallets that hand over a card. Naming one is rejected by the API, so
+    // the subscription call fails and nobody can pay at all -- a worse
+    // outcome than the missing wallet somebody was trying to add.
+    for (const wallet of ["apple_pay", "google_pay"]) {
+      expect(PAYMENT_METHOD_TYPES as readonly string[]).not.toContain(wallet);
+    }
+  });
+
   it("builds the Element from the shared list", () => {
     // Two literals that must match are a bug waiting for whoever edits one
     // of them. The failure is silent on the server: Stripe.js refuses in
