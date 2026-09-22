@@ -7,6 +7,7 @@ import {
   createSubscription,
   ensureCustomer,
   hasLiveSubscription,
+  undoSubscription,
 } from "@/lib/billing/subscribe";
 import { getDb } from "@/lib/db/client";
 import { billingConsents } from "@/lib/db/schema";
@@ -65,21 +66,30 @@ export async function POST(request: NextRequest) {
     // the happy path alone: a consent recorded after the money moved proves
     // nothing about what was on screen beforehand. If this insert fails the
     // request still fails -- an unprovable charge is worse than no charge.
-    await getDb()
-      .insert(billingConsents)
-      .values({
-        userId: user.id,
-        ipHash: hashIp(ip ?? "0.0.0.0"),
-        userAgent: request.headers.get("user-agent")?.slice(0, 500) ?? null,
-        termsVersion: TERMS_VERSION,
-        plan,
-        interval: cycle,
-        amountTodayCents: result.amountTodayCents,
-        amountNextCents: result.amountNextCents,
-        nextChargeAt: result.nextChargeAt,
-        stripeSubscriptionId: result.subscriptionId,
-        locale,
-      });
+    try {
+      await getDb()
+        .insert(billingConsents)
+        .values({
+          userId: user.id,
+          ipHash: hashIp(ip ?? "0.0.0.0"),
+          userAgent: request.headers.get("user-agent")?.slice(0, 500) ?? null,
+          termsVersion: TERMS_VERSION,
+          plan,
+          interval: cycle,
+          amountTodayCents: result.amountTodayCents,
+          amountNextCents: result.amountNextCents,
+          nextChargeAt: result.nextChargeAt,
+          stripeSubscriptionId: result.subscriptionId,
+          locale,
+        });
+    } catch (e) {
+      // The subscription above already exists in Stripe. Failing the
+      // request without taking it back would leave a live trial nobody
+      // asked for and refuse every later attempt as `already_subscribed`,
+      // which is a worse state than the failure itself.
+      await undoSubscription(result.subscriptionId);
+      throw e;
+    }
 
     return NextResponse.json(
       {
