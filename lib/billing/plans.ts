@@ -162,6 +162,25 @@ export const TRIAL = {
 };
 
 /**
+ * When the pre-charge warning goes out, in hours before the charge.
+ *
+ * `windowHours` is tied to the cron interval in vercel.json and the two
+ * cannot be chosen independently:
+ *
+ *   too narrow  a trial falls between two runs and is never warned at all.
+ *   too wide    the warning goes out early. The first run that matches is
+ *               the one that sends, and trialReminderSentAt stops every
+ *               run after it -- so the window's far edge, not its near
+ *               edge, is when the email actually lands.
+ *
+ * That second failure is not hypothetical: a [24h, 48h] window under an
+ * hourly cron mails everyone two days ahead while looking like a 24-hour
+ * warning, which is how this shipped once. tests/guardrails.test.ts reads
+ * the schedule and holds the two together.
+ */
+export const TRIAL_REMINDER = { leadHours: 24, windowHours: 2 } as const;
+
+/**
  * Whether this combination starts with a free trial, and for how long.
  *
  * This is the rule the whole redesign turns on. A trial hanging off a

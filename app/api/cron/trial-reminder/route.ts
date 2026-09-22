@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { sendTrialReminder } from "@/lib/billing/notify";
-import { PRICES } from "@/lib/billing/plans";
+import { PRICES, TRIAL_REMINDER } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
 import { subscriptions, users } from "@/lib/db/schema";
 import { isLocale, routing } from "@/lib/i18n/routing";
@@ -17,19 +17,21 @@ import { isLocale, routing } from "@/lib/i18n/routing";
 // is the one that costs most: the warning is what stops the charge being a
 // surprise, and a surprise charge is a dispute.
 //
-// Runs once a day (vercel.json), which is what a Vercel Hobby account
-// allows -- an hourly schedule is refused at deploy time.
+// Runs hourly (vercel.json), with a window two hours wide starting a day
+// out: the warning lands between 24 and 26 hours before the charge.
 //
-// The window is exactly one day wide and starts one day out, so it tiles
-// the timeline: between two runs the distance to a given trial_end drops by
-// exactly 24 hours, so each trial falls inside [24h, 48h] on exactly one
-// run. Nobody is skipped and nobody is mailed twice, and the
-// trialReminderSentAt mark covers the boundary case where a trial sits
-// exactly on 24 or 48 hours.
+// The window and the schedule are one decision, not two. What sends the
+// email is the FIRST run that matches, because trialReminderSentAt stops
+// every run after it -- so the far edge of the window is when it actually
+// goes out. A window wider than it needs to be is a warning that arrives
+// early; one narrower than the gap between runs lets a trial slip through
+// unwarned. See TRIAL_REMINDER in lib/billing/plans.ts, which the
+// guardrail test holds against the cron schedule.
 //
-// The cost is precision: the warning lands somewhere between one and two
-// days before the charge rather than at 24 hours. That is why the email
-// states the date instead of saying "tomorrow" -- see emails/trial-reminder.
+// The email still names the date rather than saying "tomorrow": at a
+// 24-26 hour lead a send after 22:00 falls two calendar days before the
+// charge, and this is the one message that has to be exact about when
+// money moves.
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +65,17 @@ export async function GET(request: NextRequest) {
       and(
         eq(subscriptions.status, "trialing"),
         isNull(subscriptions.trialReminderSentAt),
-        gte(subscriptions.trialEnd, new Date(now + 24 * HOUR)),
-        lte(subscriptions.trialEnd, new Date(now + 48 * HOUR)),
+        gte(
+          subscriptions.trialEnd,
+          new Date(now + TRIAL_REMINDER.leadHours * HOUR),
+        ),
+        lte(
+          subscriptions.trialEnd,
+          new Date(
+            now +
+              (TRIAL_REMINDER.leadHours + TRIAL_REMINDER.windowHours) * HOUR,
+          ),
+        ),
       ),
     );
 
