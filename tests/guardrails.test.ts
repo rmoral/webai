@@ -220,3 +220,33 @@ describe("the reminder schedule and its window agree", () => {
     );
   });
 });
+
+describe("the CSP lets the payment finish", () => {
+  const config = readFileSync(join(ROOT, "next.config.ts"), "utf8");
+
+  /** The value of one directive, as the header will carry it. */
+  function directive(name: string): string {
+    const line = config
+      .split("\n")
+      .find((l) => l.includes(`"${name} `) || l.includes(`\`${name} `));
+    expect(line, `${name} is not in the CSP`).toBeDefined();
+    return line!;
+  }
+
+  it("frames the 3-D Secure challenge", () => {
+    // The challenge is an iframe on hooks.stripe.com. Drop it and the form
+    // works all the way to the last click, then dies silently on every card
+    // whose bank asks for authentication -- which in the EU is nearly all
+    // of them, and which no test card in the happy path will ever show.
+    expect(directive("frame-src")).toContain("https://hooks.stripe.com");
+  });
+
+  it("allows the origins Stripe.js spreads its frames over", () => {
+    expect(directive("frame-src")).toContain("https://*.js.stripe.com");
+    expect(directive("script-src")).toContain("https://*.js.stripe.com");
+  });
+
+  it("lets the Element talk to the API", () => {
+    expect(directive("connect-src")).toContain("https://api.stripe.com");
+  });
+});
