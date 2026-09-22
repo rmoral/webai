@@ -120,19 +120,33 @@ describe("trial reminder", () => {
     expect(body).toContain("Cancelar");
   });
 
-  it("puts the figure in the subject and the preheader", async () => {
+  it("puts the figure and the date in the subject and the preheader", async () => {
     // A good share of people decide whether this matters from the inbox
     // list alone, without opening it.
-    expect(subject("es", "reminderSubject", { amount: "29,99 US$" })).toContain(
-      "29,99 US$",
-    );
+    const es = subject("es", "reminderSubject", {
+      amount: "29,99 US$",
+      date: "21 de septiembre de 2026",
+    });
+    expect(es).toContain("29,99 US$");
+    expect(es).toContain("21 de septiembre de 2026");
     expect(await html("es")).toContain("29,99 US$");
-    expect(subject("en", "reminderSubject", { amount: "$29.99" })).toContain(
-      "$29.99",
-    );
+
+    const en = subject("en", "reminderSubject", {
+      amount: "$29.99",
+      date: "21 September 2026",
+    });
+    expect(en).toContain("$29.99");
+    expect(en).toContain("21 September 2026");
   });
 
-  it("states the exact end date, not 'tomorrow' alone", async () => {
-    expect(await html("es")).toContain("21 de septiembre de 2026");
+  it("names the date rather than saying 'tomorrow'", async () => {
+    // The cron runs once a day, which is all a Vercel Hobby account
+    // allows, so this lands anywhere between one and two days before the
+    // charge. "Tomorrow" would be wrong about half the time, in the one
+    // message whose whole job is to be exact about when money moves.
+    const body = await html("es");
+    expect(body).toContain("21 de septiembre de 2026");
+    expect(body).not.toMatch(/\bMañana\b/i);
+    expect(await html("en")).not.toMatch(/\btomorrow\b/i);
   });
 });

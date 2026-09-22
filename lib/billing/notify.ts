@@ -96,7 +96,7 @@ export async function sendSubscriptionConfirmation(args: {
   });
 }
 
-/** The 24-hour warning. Sent by the cron, never by a Stripe event. */
+/** The pre-charge warning. Sent by the cron, never by a Stripe event. */
 export async function sendTrialReminder(args: {
   to: string;
   locale: Locale;
@@ -106,16 +106,17 @@ export async function sendTrialReminder(args: {
 }): Promise<void> {
   const t = emailTranslator(args.locale);
   const amount = formatUsd(args.amount, args.locale);
+  const date = longDate(args.locale, args.trialEnd);
 
   await sendEmail({
     to: args.to,
-    // The figure goes in the subject line: a good share of people decide
-    // whether this matters without opening it.
-    subject: t("reminderSubject", { amount }),
+    // The figure and the date both go in the subject line: a good share of
+    // people decide whether this matters without opening it.
+    subject: t("reminderSubject", { amount, date }),
     react: TrialReminderEmail({
       appUrl: args.appUrl,
       locale: args.locale,
-      chargeDate: longDate(args.locale, args.trialEnd),
+      chargeDate: date,
       chargeAmount: amount,
       proAmount: formatUsd(PRICES.pro.monthly.amount, args.locale),
     }),

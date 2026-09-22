@@ -41,7 +41,7 @@ export function TrialReminderEmail({
   return (
     <EmailShell
       locale={locale}
-      preview={t("reminderPreview", { amount: chargeAmount })}
+      preview={t("reminderPreview", { amount: chargeAmount, date: chargeDate })}
     >
       <EmailHeading>
         {t("reminderHeading", { amount: chargeAmount })}
@@ -57,7 +57,7 @@ export function TrialReminderEmail({
 
       <EmailBody>{t("reminderStay")}</EmailBody>
       <EmailBody>{t("reminderDowngrade", { amount: proAmount })}</EmailBody>
-      <EmailBody>{t("reminderCancel")}</EmailBody>
+      <EmailBody>{t("reminderCancel", { date: chargeDate })}</EmailBody>
 
       <EmailButton href={app}>{t("goToApp")}</EmailButton>
       <EmailButton href={account} variant="outline">
