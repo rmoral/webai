@@ -1,0 +1,72 @@
+# Sets the head office address Stripe Tax calculates from. Run it from
+# GitHub → Actions → "Set Stripe tax origin" → Run workflow (works from a
+# phone). Idempotent: it writes the same address every time.
+#
+# Leave the fields empty to copy the address already on the account
+# profile. Fill them to say it explicitly -- which a sandbox usually needs,
+# since it starts with no profile address of its own.
+#
+# Acts on the mode of the STRIPE_SECRET_KEY repository secret: the head
+# office is stored per mode, so test and live each need their own run.
+name: Set Stripe tax origin
+
+on:
+  workflow_dispatch:
+    inputs:
+      country:
+        description: "Country code, e.g. ES (empty = take it from the account)"
+        required: false
+      line1:
+        description: "Street address"
+        required: false
+      line2:
+        description: "Street address, second line"
+        required: false
+      city:
+        description: "City"
+        required: false
+      postal_code:
+        description: "Postal code"
+        required: false
+      state:
+        description: "Province or state"
+        required: false
+
+concurrency: stripe-tax-origin
+
+jobs:
+  set-origin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check the STRIPE_SECRET_KEY secret is set
+        run: |
+          if [ -z "$STRIPE_SECRET_KEY" ]; then
+            echo "::error::The STRIPE_SECRET_KEY repository secret is empty or missing."
+            echo "Add it under Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      - name: Set the head office address
+        run: pnpm stripe:tax-origin
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          TAX_COUNTRY: ${{ inputs.country }}
+          TAX_LINE1: ${{ inputs.line1 }}
+          TAX_LINE2: ${{ inputs.line2 }}
+          TAX_CITY: ${{ inputs.city }}
+          TAX_POSTAL_CODE: ${{ inputs.postal_code }}
+          TAX_STATE: ${{ inputs.state }}
