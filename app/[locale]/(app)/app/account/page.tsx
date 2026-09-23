@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getFormatter, getTranslations } from "next-intl/server";
 
 import { DeleteAccountButton } from "@/components/app/delete-account-button";
+import { CancelFlow } from "@/components/billing/cancel-flow";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,6 +84,13 @@ export default async function AccountPage() {
                 subscriber.topupWords > 0 &&
                 t("account.topups", { words: subscriber.topupWords })}
             </p>
+            {/* Arrived from a "cancel" link in an email: straight into
+                the portal's cancellation flow, not its front page. */}
+            {isPaid && (
+              <Suspense>
+                <CancelFlow plan={subscriber?.plan.id ?? "unknown"} />
+              </Suspense>
+            )}
             {isPaid ? (
               <form action="/api/stripe/portal" method="POST">
                 <Button type="submit" variant="outline">

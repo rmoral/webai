@@ -9,3 +9,8 @@ next-env.d.ts
 # Playwright output.
 test-results/
 playwright-report/
+
+# Pasted verbatim into the Supabase dashboard. Reformatting table-based
+# email HTML moves whitespace between inline elements, which a mail client
+# renders as a gap in the middle of a word.
+emails/supabase/*.html

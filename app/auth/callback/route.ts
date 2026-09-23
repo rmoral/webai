@@ -2,7 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+import * as Sentry from "@sentry/nextjs";
+
 import { ensureUserRecord } from "@/lib/auth/ensure-user";
+import { claimWelcome } from "@/lib/auth/welcome";
+import { splitLocale } from "@/lib/i18n/routing";
 import { safeNext } from "@/lib/security/validation";
 
 // Handles the three ways Supabase can return from a sign-in:
@@ -75,6 +79,20 @@ export async function GET(request: NextRequest) {
   const isNewAccount =
     Number.isFinite(createdAt) && Date.now() - createdAt < 5 * 60 * 1000;
   if (!isNewAccount) return response;
+
+  // The welcome, once per account. The claim is what makes it once: the
+  // age check above is a heuristic, and a replayed callback would pass it
+  // twice. Never allowed to fail the sign-in -- somebody who cannot get
+  // into their new account because an email did not send is a worse
+  // outcome than no welcome at all.
+  if (await claimWelcome(data.user.id)) {
+    const { sendWelcome } = await import("@/lib/billing/notify");
+    await sendWelcome({
+      to: data.user.email!,
+      locale: splitLocale(new URL(next, origin).pathname).locale,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? origin,
+    }).catch((error) => Sentry.captureException(error));
+  }
 
   const method =
     data.user.app_metadata?.provider === "google" ? "google" : "magic_link";
