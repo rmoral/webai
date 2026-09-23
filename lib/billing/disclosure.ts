@@ -89,3 +89,57 @@ export function paymentDisclosure(
     date: formatDate(renewalDate(interval, now)),
   });
 }
+
+/**
+ * What the chosen plan costs, as rows, for the panel beside the sign-up
+ * form.
+ *
+ * The same four facts /checkout will show, computed from the same
+ * catalogue, so the two pages cannot disagree about the date or the
+ * amount -- which is the disagreement that turns into a chargeback. No
+ * copy here: the labels belong to the catalogue of messages, the figures
+ * to `PRICES`.
+ *
+ * `today` is the row that decides whether somebody keeps going, so it is
+ * marked rather than left for the layout to guess.
+ */
+export type PlanRow =
+  | { key: "trial"; days: number }
+  | { key: "today"; amount: number }
+  | { key: "firstCharge"; date: Date }
+  | { key: "renewal"; date: Date }
+  | { key: "after"; perMonth: number }
+  | { key: "equivalent"; perMonth: number };
+
+export function planRows(
+  tier: PaidTier,
+  interval: BillingInterval,
+  now = new Date(),
+): PlanRow[] {
+  const price = PRICES[tier][interval];
+  const trialDays = trialDaysFor(tier, interval);
+
+  if (trialDays !== null) {
+    const firstCharge = new Date(now);
+    firstCharge.setDate(firstCharge.getDate() + trialDays);
+    return [
+      { key: "trial", days: trialDays },
+      // Nothing is taken today, and the column has to add up to that.
+      { key: "today", amount: 0 },
+      { key: "firstCharge", date: firstCharge },
+      { key: "after", perMonth: price.monthlyEquivalent },
+    ];
+  }
+
+  return interval === "yearly"
+    ? [
+        { key: "today", amount: price.amount },
+        { key: "equivalent", perMonth: price.monthlyEquivalent },
+        { key: "renewal", date: renewalDate(interval, now) },
+      ]
+    : [
+        { key: "today", amount: price.amount },
+        { key: "renewal", date: renewalDate(interval, now) },
+        { key: "after", perMonth: price.monthlyEquivalent },
+      ];
+}

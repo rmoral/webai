@@ -14,7 +14,7 @@ test("sign-up is its own page, and says what you get", async ({ page }) => {
   // The title carries the benefit, not the action. "Sign in" tells someone
   // who just pressed "create a free account" nothing about where they are.
   await expect(
-    page.getByRole("heading", { name: /Tu cuenta gratis/ }),
+    page.getByRole("heading", { name: /Crea tu cuenta gratis/ }),
   ).toBeVisible();
   await expect(page.getByText("Sin contraseña y sin tarjeta")).toBeVisible();
   await expect(page.getByText(/De 300 a 500 palabras al día/)).toBeVisible();

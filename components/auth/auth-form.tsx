@@ -7,20 +7,20 @@ import { usePostHog } from "posthog-js/react";
 
 import { track } from "@/lib/analytics/events";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { planRows } from "@/lib/billing/disclosure";
 import {
   PLANS,
   PRICES,
   formatUsd,
-  trialDaysFor,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
 import { createClient } from "@/lib/auth/client";
-import { Link } from "@/lib/i18n/navigation";
+import { Link, getPathname } from "@/lib/i18n/navigation";
 import { LEGAL_SLUGS } from "@/lib/i18n/legal";
 import type { Locale } from "@/lib/i18n/routing";
 import { safeNext } from "@/lib/security/validation";
+import { cn } from "@/lib/utils";
 
 // Sign up and sign in: two routes, one form.
 //
@@ -52,6 +52,30 @@ function chosenPlan(
     tier: plan,
     interval: cycle === "yearly" ? "yearly" : "monthly",
   };
+}
+
+/**
+ * The routes where there is text to come back to.
+ *
+ * "Your text is still in the editor" was printed on every sign-up,
+ * including the ones reached from pricing with nothing typed anywhere --
+ * a reassurance about something that had not happened, which is the kind
+ * of sentence that teaches a reader to stop believing the others.
+ */
+const EDITOR_ROUTES = [
+  "/",
+  "/humanize",
+  "/detect",
+  "/paraphrase",
+  "/correct",
+] as const;
+
+function keepsText(next: string, locale: Locale): boolean {
+  const [path, query] = next.split("?");
+  // /app is the fallback destination, so on its own it means nothing was
+  // being written. With a tool in the query it is the editor.
+  if (path === "/app") return new URLSearchParams(query ?? "").has("tool");
+  return EDITOR_ROUTES.some((href) => getPathname({ href, locale }) === path);
 }
 
 /** Google's mark. A provider button without it reads as a second option. */
@@ -140,137 +164,213 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
   }
 
   return (
-    <div
-      className={
-        plan
-          ? "grid w-full max-w-3xl gap-10 md:grid-cols-[minmax(0,1fr)_18rem]"
-          : "w-full max-w-md"
-      }
-    >
-      <div>
+    <div className={plan ? "w-full max-w-3xl" : "w-full max-w-md"}>
+      <div className="flex items-center justify-between gap-4">
         <Link href="/" className="text-base font-bold tracking-tight">
           Verbaly<span className="text-brand">x</span>
         </Link>
 
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight">
-          {signup
-            ? t("signupTitle", {
-                words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-              })
-            : t("signinTitle")}
-        </h1>
-        <p className="text-muted-foreground mt-2 text-sm leading-normal">
-          {signup ? t("signupLede") : t("signinLede")}
-        </p>
-
-        {signup && (
-          <ul className="border-brand-line bg-brand-soft text-brand-ink mt-5 space-y-1.5 rounded-xl border p-4 text-sm leading-normal">
-            <li>
-              {t("benefitWords", {
-                from: format.number(PLANS.anonymous.limits.wordsPerDay ?? 0),
-                to: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-              })}
-            </li>
-            <li>{t("benefitTools")}</li>
-          </ul>
-        )}
-
-        <div className="mt-5 flex flex-col gap-4">
-          {/* The mark and the weight of a first option. Styled as the
-            secondary choice and unbranded, it read as the fallback -- and
-            it is the fastest way in that exists. */}
-          <Button onClick={withGoogle} className="w-full">
-            <GoogleMark />
-            {t("google")}
-          </Button>
-
-          <div className="text-muted-foreground text-center text-xs">
-            {t("or")}
-          </div>
-
-          {status === "sent" ? (
-            <p className="text-sm leading-normal">{t("sent", { email })}</p>
-          ) : (
-            <form onSubmit={withEmail} className="flex flex-col gap-2">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder={t("emailPlaceholder")}
-                aria-label={t("emailPlaceholder")}
-                className="border-input focus-visible:ring-brand/30 focus-visible:border-brand h-11 rounded-md border bg-transparent px-3 text-base outline-none focus-visible:ring-[3px] md:text-sm"
-              />
-              <Button type="submit" disabled={status === "sending" || !email}>
-                {status === "sending" ? t("sending") : t("send")}
-              </Button>
-              {status === "error" && (
-                <p className="text-danger-ink text-sm" role="alert">
-                  {t("error")}
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-
-        {/* Functional, not reassurance: the editor keeps what was typed, so
-          this sentence is true without anybody having to recover anything. */}
-        <p className="text-muted-foreground mt-5 text-sm leading-normal">
-          {t("textKept")}
-        </p>
-        <p className="text-muted-foreground mt-3 text-xs leading-normal">
-          {t("privacy")}
-        </p>
-
-        <p className="mt-6 text-sm">
-          <Link
-            href={{
-              pathname: signup ? "/login" : "/signup",
-              query: crossQuery,
-            }}
-            className="text-brand underline"
+        {/* Two steps, and this is the first. Somebody who came to buy and
+            met a form asking for an email needs to know the card comes
+            after it, not instead of it. */}
+        {plan && (
+          <ol
+            aria-label={t("steps")}
+            className="text-muted-foreground flex items-center gap-2 text-sm"
           >
-            {signup ? t("crossToSignin") : t("crossToSignup")}
-          </Link>
-        </p>
-
-        {signup && (
-          <p className="text-muted-foreground mt-4 text-xs leading-normal">
-            {/* Named as documents and not linked to them, which is an
-              acceptance of something the reader cannot read. */}
-            {t.rich("legal", {
-              terms: (chunks) => (
-                <Link
-                  href={{
-                    pathname: "/legal/[slug]",
-                    params: { slug: LEGAL_SLUGS[locale].terms },
-                  }}
-                  target="_blank"
-                  className="underline"
-                >
-                  {chunks}
-                </Link>
-              ),
-              privacy: (chunks) => (
-                <Link
-                  href={{
-                    pathname: "/legal/[slug]",
-                    params: { slug: LEGAL_SLUGS[locale].privacy },
-                  }}
-                  target="_blank"
-                  className="underline"
-                >
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
+            <li className="text-foreground flex items-center gap-1.5 font-medium">
+              <b className="bg-brand text-brand-foreground flex size-5 items-center justify-center rounded-full text-xs">
+                1
+              </b>
+              {t("stepAccount")}
+            </li>
+            <li aria-hidden className="bg-border h-px w-6" />
+            <li className="flex items-center gap-1.5">
+              <b className="border-border flex size-5 items-center justify-center rounded-full border text-xs font-normal">
+                2
+              </b>
+              {t("stepPay")}
+            </li>
+          </ol>
         )}
       </div>
 
-      {/* The plan stays in view for the whole of the sign-up, so nobody has
-          to take on trust that what they pressed survived the trip. */}
-      {plan && <ChosenPlan tier={plan.tier} interval={plan.interval} />}
+      <div
+        className={
+          plan
+            ? "mt-8 grid gap-8 min-[820px]:grid-cols-[minmax(0,1fr)_18rem]"
+            : "mt-8"
+        }
+      >
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {plan
+              ? t("planTitle")
+              : signup
+                ? t("signupTitle", {
+                    words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+                  })
+                : t("signinTitle")}
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm leading-normal">
+            {plan ? t("planLede") : signup ? t("signupLede") : t("signinLede")}
+          </p>
+
+          {/* What the free account is worth. Not shown beside a plan: the
+              panel next to it is already the argument. */}
+          {signup && !plan && (
+            <ul className="border-brand-line bg-brand-soft text-brand-ink mt-5 space-y-1.5 rounded-xl border p-4 text-sm leading-normal">
+              <li>
+                {t("benefitWords", {
+                  from: format.number(PLANS.anonymous.limits.wordsPerDay ?? 0),
+                  to: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+                })}
+              </li>
+              <li>{t("benefitTools")}</li>
+            </ul>
+          )}
+
+          <div className="mt-5 flex flex-col gap-4">
+            {/* First, and in Google's own colours rather than ours. Styled
+              as the secondary choice it read as the fallback, and it is
+              the fastest way in that exists. The hex values are Google's
+              identity guidelines for the button, which is why they are
+              written here instead of coming from the tokens. */}
+            <button
+              type="button"
+              onClick={withGoogle}
+              className="focus-visible:ring-brand/30 flex h-12 w-full items-center justify-center gap-3 rounded-md border border-[#747775] bg-white text-sm font-medium text-[#1f1f1f] transition-colors hover:bg-[#f7f8f8] focus-visible:ring-[3px] focus-visible:outline-none dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1e1f20]"
+            >
+              <GoogleMark />
+              {t("google")}
+            </button>
+
+            <div className="text-muted-foreground flex items-center gap-3 text-xs">
+              <span className="bg-border h-px flex-1" />
+              {t("or")}
+              <span className="bg-border h-px flex-1" />
+            </div>
+
+            {status === "sent" ? (
+              <div className="flex flex-col gap-2 text-sm leading-normal">
+                <p role="status">{t("sent", { email })}</p>
+                {/* A link that never arrives is the end of the funnel, and
+                  the reader has no way back to the form without it. */}
+                <p className="text-muted-foreground">
+                  {t.rich("notArrived", {
+                    retry: (chunks) => (
+                      <button
+                        type="button"
+                        onClick={() => setStatus("idle")}
+                        className="text-brand cursor-pointer underline underline-offset-[3px]"
+                      >
+                        {chunks}
+                      </button>
+                    ),
+                  })}
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={withEmail} className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder={t("emailPlaceholder")}
+                  aria-label={t("emailPlaceholder")}
+                  className="border-input focus-visible:ring-brand/30 focus-visible:border-brand h-11 rounded-md border bg-transparent px-3 text-base outline-none focus-visible:ring-[3px] md:text-sm"
+                />
+                {/* Outline: Google is the first option, and two filled
+                  buttons would make neither of them it. */}
+                <Button
+                  type="submit"
+                  variant="outline"
+                  disabled={status === "sending" || !email}
+                >
+                  {status === "sending" ? t("sending") : t("send")}
+                </Button>
+                {status === "error" && (
+                  <p className="text-danger-ink text-sm" role="alert">
+                    {t("error")}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+
+          {/* Functional, not reassurance: the editor keeps what was typed,
+            so this sentence is true without anybody having to recover
+            anything -- but only where there is something to come back to. */}
+          {keepsText(next, locale) && !plan && (
+            <p className="text-muted-foreground mt-5 text-sm leading-normal">
+              {t("textKept")}
+            </p>
+          )}
+          {signup && !plan && (
+            <p className="text-muted-foreground mt-3 text-xs leading-normal">
+              {t("privacy")}
+            </p>
+          )}
+
+          <p className="mt-6 text-sm">
+            <Link
+              href={{
+                pathname: signup ? "/login" : "/signup",
+                query: crossQuery,
+              }}
+              className="text-brand underline"
+            >
+              {signup ? t("crossToSignin") : t("crossToSignup")}
+            </Link>
+          </p>
+
+          {signup && (
+            <p className="text-muted-foreground mt-4 text-xs leading-normal">
+              {/* Named as documents and not linked to them, which is an
+              acceptance of something the reader cannot read. */}
+              {t.rich("legal", {
+                terms: (chunks) => (
+                  <Link
+                    href={{
+                      pathname: "/legal/[slug]",
+                      params: { slug: LEGAL_SLUGS[locale].terms },
+                    }}
+                    target="_blank"
+                    className="underline"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+                privacy: (chunks) => (
+                  <Link
+                    href={{
+                      pathname: "/legal/[slug]",
+                      params: { slug: LEGAL_SLUGS[locale].privacy },
+                    }}
+                    target="_blank"
+                    className="underline"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+          )}
+        </div>
+
+        {/* The plan stays in view for the whole of the sign-up, so nobody
+            has to take on trust that what they pressed survived the trip.
+            Beside the form where there is room; above it where there is
+            not, because a summary under the fold is not a summary. */}
+        {plan && (
+          <ChosenPlan
+            tier={plan.tier}
+            interval={plan.interval}
+            className="order-first min-[820px]:order-none"
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -278,45 +378,102 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
 function ChosenPlan({
   tier,
   interval,
+  className,
 }: {
   tier: PaidTier;
   interval: BillingInterval;
+  className?: string;
 }) {
   const t = useTranslations("auth");
   const plans = useTranslations("plans");
+  const format = useFormatter();
   const locale = useLocale() as Locale;
-  const amount = PRICES[tier][interval].amount;
-  const trialDays = trialDaysFor(tier, interval);
+
+  const money = (amount: number) => formatUsd(amount, locale);
+  const day = (date: Date) =>
+    format.dateTime(date, { day: "numeric", month: "long", year: "numeric" });
+
+  // Computed once, from the catalogue: /checkout shows the same four facts
+  // and they cannot be allowed to disagree about either the date or the
+  // amount.
+  const rows = planRows(tier, interval);
+  // A first charge exists exactly when there is a trial, so the row is the
+  // condition rather than a second reading of the same rule.
+  const firstCharge = rows.find((row) => row.key === "firstCharge");
+
+  const value = (row: (typeof rows)[number]) => {
+    switch (row.key) {
+      case "trial":
+        return t("valueTrialDays", { days: row.days });
+      case "today":
+        return money(row.amount);
+      case "firstCharge":
+      case "renewal":
+        return day(row.date);
+      default:
+        return t("valuePerMonth", { amount: money(row.perMonth) });
+    }
+  };
+
+  const LABELS = {
+    trial: "rowTrial",
+    today: "rowToday",
+    firstCharge: "rowFirstCharge",
+    renewal: "rowRenewal",
+    after: "rowAfter",
+    equivalent: "rowEquivalent",
+  } as const;
 
   return (
-    <aside className="h-fit rounded-xl border p-5">
+    <aside
+      aria-label={t("yourChoice")}
+      className={cn("h-fit rounded-xl border p-5", className)}
+    >
       <p className="text-muted-foreground text-xs font-semibold tracking-[0.06em] uppercase">
-        {t("planChosen")}
+        {t("yourChoice")}
       </p>
-      <p className="mt-2 flex items-center gap-2 font-semibold">
-        {plans(tier)}
-        {trialDays !== null && (
-          <Badge variant="brand">
-            {t("planTrialBadge", { days: trialDays })}
-          </Badge>
-        )}
+      <p className="mt-2 font-semibold">
+        {t("planCycle", {
+          plan: plans(tier),
+          cycle: t(interval === "yearly" ? "cycleYearly" : "cycleMonthly"),
+        })}
       </p>
-      <p className="text-muted-foreground mt-1 text-sm">
-        {interval === "yearly"
-          ? t("planBilledYearly", { amount: formatUsd(amount, locale) })
-          : t("planBilledMonthly", { amount: formatUsd(amount, locale) })}
+
+      <dl className="mt-4 flex flex-col gap-2 text-sm">
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className={cn(
+              "flex items-baseline justify-between gap-4",
+              // What is taken today is the figure the decision turns on.
+              row.key === "today" && "text-foreground font-semibold",
+            )}
+          >
+            <dt className="text-muted-foreground font-normal">
+              {t(LABELS[row.key])}
+            </dt>
+            <dd data-testid={`plan-row-${row.key}`}>{value(row)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <p className="text-muted-foreground mt-4 text-sm leading-normal">
+        {firstCharge
+          ? t("planNoteTrial", {
+              date: day(firstCharge.date),
+              amount: money(PRICES[tier][interval].monthlyEquivalent),
+            })
+          : t("planNoteCharge")}
       </p>
-      {trialDays !== null && (
-        <p className="text-success-ink mt-2 text-sm leading-normal">
-          {t("planTrialNote", { days: trialDays })}
-        </p>
-      )}
-      {/* Changing your mind must not mean starting over. */}
+
+      {/* Changing your mind must not mean starting over -- and it lands on
+          the cycle they were looking at, not on whatever the page opens
+          with. */}
       <Link
-        href="/pricing"
+        href={{ pathname: "/pricing", query: { cycle: interval } }}
         className="text-brand mt-4 inline-block text-sm underline"
       >
-        {t("planChange")}
+        {t("changePlan")}
       </Link>
     </aside>
   );
