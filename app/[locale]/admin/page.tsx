@@ -10,6 +10,7 @@ import {
   configHealth,
   databaseTarget,
   describeDatabaseFailure,
+  stripeMode,
 } from "@/lib/config/health";
 import { getAdminTotals, listUsers } from "@/lib/usage/summary";
 
@@ -54,6 +55,7 @@ export default async function AdminPage() {
   const db = databaseTarget();
   const config = configHealth();
   const missing = config.filter((c) => !c.present);
+  const stripe = stripeMode();
 
   const stats = totals
     ? [
@@ -132,6 +134,22 @@ export default async function AdminPage() {
           </details>
         </CardContent>
       </Card>
+
+      {/* Which Stripe account this deployment is really talking to. With
+          test keys in production everything looks like it works and no
+          money moves, and the only signs are inside Stripe's own iframe. */}
+      {stripe.problem && (
+        <div className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">
+          <p>
+            <b className="font-semibold">Revisa las claves de Stripe.</b> Clave
+            secreta en modo <code className="font-mono">{stripe.secret}</code>,
+            publicable en modo{" "}
+            <code className="font-mono">{stripe.publishable}</code>
+            {stripe.production ? ", en producción" : ", fuera de producción"}.
+          </p>
+          <p className="mt-2">{stripe.problem}</p>
+        </div>
+      )}
 
       {!totals && (
         <div className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">

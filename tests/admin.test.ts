@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { isAdmin } from "@/lib/auth/admin";
 import { sslFor } from "@/lib/db/client";
-import { databaseTarget, describeDatabaseFailure } from "@/lib/config/health";
+import {
+  configHealth,
+  databaseTarget,
+  describeDatabaseFailure,
+  stripeMode,
+} from "@/lib/config/health";
 
 afterEach(() => {
   delete process.env.ADMIN_EMAILS;
@@ -249,5 +254,73 @@ describe("a schema older than the code", () => {
       { code: "22P02" },
     );
     expect(describeDatabaseFailure(e).hint).toBeNull();
+  });
+});
+
+describe("stripeMode", () => {
+  const saved = {
+    secret: process.env.STRIPE_SECRET_KEY,
+    publishable: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    vercel: process.env.VERCEL_ENV,
+  };
+
+  afterEach(() => {
+    for (const [name, value] of [
+      ["STRIPE_SECRET_KEY", saved.secret],
+      ["NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", saved.publishable],
+      ["VERCEL_ENV", saved.vercel],
+    ] as const) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+
+  function mode(secret: string, publishable: string, env?: string) {
+    process.env.STRIPE_SECRET_KEY = secret;
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = publishable;
+    if (env === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = env;
+    return stripeMode();
+  }
+
+  it("says nothing when production runs on live keys", () => {
+    const report = mode("sk_live_abc", "pk_live_abc", "production");
+    expect(report).toMatchObject({
+      secret: "live",
+      publishable: "live",
+      production: true,
+      problem: null,
+    });
+  });
+
+  it("names the sandbox when production runs on test keys", () => {
+    // The failure this catches is total and invisible: the checkout
+    // renders, the card is accepted and no money moves.
+    const report = mode("sk_test_abc", "pk_test_abc", "production");
+    expect(report.problem).toMatch(/nadie paga de verdad/);
+  });
+
+  it("leaves a preview on test keys alone", () => {
+    expect(mode("sk_test_abc", "pk_test_abc", "preview").problem).toBeNull();
+  });
+
+  it("catches a pair of keys from different modes", () => {
+    // Stripe.js refuses the confirmation client-side, so nothing reaches
+    // our logs and the customer just sees the payment not go through.
+    expect(mode("sk_live_abc", "pk_test_abc", "preview").problem).toMatch(
+      /no son del mismo modo/,
+    );
+  });
+
+  it("does not recognise something that is not a Stripe key", () => {
+    expect(mode("whsec_abc", "pk_live_abc").problem).toMatch(/formato/);
+  });
+
+  it("checks the publishable key, without which no card field renders", () => {
+    // It was missing from the panel entirely, so the one variable whose
+    // absence stops every payment was the one nobody was told about.
+    expect(configHealth().map((c) => c.name)).toContain(
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    );
   });
 });
