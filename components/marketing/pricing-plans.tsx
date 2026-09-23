@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { TrialDisclosure } from "@/components/billing/paywall";
+import { useViewer } from "@/components/marketing/viewer";
 import { track } from "@/lib/analytics/events";
-import { createClient } from "@/lib/auth/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -34,9 +34,6 @@ import type { Locale } from "@/lib/i18n/routing";
 // nowhere else, so the button and the disclosure both change with the
 // cycle rather than only the price.
 
-/** Which card, if any, the reader is already paying for. */
-type Viewer = "anonymous" | "free" | "pro" | "unlimited";
-
 export function PricingPlans() {
   const t = useTranslations("pricing");
   const plans = useTranslations("plans");
@@ -55,8 +52,9 @@ export function PricingPlans() {
   );
   // undefined until the browser has answered. Every call to action here
   // depends on it, and telling somebody to buy what they already pay for
-  // -- and then correcting it -- is worse than waiting a moment.
-  const [viewer, setViewer] = useState<Viewer | undefined>(undefined);
+  // -- and then correcting it -- is worse than waiting a moment. Resolved
+  // once for the whole marketing tree rather than again here.
+  const viewer = useViewer();
   // Where they came from, when the link said so. Read against the one
   // value we set rather than trusted: it is a query parameter, so anyone
   // can write anything in it.
@@ -64,65 +62,23 @@ export function PricingPlans() {
 
   // `pricing_view` is the middle of the funnel: everything upstream is
   // measured by how many people reach it, and everything downstream by how
-  // many leave it for the card field.
-  //
-  // The page is statically prerendered, so whether there is a session is a
-  // question only the browser can answer. `getSession` reads the token the
-  // client already holds -- no request, no cost on an SEO page -- which is
-  // enough to tell a visitor from a customer. Which plan that customer is
-  // on costs one call to /api/usage, and only for the few who are signed
-  // in.
+  // many leave it for the card field. Counted once the reader is known and
+  // once per visit -- the toggle is a change of view, not a second view.
+  const counted = useRef(false);
   useEffect(() => {
-    let active = true;
-    const seen = (logged_in: boolean) =>
-      track(posthog, "pricing_view", { cycle: interval, logged_in, from });
-
-    // Wrapped, and wrapped around the client's construction as well as the
-    // call: `createClient` throws synchronously when the Supabase keys are
-    // missing, and a throw inside an effect unmounts the tree above it --
-    // so a misconfigured deployment would render the pricing page blank.
-    // Counting a view is never worth the page that sells.
-    try {
-      createClient()
-        .auth.getSession()
-        .then(({ data }) => {
-          if (!active) return;
-          seen(Boolean(data.session));
-          if (!data.session) {
-            setViewer("anonymous");
-            return;
-          }
-          // The plan is a detail on top of the session: if it does not
-          // arrive, the page still knows not to sell a free account to
-          // somebody who has one.
-          setViewer("free");
-          fetch("/api/usage", { cache: "no-store" })
-            .then((res) => (res.ok ? res.json() : null))
-            .then((usage) => {
-              if (!active) return;
-              if (usage?.plan === "pro" || usage?.plan === "unlimited") {
-                setViewer(usage.plan);
-              }
-            })
-            .catch(() => {});
-        })
-        .catch(() => {});
-    } catch {
-      setViewer("anonymous");
-      seen(false);
-    }
-    return () => {
-      active = false;
-    };
-    // Once per visit, with the cycle the page opened on. The toggle is a
-    // change of view, not a second view.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [posthog]);
+    if (!viewer || counted.current) return;
+    counted.current = true;
+    track(posthog, "pricing_view", {
+      cycle: interval,
+      logged_in: viewer.signedIn,
+      from,
+    });
+  }, [viewer, posthog, interval, from]);
 
   const yearly = interval === "yearly";
   // Nobody can start a trial, or change cycle to get one, while they are
   // already paying.
-  const paying = viewer === "pro" || viewer === "unlimited";
+  const paying = viewer?.plan === "pro" || viewer?.plan === "unlimited";
   // Read from the prices, never typed into the copy: the line used to
   // promise two months while the prices gave away six.
   const discount = sharedYearlyDiscount();
@@ -219,7 +175,7 @@ export function PricingPlans() {
             // column went on selling "create a free account" to somebody
             // reading it from their own account -- and to a customer it
             // has nothing to say at all.
-            viewer === "free" ? (
+            viewer?.plan === "free" ? (
               currentPlan
             ) : paying ? null : (
               <Button
@@ -264,9 +220,9 @@ export function PricingPlans() {
             t("proTools"),
           ]}
           cta={
-            viewer === "pro" ? (
+            viewer?.plan === "pro" ? (
               currentPlan
-            ) : viewer === "unlimited" ? (
+            ) : viewer?.plan === "unlimited" ? (
               switchTo(t("switchToPro"), false)
             ) : (
               // Outline, because the only filled button on this page is
@@ -323,9 +279,9 @@ export function PricingPlans() {
             t("priority"),
           ]}
           cta={
-            viewer === "unlimited" ? (
+            viewer?.plan === "unlimited" ? (
               currentPlan
-            ) : viewer === "pro" ? (
+            ) : viewer?.plan === "pro" ? (
               switchTo(t("switchToUnlimited"), true)
             ) : (
               <Button className="w-full" asChild>
@@ -343,7 +299,7 @@ export function PricingPlans() {
             )
           }
           disclosure={
-            viewer === "unlimited" ? null : viewer === "pro" ? (
+            viewer?.plan === "unlimited" ? null : viewer?.plan === "pro" ? (
               // A proration is arithmetic we do not do here. Promising an
               // amount we have not computed is how a change of plan turns
               // into a complaint.

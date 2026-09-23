@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 
+import { useViewer } from "@/components/marketing/viewer";
 import { Badge } from "@/components/ui/badge";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
@@ -19,13 +20,13 @@ import { cn } from "@/lib/utils";
 // marketing page out of static rendering.
 export function ToolTabs({
   className,
-  plan = "anonymous",
+  plan,
 }: {
   className?: string;
   /**
-   * Whose tabs these are. Inside /app the layout knows it; on the
-   * marketing pages, which are static and mostly read by people with no
-   * session, anonymous is both the default and the common case.
+   * Whose tabs these are. Inside /app the layout knows it and says so;
+   * on the marketing pages, which are prerendered, the browser answers
+   * and this is left out.
    */
   plan?: PlanId;
 }) {
@@ -36,13 +37,18 @@ export function ToolTabs({
   );
 }
 
-function Tabs({ className, plan }: { className?: string; plan: PlanId }) {
+function Tabs({ className, plan }: { className?: string; plan?: PlanId }) {
   // next-intl's usePathname: the internal pathname, so matching a tool works
   // the same in both languages without a table of translated URLs here.
   const pathname = usePathname();
   const active = useSearchParams().get("tool");
   const t = useTranslations();
   const inApp = pathname.startsWith("/app");
+  // The server's answer where there is one, the browser's where the page
+  // was built without a reader. Anonymous until either speaks, which is
+  // what the prerendered HTML says and what most readers are.
+  const viewer = useViewer();
+  const mine = plan ?? viewer?.plan ?? "anonymous";
 
   const current: ToolId = inApp
     ? ((active && active in TOOLS ? active : "humanize") as ToolId)
@@ -65,7 +71,7 @@ function Tabs({ className, plan }: { className?: string; plan: PlanId }) {
         // a surprise if nothing said so beforehand. It stays a link: the
         // tab is how somebody finds out what the tool does, and the wall
         // is a better argument with the tool in front of it.
-        const locked = !PLANS[plan].limits.tools.includes(tool.id);
+        const locked = !PLANS[mine].limits.tools.includes(tool.id);
         const mark = locked && (
           <Badge
             variant="brand"
