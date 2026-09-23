@@ -9,6 +9,7 @@ import {
   TRIAL_REMINDER,
   formatUsd,
 } from "@/lib/billing/plans";
+import { SITE_ORIGIN } from "@/lib/i18n/routing";
 import en from "@/messages/en.json";
 import es from "@/messages/es.json";
 
@@ -282,5 +283,21 @@ describe("the Element and the subscription offer the same payment methods", () =
     );
     // One for the trial's setup mode, one for the immediate charge.
     expect(uses?.length).toBe(2);
+  });
+});
+
+describe("canonical origin", () => {
+  it("is the host that serves, and the only one written down", () => {
+    // The sitemap and robots.txt each carried their own default while the
+    // canonical tags had none, so with NEXT_PUBLIC_APP_URL unset they
+    // disagreed: Google read a sitemap pointing at one site and canonicals
+    // pointing at the deployment's own vercel.app host.
+    expect(SITE_ORIGIN).toBe("https://www.verbalyx.ai");
+
+    for (const file of ["app/sitemap.ts", "app/robots.ts"]) {
+      const source = readFileSync(join(ROOT, file), "utf8");
+      expect(source, file).not.toMatch(/https:\/\/(www\.)?verbalyx\.ai/);
+      expect(source, file).toContain("SITE_ORIGIN");
+    }
   });
 });

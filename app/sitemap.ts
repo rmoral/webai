@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { TOOLS } from "@/lib/ai/tools";
 import { getPathname } from "@/lib/i18n/navigation";
-import { routing, type Locale } from "@/lib/i18n/routing";
+import { SITE_ORIGIN, routing, type Locale } from "@/lib/i18n/routing";
 
 // There was no sitemap at all before this. A bilingual site without one --
 // and without the alternates below -- leaves Google to guess which of
@@ -24,9 +24,8 @@ const PUBLIC_PAGES: Href[] = [
 
 /** The legal pages are deliberately left out: they are noindex. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://verbalyx.ai";
   const url = (href: Href, locale: Locale) =>
-    new URL(getPathname({ href, locale }), base).toString();
+    new URL(getPathname({ href, locale }), SITE_ORIGIN).toString();
 
   return PUBLIC_PAGES.flatMap((href) =>
     routing.locales.map((locale) => ({
