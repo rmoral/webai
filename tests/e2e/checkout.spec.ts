@@ -19,8 +19,10 @@ test("pricing page shows the three plans and the top-up", async ({ page }) => {
 test("the trial discloses charge date and amount before payment", async ({
   page,
 }) => {
-  // Required by ROSCA and the state auto-renewal laws (study §6.1).
-  await page.goto("/precios");
+  // Required by ROSCA and the state auto-renewal laws (study §6.1). The
+  // page opens on the yearly cycle, which has no trial, so the cycle that
+  // does is asked for by name -- the same link the walls use.
+  await page.goto("/precios?cycle=monthly");
   const disclosure = page.getByTestId("trial-disclosure");
   await expect(disclosure).toBeVisible();
   await expect(disclosure).toContainText("Hoy no se te cobra nada");
@@ -34,7 +36,7 @@ test("choosing a plan without a session opens sign-up, keeping the plan", async 
   // The leak this closes: pressing "try it free" used to land on "welcome
   // back", with no `next` -- so a brand new visitor met a returning-user
   // screen and the plan they had just chosen was gone.
-  await page.goto("/precios");
+  await page.goto("/precios?cycle=monthly");
   await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
   await page.waitForURL(/\/registro/);
   await expect(
@@ -72,7 +74,7 @@ test("trial checkout with a test card, without leaving the site", async ({
     "Needs Stripe test keys and a signed-in storage state",
   );
 
-  await page.goto("/precios");
+  await page.goto("/precios?cycle=monthly");
   await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
   await page.waitForURL(/\/pago/);
 

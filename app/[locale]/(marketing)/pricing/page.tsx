@@ -122,9 +122,12 @@ export default async function PricingPage({ params }: Params) {
       </Suspense>
 
       {/* Above the table, not below it: the promise that makes the table
-          worth reading is that none of it is a trap. */}
-      <p className="text-success-ink border-success-line bg-success-soft mt-8 rounded-xl border p-4 text-sm">
-        {t("guarantee")}
+          worth reading is that none of it is a trap. The way out is named
+          in full -- the three clicks, in order -- because "cancel whenever
+          you want" is what every subscription says. */}
+      <p className="text-success-ink border-success-line bg-success-soft mt-6 rounded-xl border px-5 py-4 text-sm leading-normal">
+        <strong className="font-semibold">{t("guaranteeLead")}</strong>
+        {t("guaranteeBody")}
       </p>
 
       <h2 className="mt-10 text-xl font-semibold tracking-tight">

@@ -70,8 +70,8 @@ test("the editor keeps the text across a trip to sign-up", async ({ page }) => {
 
 // The pricing card: one price, and a disclosure that agrees with it.
 
-async function unlimitedCard(page: Page) {
-  await page.goto("/precios");
+async function unlimitedCard(page: Page, query = "") {
+  await page.goto(`/precios${query}`);
   return page.locator("section").filter({ hasText: "Ilimitado" }).first();
 }
 
@@ -80,20 +80,30 @@ test("the cycle toggle moves the headline price, not a footnote", async ({
 }) => {
   const card = await unlimitedCard(page);
 
-  // Monthly is the default: one number, 29,99, and no yearly total beside
-  // it. The headline is asserted by test id rather than by text, because
-  // the same figure also appears in the billing line and the disclosure --
-  // which is the point.
-  await expect(card.getByTestId("plan-price")).toContainText(/29,99/);
-  await expect(card.getByTestId("plan-total")).toHaveCount(0);
-
-  await page.getByRole("radio", { name: "Anual" }).click();
-
-  // Yearly: the big number becomes the monthly equivalent and the amount
-  // actually charged appears under it. One price per card either way; two
-  // competing prices is what this page used to show.
+  // Yearly is the default: the big number is the monthly equivalent and
+  // the amount actually charged sits under it. The headline is asserted by
+  // test id rather than by text, because the same figure also appears in
+  // the billing line and the disclosure -- which is the point.
   await expect(card.getByTestId("plan-price")).toContainText(/14,99/);
   await expect(card.getByTestId("plan-total")).toContainText(/179,88/);
+
+  await page.getByRole("radio", { name: "Mensual" }).click();
+
+  // Monthly: one number, 29,99, and no yearly total. The row stays, empty,
+  // so the cards do not jump under the cursor that is changing the cycle.
+  await expect(card.getByTestId("plan-price")).toContainText(/29,99/);
+  await expect(card.getByTestId("plan-total")).toHaveText("");
+});
+
+test("the page opens on the cycle the link asked for", async ({ page }) => {
+  // The walls offer the trial, which only the monthly cycle has, so they
+  // link to it by name rather than dropping the reader on a page with no
+  // trial on it.
+  const card = await unlimitedCard(page, "?cycle=monthly");
+  await expect(card.getByTestId("plan-price")).toContainText(/29,99/);
+  await expect(
+    card.getByRole("link", { name: "Probar 3 días gratis" }),
+  ).toBeVisible();
 });
 
 test("the trial is offered on the monthly cycle and nowhere else", async ({
@@ -101,27 +111,39 @@ test("the trial is offered on the monthly cycle and nowhere else", async ({
 }) => {
   const card = await unlimitedCard(page);
 
-  // Monthly: badge, trial button, and a disclosure naming the same figure
-  // the button will eventually charge.
-  await expect(card.getByText("Prueba 3 días")).toBeVisible();
-  await expect(
-    card.getByRole("link", { name: "Probar 3 días gratis" }),
-  ).toBeVisible();
-  const monthlyNote = card.getByTestId("trial-disclosure");
-  await expect(monthlyNote).toContainText("Hoy no se te cobra nada");
-  await expect(monthlyNote).toContainText("29,99");
-
-  await page.getByRole("radio", { name: "Anual" }).click();
-
-  // Yearly: no badge, no trial, and a disclosure that says why rather than
-  // staying quiet about it.
-  await expect(card.getByText("Prueba 3 días")).toHaveCount(0);
+  // Yearly: no trial, and a disclosure that says why rather than staying
+  // quiet about it.
   await expect(
     card.getByRole("link", { name: "Elegir Ilimitado anual" }),
   ).toBeVisible();
   const yearlyNote = card.getByTestId("trial-disclosure");
   await expect(yearlyNote).toContainText("No lleva prueba gratuita");
   await expect(yearlyNote).toContainText("179,88");
+
+  // The trial has not been hidden, only moved: the line under the toggle
+  // says where it is and takes the reader there.
+  await page.getByRole("button", { name: "Ver precios mensuales" }).click();
+
+  await expect(
+    card.getByRole("link", { name: "Probar 3 días gratis" }),
+  ).toBeVisible();
+  const monthlyNote = card.getByTestId("trial-disclosure");
+  await expect(monthlyNote).toContainText("Hoy no se te cobra nada");
+  await expect(monthlyNote).toContainText("29,99");
+});
+
+test("one badge, and one filled button, on the whole page", async ({
+  page,
+}) => {
+  // Three equally loud calls to action are three ways to ask the reader to
+  // decide for us. The recommendation is named once and filled once, on
+  // both cycles.
+  for (const query of ["", "?cycle=monthly"]) {
+    const card = await unlimitedCard(page, query);
+    await expect(card.getByText("Más popular")).toBeVisible();
+    await expect(page.getByText("Más popular")).toHaveCount(1);
+    await expect(page.getByText("Prueba 3 días")).toHaveCount(0);
+  }
 });
 
 test("promises two clicks to cancel above the table, not after it", async ({

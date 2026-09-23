@@ -49,7 +49,14 @@ export async function GET(request: NextRequest) {
   );
 
   return NextResponse.json(
-    { ...allowance, timezone: QUOTA_TIMEZONE },
+    // The plan travels with the allowance because the pages that have no
+    // server render need both: the editor to know what it may offer, and
+    // /pricing to mark the card the reader is already paying for.
+    {
+      ...allowance,
+      plan: subscriber?.plan.id ?? PLANS.anonymous.id,
+      timezone: QUOTA_TIMEZONE,
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }
