@@ -507,7 +507,13 @@ export function QuotaPaywall({
                 href={
                   accountState === "anonymous"
                     ? { pathname: "/signup" as const, query: { next: here } }
-                    : { pathname: "/pricing" as const }
+                    : // The label names the monthly price, and /pricing now
+                      // opens on the yearly cycle: without this the reader
+                      // lands on a different number than the one they read.
+                      {
+                        pathname: "/pricing" as const,
+                        query: { cycle: "monthly" },
+                      }
                 }
                 onClick={() =>
                   track(posthog, "wall_dismissed", {
@@ -612,7 +618,9 @@ export function ToolPaywall({
         </Button>
         <Button variant="outline" asChild>
           <Link
-            href="/pricing"
+            // This wall opens with the trial, which exists on the monthly
+            // cycle and nowhere else.
+            href={{ pathname: "/pricing", query: { cycle: "monthly" } }}
             onClick={() =>
               track(posthog, "wall_dismissed", {
                 ...context,

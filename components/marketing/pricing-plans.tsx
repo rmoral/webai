@@ -17,8 +17,6 @@ import {
   TRIAL,
   formatUsd,
   sharedYearlyDiscount,
-  trialDaysFor,
-  yearlySaving,
   type BillingInterval,
 } from "@/lib/billing/plans";
 import { Link } from "@/lib/i18n/navigation";
@@ -33,29 +31,36 @@ import type { Locale } from "@/lib/i18n/routing";
 // and the single most expensive confusion on the site.
 //
 // And the rule that closes it: the trial exists on Unlimited monthly and
-// nowhere else, so the badge, the button and the disclosure all change
-// with the cycle rather than only the price.
+// nowhere else, so the button and the disclosure both change with the
+// cycle rather than only the price.
+
+/** Which card, if any, the reader is already paying for. */
+type Viewer = "anonymous" | "free" | "pro" | "unlimited";
 
 export function PricingPlans() {
   const t = useTranslations("pricing");
   const plans = useTranslations("plans");
   const locale = useLocale() as Locale;
   const format = useFormatter();
-  // Monthly by default. Yearly is the better deal and the toggle says so,
-  // but defaulting to it hides the trial -- the strongest thing this page
-  // has to offer -- behind a click.
-  const [interval, setInterval] = useState<BillingInterval>("monthly");
   const posthog = usePostHog();
-  // undefined until the browser has answered. The free column's call to
-  // action depends on it, and showing "create a free account" to somebody
-  // who has one -- and then correcting it -- is worse than waiting a
-  // moment for the truth.
-  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const params = useSearchParams();
+
+  // Yearly by default: it is the better deal for the reader and the one
+  // that lets us keep a customer for a year. The trial does not disappear
+  // with it -- the line under the toggle says where it lives and moves
+  // the page there in one click -- and a wall that opens with the trial
+  // links to `?cycle=monthly` so it lands on the cycle it just offered.
+  const [interval, setInterval] = useState<BillingInterval>(
+    params.get("cycle") === "monthly" ? "monthly" : "yearly",
+  );
+  // undefined until the browser has answered. Every call to action here
+  // depends on it, and telling somebody to buy what they already pay for
+  // -- and then correcting it -- is worse than waiting a moment.
+  const [viewer, setViewer] = useState<Viewer | undefined>(undefined);
   // Where they came from, when the link said so. Read against the one
   // value we set rather than trusted: it is a query parameter, so anyone
   // can write anything in it.
-  const from =
-    useSearchParams().get("from") === "header" ? "header" : undefined;
+  const from = params.get("from") === "header" ? "header" : undefined;
 
   // `pricing_view` is the middle of the funnel: everything upstream is
   // measured by how many people reach it, and everything downstream by how
@@ -64,9 +69,14 @@ export function PricingPlans() {
   // The page is statically prerendered, so whether there is a session is a
   // question only the browser can answer. `getSession` reads the token the
   // client already holds -- no request, no cost on an SEO page -- which is
-  // enough to tell a visitor from a customer.
+  // enough to tell a visitor from a customer. Which plan that customer is
+  // on costs one call to /api/usage, and only for the few who are signed
+  // in.
   useEffect(() => {
     let active = true;
+    const seen = (logged_in: boolean) =>
+      track(posthog, "pricing_view", { cycle: interval, logged_in, from });
+
     // Wrapped, and wrapped around the client's construction as well as the
     // call: `createClient` throws synchronously when the Supabase keys are
     // missing, and a throw inside an effect unmounts the tree above it --
@@ -77,21 +87,29 @@ export function PricingPlans() {
         .auth.getSession()
         .then(({ data }) => {
           if (!active) return;
-          setSignedIn(Boolean(data.session));
-          track(posthog, "pricing_view", {
-            cycle: interval,
-            logged_in: Boolean(data.session),
-            from,
-          });
+          seen(Boolean(data.session));
+          if (!data.session) {
+            setViewer("anonymous");
+            return;
+          }
+          // The plan is a detail on top of the session: if it does not
+          // arrive, the page still knows not to sell a free account to
+          // somebody who has one.
+          setViewer("free");
+          fetch("/api/usage", { cache: "no-store" })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((usage) => {
+              if (!active) return;
+              if (usage?.plan === "pro" || usage?.plan === "unlimited") {
+                setViewer(usage.plan);
+              }
+            })
+            .catch(() => {});
         })
         .catch(() => {});
     } catch {
-      setSignedIn(false);
-      track(posthog, "pricing_view", {
-        cycle: interval,
-        logged_in: false,
-        from,
-      });
+      setViewer("anonymous");
+      seen(false);
     }
     return () => {
       active = false;
@@ -102,33 +120,58 @@ export function PricingPlans() {
   }, [posthog]);
 
   const yearly = interval === "yearly";
+  // Nobody can start a trial, or change cycle to get one, while they are
+  // already paying.
+  const paying = viewer === "pro" || viewer === "unlimited";
   // Read from the prices, never typed into the copy: the line used to
   // promise two months while the prices gave away six.
   const discount = sharedYearlyDiscount();
   const n = (value: number) => format.number(value);
 
+  /** The box that replaces the button on the card already being paid for. */
+  const currentPlan = (
+    <div
+      data-testid="current-plan"
+      className="text-muted-foreground flex h-11 w-full items-center justify-center rounded-md border border-dashed text-sm font-medium md:h-9"
+    >
+      {t("currentPlan")}
+    </div>
+  );
+
+  /** A change of plan is a proration, and Stripe's portal owns it. */
+  const switchTo = (label: string, filled: boolean) => (
+    <Button variant={filled ? "default" : "outline"} className="w-full" asChild>
+      <Link href="/app/account">{label}</Link>
+    </Button>
+  );
+
   return (
     <>
-      <div
-        role="radiogroup"
-        aria-label={t("compareTitle")}
-        className="mt-6 flex flex-wrap items-center gap-2"
-      >
-        {(["monthly", "yearly"] as const).map((option) => (
-          <Chip
-            key={option}
-            role="radio"
-            aria-checked={interval === option}
-            pressed={interval === option}
-            onClick={() => setInterval(option)}
-          >
-            {t(option)}
-          </Chip>
-        ))}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div
+          role="radiogroup"
+          // Not the page's heading: this group chooses a billing cycle,
+          // and a screen reader announcing "what each plan includes" here
+          // describes the table further down instead.
+          aria-label={t("cycleLabel")}
+          className="flex flex-wrap items-center gap-2"
+        >
+          {(["yearly", "monthly"] as const).map((option) => (
+            <Chip
+              key={option}
+              role="radio"
+              aria-checked={interval === option}
+              pressed={interval === option}
+              onClick={() => setInterval(option)}
+            >
+              {t(option)}
+            </Chip>
+          ))}
+        </div>
         {yearly && (
-          <span className="text-muted-foreground text-sm">
+          <span className="text-success-ink text-sm font-medium">
             {discount
-              ? t("yearlySave", {
+              ? t("saveHalf", {
                   percent: discount.percent,
                   months: discount.freeMonths,
                 })
@@ -136,6 +179,30 @@ export function PricingPlans() {
           </span>
         )}
       </div>
+
+      {/* The trial is the strongest thing this page has to offer and the
+          yearly cycle does not have one. Rather than default to the cycle
+          that shows it, the page says where it is. Hidden from somebody
+          who is already paying: they cannot start one. */}
+      {!paying && (
+        <p className="text-muted-foreground mt-3 text-sm leading-normal">
+          {yearly
+            ? t("trialHint", { days: TRIAL.days })
+            : discount
+              ? t("yearlyHint", {
+                  percent: discount.percent,
+                  months: discount.freeMonths,
+                })
+              : t("yearlyHintGeneric")}{" "}
+          <button
+            type="button"
+            onClick={() => setInterval(yearly ? "monthly" : "yearly")}
+            className="text-brand cursor-pointer underline underline-offset-[3px]"
+          >
+            {yearly ? t("seeMonthly") : t("seeYearly")}
+          </button>
+        </p>
+      )}
 
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
         <Card
@@ -150,19 +217,18 @@ export function PricingPlans() {
           cta={
             // Never propose something already done. With a session this
             // column went on selling "create a free account" to somebody
-            // reading it from their own account.
-            signedIn ? (
-              <Button variant="outline" className="w-full" disabled>
-                {t("currentPlan")}
-              </Button>
-            ) : (
+            // reading it from their own account -- and to a customer it
+            // has nothing to say at all.
+            viewer === "free" ? (
+              currentPlan
+            ) : paying ? null : (
               <Button
                 variant="outline"
                 className="w-full"
                 asChild
                 // Holds the row while the session resolves, so the card
                 // does not change its mind in front of the reader.
-                aria-busy={signedIn === undefined}
+                aria-busy={viewer === undefined}
               >
                 <Link href="/signup">{t("signup")}</Link>
               </Button>
@@ -185,7 +251,6 @@ export function PricingPlans() {
             yearly
               ? t("billingProYearly", {
                   amount: formatUsd(PRICES.pro.yearly.amount, locale),
-                  saving: formatUsd(yearlySaving("pro"), locale),
                 })
               : t("billingProMonthly", {
                   amount: formatUsd(PRICES.pro.monthly.amount, locale),
@@ -199,29 +264,33 @@ export function PricingPlans() {
             t("proTools"),
           ]}
           cta={
-            <Button className="w-full" asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "pro", cycle: interval },
-                }}
-              >
-                {yearly ? t("chooseProYearly") : t("chooseProMonthly")}
-              </Link>
-            </Button>
+            viewer === "pro" ? (
+              currentPlan
+            ) : viewer === "unlimited" ? (
+              switchTo(t("switchToPro"), false)
+            ) : (
+              // Outline, because the only filled button on this page is
+              // the one we are recommending.
+              <Button variant="outline" className="w-full" asChild>
+                <Link
+                  href={{
+                    pathname: "/checkout",
+                    query: { plan: "pro", cycle: interval },
+                  }}
+                >
+                  {yearly ? t("chooseProYearly") : t("chooseProMonthly")}
+                </Link>
+              </Button>
+            )
           }
         />
 
         <Card
           highlighted
+          // The only badge on the page, and it names the recommendation
+          // rather than an offer that half the cycles do not have.
+          badge={t("mostPopular")}
           title={plans("unlimited")}
-          // The badge is tied to the rule, not to the plan: an annual cycle
-          // has no trial and must not advertise one.
-          badge={
-            trialDaysFor("unlimited", interval) !== null
-              ? t("trialBadge", { days: TRIAL.days })
-              : undefined
-          }
           price={formatUsd(
             PRICES.unlimited[interval].monthlyEquivalent,
             locale,
@@ -238,7 +307,6 @@ export function PricingPlans() {
             yearly
               ? t("billingUnlimitedYearly", {
                   amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
-                  saving: formatUsd(yearlySaving("unlimited"), locale),
                 })
               : t("billingUnlimitedMonthly", {
                   days: TRIAL.days,
@@ -255,21 +323,37 @@ export function PricingPlans() {
             t("priority"),
           ]}
           cta={
-            <Button className="w-full" asChild>
-              <Link
-                href={{
-                  pathname: "/checkout",
-                  query: { plan: "unlimited", cycle: interval },
-                }}
-              >
-                {yearly
-                  ? t("chooseUnlimitedYearly")
-                  : t("tryFree", { days: TRIAL.days })}
-              </Link>
-            </Button>
+            viewer === "unlimited" ? (
+              currentPlan
+            ) : viewer === "pro" ? (
+              switchTo(t("switchToUnlimited"), true)
+            ) : (
+              <Button className="w-full" asChild>
+                <Link
+                  href={{
+                    pathname: "/checkout",
+                    query: { plan: "unlimited", cycle: interval },
+                  }}
+                >
+                  {yearly
+                    ? t("chooseUnlimitedYearly")
+                    : t("tryFree", { days: TRIAL.days })}
+                </Link>
+              </Button>
+            )
           }
           disclosure={
-            yearly ? (
+            viewer === "unlimited" ? null : viewer === "pro" ? (
+              // A proration is arithmetic we do not do here. Promising an
+              // amount we have not computed is how a change of plan turns
+              // into a complaint.
+              <p
+                className="border-brand-line bg-brand-softer text-brand-ink mt-3 rounded-xl border p-3 text-sm leading-normal"
+                data-testid="trial-disclosure"
+              >
+                {t("switchNote")}
+              </p>
+            ) : yearly ? (
               // Explaining why there is no trial here turns an absence into
               // the reason it exists.
               <p
@@ -320,8 +404,13 @@ function Card({
 }) {
   return (
     <section
+      aria-label={title}
       className={`flex flex-col rounded-xl border p-5 ${
-        highlighted ? "border-brand ring-brand ring-1" : ""
+        // First in one column: it is the recommendation, and what is read
+        // first in a stack is what is read at all.
+        highlighted
+          ? "border-brand ring-brand order-first ring-1 sm:order-none"
+          : ""
       }`}
     >
       <h2 className="flex items-center gap-2 font-semibold">
@@ -343,8 +432,13 @@ function Card({
           </span>
         )}
       </p>
-      {total && (
-        <p data-testid="plan-total" className="text-muted-foreground text-sm">
+      {/* The row is kept even when there is no yearly total, so the cards
+          do not jump as the cycle changes under the reader's cursor. */}
+      {suffix && (
+        <p
+          data-testid="plan-total"
+          className="min-h-[1.3em] text-sm font-medium"
+        >
           {total}
         </p>
       )}
@@ -358,7 +452,7 @@ function Card({
         ))}
       </ul>
 
-      <div className="mt-5">{cta}</div>
+      <div className="mt-5 flex-1 content-end">{cta}</div>
       {disclosure}
     </section>
   );
