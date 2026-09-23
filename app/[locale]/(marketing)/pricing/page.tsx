@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import {
   getFormatter,
@@ -114,7 +115,11 @@ export default async function PricingPage({ params }: Params) {
         {t("intro", { days: TRIAL.days })}
       </p>
 
-      <PricingPlans />
+      {/* It reads `?from=` to attribute the visit, which needs a boundary
+          for the page to stay prerendered. */}
+      <Suspense>
+        <PricingPlans />
+      </Suspense>
 
       {/* Above the table, not below it: the promise that makes the table
           worth reading is that none of it is a trap. */}

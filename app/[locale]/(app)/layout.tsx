@@ -2,10 +2,8 @@ import { getTranslations } from "next-intl/server";
 
 import { FeatureLock } from "@/components/billing/paywall";
 import { TrialEndGate } from "@/components/billing/trial-end-gate";
-import {
-  AllowanceProvider,
-  HeaderAllowance,
-} from "@/components/billing/allowance";
+import { AllowanceProvider } from "@/components/billing/allowance";
+import { UsageMeter, meterKind } from "@/components/billing/usage-meter";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +27,7 @@ export default async function AppLayout({
   await ensureUserRecord(user.id, user.email);
 
   // The header must not be able to take the app down: a database blip
-  // should cost the quota bar, not the page.
+  // should cost the meter, not the page.
   const subscriber = await getSubscriber(user.id).catch(() => null);
   // The first reading. Every one after it arrives on the response to a
   // request the editor made, through AllowanceProvider -- which is what
@@ -49,52 +47,84 @@ export default async function AppLayout({
     subscriber?.trialEnd != null &&
     subscriber.trialEnd.getTime() - Date.now() < 24 * 60 * 60 * 1000;
 
+  /**
+   * Everything that is not the meter. Rendered twice, because which of
+   * the two fits depends on the screen and not on anything the server
+   * knows: inline on a desktop, behind one control on a phone, where four
+   * links and a button cannot share a row with the balance.
+   */
+  const destinations = (
+    <>
+      {/* Wall D. On a free plan the history is a lock rather than a link:
+          sending someone to a page whose whole content is "you cannot have
+          this" is a worse answer than saying it here. */}
+      {subscriber && !subscriber.plan.limits.history ? (
+        <span className="flex items-center gap-1.5">
+          <FeatureLock
+            feature="history"
+            plan={subscriber.plan.id}
+            label={t("app.history")}
+          />
+          <Badge variant="brand">{t("plans.pro")}</Badge>
+        </span>
+      ) : (
+        <Link href="/app/history" className="hover:underline">
+          {t("app.history")}
+        </Link>
+      )}
+      <Link href="/app/account" className="hover:underline">
+        {t("app.account")}
+      </Link>
+      {isAdmin(user.email) && (
+        <Link href="/admin" className="hover:underline">
+          {t("app.admin")}
+        </Link>
+      )}
+      <form action="/auth/signout" method="POST">
+        <Button variant="outline" size="sm" type="submit">
+          {t("app.signOut")}
+        </Button>
+      </form>
+    </>
+  );
+
   return (
     <AllowanceProvider initial={allowance}>
       <div className="min-h-screen">
         <header className="border-b">
           <div className="mx-auto max-w-[65rem] px-6">
-            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm">
+            <nav className="flex min-h-13 items-center gap-x-4 gap-y-2 py-1 text-sm sm:py-2">
               <Link href="/app" className="font-semibold tracking-tight">
                 Verbalyx
               </Link>
-              {subscriber && (
-                <>
-                  <Badge variant="brand">
-                    {t(`plans.${subscriber.plan.id}`)}
-                  </Badge>
-                  <HeaderAllowance />
-                </>
+
+              {subscriber && allowance && (
+                <UsageMeter
+                  kind={meterKind(subscriber)}
+                  used={allowance.used}
+                  limit={allowance.limit}
+                  periodEnd={subscriber.periodEnd?.toISOString() ?? null}
+                  trialEnd={subscriber.trialEnd?.toISOString() ?? null}
+                  topup={subscriber.topupWords}
+                />
               )}
-              {/* Wall D. On a free plan the history is a lock rather than a
-                link: sending someone to a page whose whole content is "you
-                cannot have this" is a worse answer than saying it here. */}
-              {subscriber && !subscriber.plan.limits.history ? (
-                <div className="ml-auto">
-                  <FeatureLock
-                    feature="history"
-                    plan={subscriber.plan.id}
-                    label={t("app.history")}
-                  />
+
+              <span className="ml-auto hidden items-center gap-4 sm:flex">
+                {destinations}
+              </span>
+
+              {/* One control instead of four. A `details` rather than a
+                  menu of our own: it opens, closes and reaches the
+                  keyboard without a line of JavaScript, which is what
+                  keeps this shell a server component. */}
+              <details className="relative ml-auto sm:hidden">
+                <summary className="hover:bg-accent focus-visible:ring-brand/30 flex h-11 cursor-pointer list-none items-center rounded-md px-3 text-sm font-medium focus-visible:ring-[3px] focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+                  {t("app.menu")}
+                </summary>
+                <div className="bg-popover absolute top-full right-0 z-30 mt-2 flex w-52 flex-col items-start gap-3 rounded-xl border p-3 shadow-lg">
+                  {destinations}
                 </div>
-              ) : (
-                <Link href="/app/history" className="ml-auto hover:underline">
-                  {t("app.history")}
-                </Link>
-              )}
-              <Link href="/app/account" className="hover:underline">
-                {t("app.account")}
-              </Link>
-              {isAdmin(user.email) && (
-                <Link href="/admin" className="hover:underline">
-                  {t("app.admin")}
-                </Link>
-              )}
-              <form action="/auth/signout" method="POST">
-                <Button variant="outline" size="sm" type="submit">
-                  {t("app.signOut")}
-                </Button>
-              </form>
+              </details>
             </nav>
             <ToolTabs />
           </div>
