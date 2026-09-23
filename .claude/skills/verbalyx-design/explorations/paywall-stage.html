@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Paywall stage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<style>
+html,body{margin:0;height:100%}
+body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+#root{position:relative;height:100vh;overflow:hidden}
+.behind{position:absolute;inset:0;padding:20px;overflow:hidden}
+.behind h3{margin:0;font-size:20px;font-weight:600}
+.behind .ed{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden}
+.behind .bar{display:flex;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--muted)}
+.behind .pn{padding:12px;font-size:13px;line-height:1.6;color:var(--muted-foreground);min-height:150px}
+.behind .cols{display:grid;grid-template-columns:1fr 1px 1fr}
+.behind .rl{background:var(--border)}
+@media (max-width:520px){.behind .cols{grid-template-columns:1fr}.behind .rl{display:none}.behind .pn:last-child{border-top:1px solid var(--border)}}
+.chipr{height:28px;padding:0 12px;line-height:26px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted-foreground)}
+.chipr.on{line-height:28px;background:var(--brand);color:#fff;border-color:var(--brand)}
+.over{white-space:pre-wrap;font-size:14px;line-height:1.65;color:var(--foreground)}
+.over .cut{opacity:.38}
+.runbar{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--border);background:var(--muted)}
+.btnp{height:40px;padding:0 20px;border-radius:8px;background:var(--brand);color:#fff;font:500 14px/40px var(--font-sans);border:0}
+.lockrow{position:relative;display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-xl)}
+.lockrow .t{font-size:14px;font-weight:500}
+.lockrow .s{font-size:13px;color:var(--muted-foreground)}
+.lockpill{margin-left:auto;height:28px;padding:0 10px;line-height:26px;border:1px solid var(--brand-line);background:var(--brand-soft);color:var(--brand-ink);border-radius:8px;font-size:12px;font-weight:500}
+</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { Paywall } = window.VerbalyxDesignSystem_caebf9;
+const P = new URLSearchParams(location.search);
+const v = P.get('v') || 'B';
+const account = P.get('account') || 'anonymous';
+const used = Number(P.get('used') || 300);
+const limit = Number(P.get('limit') || 300);
+const RESULT = "El ritmo de una frase dice más que su vocabulario. Cuando todas miden lo mismo, el texto suena a máquina aunque cada palabra sea correcta. Aquí las alternamos: una larga que desarrolla la idea, una corta que la remata. El significado no se mueve, y los datos, los nombres propios y la terminología técnica siguen exactamente donde estaban, porque reescribir no es cambiar lo que dijiste.";
+const KEPT = "Es importante destacar que la implementación de estas metodologías resulta fundamental para optimizar los resultados obtenidos en el ámbito de la comunicación escrita. En resumen, dichos procesos permiten alcanzar objetivos de manera eficiente y efectiva, lo cual juega un papel fundamental en el mundo actual. ";
+const CUT = "Cabe señalar además que la adopción de estas prácticas resulta esencial para cualquier organización que aspire a mantener una ventaja competitiva sostenible en el tiempo, especialmente en contextos donde la calidad del mensaje determina la percepción de la marca y condiciona de forma decisiva los resultados obtenidos a medio plazo.";
+
+function Editor({children, overflow}){
+  return <div className="behind">
+    <h3>Humanizador</h3>
+    <div className="ed">
+      <div className="bar"><span className="chipr">Académico</span><span className="chipr on">Neutro</span><span className="chipr">Informal</span></div>
+      <div className="cols">
+        <div className="pn">{overflow
+          ? <div className="over"><span>{KEPT}</span><span className="cut">{CUT}</span></div>
+          : "Es importante destacar que la implementación de estas metodologías resulta fundamental para optimizar los resultados obtenidos…"}</div>
+        <div className="rl"></div>
+        <div className="pn">El resultado aparecerá aquí</div>
+      </div>
+      {children}
+      {!children && <div className="runbar"><button className="btnp">Humanizador</button><span style={{fontSize:13,color:'var(--muted-foreground)'}}>No guardamos tu texto.</span></div>}
+    </div>
+  </div>;
+}
+
+function App(){
+  if(v==='A') return <Editor overflow><Paywall trigger="overflow" attempted={812} perRequest={300}/><div className="runbar"><button className="btnp">Humanizador</button><span style={{fontSize:13,color:'var(--muted-foreground)'}}>Procesa las 300 primeras.</span></div></Editor>;
+  if(v==='C') return <React.Fragment><Editor/><Paywall trigger="tool" toolName="Parafraseador"/></React.Fragment>;
+  if(v==='D') return <div className="behind">
+      <h3>Mi cuenta</h3>
+      <div className="lockrow"><div><div className="t">Historial de documentos</div><div className="s">Vuelve a cualquier resultado anterior.</div></div><span className="lockpill">Pro</span>
+        <Paywall trigger="feature" featureName="historial" popoverStyle={{top:'calc(100% + 8px)',left:0}}/>
+      </div>
+      <div className="lockrow"><div><div className="t">Desglose por pasajes</div><div className="s">Qué frases sostienen la banda del detector.</div></div><span className="lockpill">Pro</span></div>
+    </div>;
+  if(v==='E') return <Paywall trigger="trialEnd"/>;
+  return <React.Fragment><Editor/><Paywall account={account} usedToday={used} limitToday={limit} partialResult={RESULT}/></React.Fragment>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

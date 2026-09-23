@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Paywall B — cuota diaria agotada</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--muted);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+.page{max-width:1240px;margin:0 auto;padding:40px 24px 72px}
+h1{margin:0;font-size:var(--text-2xl);font-weight:600;letter-spacing:-.01em}
+.lede{margin:8px 0 0;color:var(--muted-foreground);max-width:46rem;line-height:1.55}
+.sec{margin-top:40px}
+.sec h2{margin:0 0 4px;font-size:var(--text-base);font-weight:600}
+.sec p.note{margin:0 0 16px;color:var(--muted-foreground);font-size:var(--text-sm);max-width:46rem;line-height:1.55}
+.row{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.spec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.spec-cap{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground)}
+.spec iframe{display:block;border:0;background:var(--background)}
+.ann{max-width:340px;font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.ann b{color:var(--foreground)}
+.ann ul{margin:10px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+</style></head>
+<body><div class="page">
+<h1>Paywall · variante B — cuota diaria agotada</h1>
+<p class="lede">Se dispara al pulsar «Humanizador» sin cuota. El resultado ya está procesado: el usuario ve el principio nítido y el resto difuminado. Dos estados de cuenta, porque el CTA secundario cambia. Cada recuadro es un viewport real, no una maqueta escalada.</p>
+
+<div class="sec">
+<h2>Anónimo · escritorio</h2>
+<p class="note">300 / 300 palabras. El secundario ofrece la cuenta gratis, que es el salto barato: de 300 a 500 al día sin tarjeta.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 820 · anónimo</div><iframe src="paywall-stage.html?account=anonymous&amp;used=300&amp;limit=300" width="880" height="820" title="Paywall B, anónimo, escritorio"></iframe></div>
+<div class="ann"><b>Decisiones.</b>
+<ul>
+<li>El titular dice primero lo bueno («Tu texto está humanizado») y después el límite. Choca con el dolor, no con una regla.</li>
+<li>El resultado parcial es el texto real del usuario, no un placeholder.</li>
+<li>Un solo primario. El secundario es <code>outline</code>, del mismo ancho pero sin peso de color.</li>
+<li>La divulgación legal va a 14 px sobre fondo tintado, dentro del flujo. No es letra pequeña.</li>
+<li>Privacidad con el matiz de la FAQ: «no guardamos tu texto, solo el recuento», no el absoluto del pie.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<h2>Registrado en gratis · escritorio</h2>
+<p class="note">500 / 500 palabras. Ya tiene cuenta, así que el secundario pasa a ser Pro con su precio a la vista — nunca un «Ver planes» genérico.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 820 · cuenta gratis</div><iframe src="paywall-stage.html?account=free&amp;used=500&amp;limit=500" width="880" height="820" title="Paywall B, cuenta gratis, escritorio"></iframe></div>
+<div class="ann"><b>Por qué el precio en el botón.</b>
+<ul>
+<li>«Ver Pro — 14,99 US$/mes» evita que el usuario descubra el precio dos pantallas después.</li>
+<li>Es también la salida de quien no quiere trial: el estudio espera que 20-30 % del trial acabe en Pro.</li>
+<li>El aviso de cuota usa el badge ámbar del sistema, no rojo: se acabó el día, no hay error.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<h2>Móvil · 390 px</h2>
+<p class="note">Por debajo de 520 px el modal pasa a hoja inferior a ancho completo: los dos CTA quedan en la zona del pulgar y la divulgación sigue visible sin desplazar.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">móvil · 390 × 844 · anónimo</div><iframe src="paywall-stage.html?account=anonymous&amp;used=300&amp;limit=300" width="390" height="844" title="Paywall B, anónimo, móvil"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 844 · cuenta gratis</div><iframe src="paywall-stage.html?account=free&amp;used=500&amp;limit=500" width="390" height="844" title="Paywall B, cuenta gratis, móvil"></iframe></div>
+<div class="ann"><b>Móvil.</b>
+<ul>
+<li>Hoja anclada abajo, esquinas superiores redondeadas, 94 % de alto máximo.</li>
+<li>Botones a ancho completo, 44 px de alto mínimo.</li>
+<li>El resultado parcial se recorta a ~9,5 rem para que los CTA y la divulgación entren sin scroll.</li>
+<li>La X se mantiene arriba a la derecha: en hoja inferior sigue siendo el gesto esperado junto al deslizar.</li>
+</ul></div>
+</div></div>
+
+</div></body></html>

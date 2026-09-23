@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Registro, precios, checkout y correos</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--muted);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+.page{max-width:1300px;margin:0 auto;padding:40px 24px 80px}
+h1{margin:0;font-size:var(--text-2xl);font-weight:600;letter-spacing:-.01em}
+.lede{margin:8px 0 0;color:var(--muted-foreground);max-width:48rem;line-height:1.55}
+.sec{margin-top:44px;padding-top:28px;border-top:1px solid var(--border)}
+.sec h2{margin:0 0 4px;font-size:var(--text-lg);font-weight:600}
+.kind{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;background:var(--brand-soft);border:1px solid var(--brand-line);color:var(--brand-ink);font-size:11px;font-weight:600;margin-bottom:8px}
+.sec p.note{margin:0 0 18px;color:var(--muted-foreground);max-width:48rem;line-height:1.55}
+.row{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+.spec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.spec-cap{padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground)}
+.spec iframe{display:block;border:0;background:var(--background)}
+.ann{max-width:310px;font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.ann b{color:var(--foreground)}
+.ann ul{margin:10px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+</style></head>
+<body><div class="page">
+<h1>Registro, precios, checkout y correos</h1>
+<p class="lede">El resto de la sección 4 del estudio. Cada recuadro es un viewport real: 390 px los móviles. Los correos se ven a 600 px y a 390 px, que es como llegan de verdad.</p>
+
+<div class="sec">
+<span class="kind">4.1 · registro</span>
+<h2>/registro y /login, rutas separadas</h2>
+<p class="note">Mismo componente, dos títulos. El de alta lleva el beneficio; el de acceso, el regreso. Sin contraseña, sin campos extra, y con la promesa explícita de que el texto del editor sigue ahí al volver.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 900 × 800 · /registro</div><iframe src="flow-stage.html?v=registro" width="900" height="800" title="escritorio · 900 × 800 · /registro" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 780 · /registro</div><iframe src="flow-stage.html?v=registro" width="390" height="780" title="móvil · 390 × 780 · /registro" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Título con beneficio: «Tu cuenta gratis: 500 palabras al día», no «Inicia sesión para continuar».</li>
+<li>Google primero y a ancho completo; el enlace mágico debajo. Cero contraseñas.</li>
+<li>El bloque azul repite el salto de 300 a 500 — es el motivo concreto del estudio.</li>
+<li>«Tu texto sigue en el editor» es funcional: va a <code>sessionStorage</code>.</li>
+<li>«Sin tarjeta» aparece dos veces. Es lo que nos separa de Undetectable.</li>
+</ul></div>
+</div>
+<div class="row" style="margin-top:22px">
+<div class="spec"><div class="spec-cap">escritorio · 900 × 640 · /login</div><iframe src="flow-stage.html?v=login" width="900" height="640" title="escritorio · 900 × 640 · /login" loading="lazy"></iframe></div>
+<div class="ann"><b>/login</b> quita el bloque de beneficios y la línea del texto conservado: quien vuelve ya sabe lo que tiene. El enlace cruzado lleva a «Crear cuenta gratis».</div>
+</div></div>
+
+<div class="sec">
+<span class="kind">4.3 · precios</span>
+<h2>Toggle que cambia el precio de cabecera</h2>
+<p class="note">Pruébalo: el número grande cambia con el ciclo, y con él la divulgación. La regla que cierra el agujero: <b>el trial solo existe en Ilimitado mensual</b>. En anual el botón dice «Elegir Ilimitado anual» y la divulgación dice que se cobran 179,88 US$ hoy.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 1120 × 900 · interactivo</div><iframe src="flow-stage.html?v=precios" width="1120" height="900" title="escritorio · 1120 × 900 · interactivo" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Tres planes, no dos. Pro lleva «Más popular» porque es quien absorbe los downgrades del trial.</li>
+<li>Cada tarjeta con cobro lleva su divulgación dentro, a 14 px.</li>
+<li>Prueba social: solo el contador real. Sin testimonios inventados.</li>
+<li>Tabla comparativa y FAQ de facturación con seis preguntas, debajo.</li>
+<li>La garantía de cancelación está sobre la tabla, no al pie.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">4.4 · checkout</span>
+<h2>/checkout/resumen</h2>
+<p class="note">La pantalla que Stripe no puede hacer. El ciclo se elige aquí, la divulgación cambia con él y el botón no se activa hasta marcar la casilla.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 1000 × 780 · prueba mensual</div><iframe src="flow-stage.html?v=checkout" width="1000" height="780" title="escritorio · 1000 × 780 · prueba mensual" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 1180</div><iframe src="flow-stage.html?v=checkout" width="390" height="1180" title="móvil · 390 × 1180" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>El desglose enseña el descuento de la prueba como línea («−29,99 US$»), para que «Hoy pagas 0,00 US$» sea verificable.</li>
+<li>Casilla de consentimiento específica, no enterrada en los términos.</li>
+<li>«¿Cómo cancelo?» abre los dos pasos reales, antes de pedir la tarjeta.</li>
+<li>Cambia a anual y verás la divulgación pasar a «Hoy se te cobran 179,88 US$».</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">4.5 · post-compra</span>
+<h2>Confirmación</h2>
+<p class="note">La fecha del primer cobro es el elemento más grande de la pantalla. «Gestionar suscripción» está visible desde el primer segundo.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 900 × 640</div><iframe src="flow-stage.html?v=confirmacion" width="900" height="640" title="escritorio · 900 × 640" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 720</div><iframe src="flow-stage.html?v=confirmacion" width="390" height="720" title="móvil · 390 × 720" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Un solo primario («Ir a la app»); gestionar es <code>outline</code> pero no está escondido.</li>
+<li>Confirma que el correo ya salió y que habrá recordatorio el día antes.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">4.5 · correos</span>
+<h2>Confirmación inmediata y recordatorio 24 h</h2>
+<p class="note">HTML de tabla, sin imágenes, tipografía de sistema. El segundo es el que ningún competidor envía y el que, según tu estudio, evita el 80 % de las disputas.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">correo 1 · 600 × 920 · confirmación</div><iframe src="../emails/03b-compra-prueba.html" width="600" height="920" title="correo 1 · 600 × 920 · confirmación" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">correo 2 · 600 × 900 · recordatorio</div><iframe src="../emails/04-fin-prueba.html" width="600" height="900" title="correo 2 · 600 × 900 · recordatorio" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Fecha e importe en bloque tintado, a 26 px. No es una nota al pie.</li>
+<li>Sustituidos por el sistema D6 (ver <a href="D6 Emails.html">D6 Emails</a>): un botón y «Cancelar» como enlace visible.</li>
+<li>El recordatorio nombra las tres salidas, incluida «no hagas nada».</li>
+<li>El preheader lleva la cifra y la fecha: mucha gente solo lee esa línea.</li>
+<li>Sin imágenes ni Geist: nada se rompe en Outlook ni con imágenes bloqueadas.</li>
+</ul></div>
+</div>
+<div class="row" style="margin-top:22px">
+<div class="spec"><div class="spec-cap">móvil · 390 × 920 · confirmación</div><iframe src="../emails/03b-compra-prueba.html" width="390" height="920" title="móvil · 390 × 920 · confirmación" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 920 · recordatorio</div><iframe src="../emails/04-fin-prueba.html" width="390" height="920" title="móvil · 390 × 920 · recordatorio" loading="lazy"></iframe></div>
+<div class="ann">En móvil los dos botones se apilan a ancho completo y los titulares bajan a 22 px.</div>
+</div></div>
+
+</div></body></html>

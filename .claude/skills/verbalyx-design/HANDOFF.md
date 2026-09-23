@@ -1,5 +1,7 @@
 # Cómo llevar este diseño a `rmoral/webai`
 
+> **¿Vas a implementarlo con Claude Code?** Usa `IMPLEMENTACION/` en su lugar: es la especificación detallada, fase a fase, con el prompt listo en `IMPLEMENTACION/PROMPT.md`. Este archivo es la versión corta, para integrarlo a mano.
+
 Guía de integración, en el orden que respeta la prioridad de tu `CLAUDE.md`: primero lo que monetiza, luego la herramienta, luego SEO.
 
 Reglas que NO cambian: los límites siguen viniendo de `lib/billing/plans.ts`, el gating de `lib/billing/entitlements.ts`, las llamadas a IA solo desde servidor, Server Components por defecto. Esto es una capa visual, no un refactor.

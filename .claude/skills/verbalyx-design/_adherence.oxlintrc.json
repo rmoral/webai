@@ -16,6 +16,7 @@
         "patterns": [
           {
             "group": [
+              "components/billing/**",
               "components/core/**",
               "components/feedback/**",
               "components/forms/**",
@@ -25,6 +26,8 @@
               "ui_kits/**",
               "ui_kits/admin/**",
               "ui_kits/app/**",
+              "ui_kits/auth/**",
+              "ui_kits/checkout/**",
               "ui_kits/marketing/**"
             ],
             "message": "Import design-system components from 'index.js', not component internals."
@@ -45,6 +48,18 @@
       {
         "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Geist|Geist Mono))/i]",
         "message": "Font not provided by the design system. Available: Geist, Geist Mono."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AuthPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:mode|keptText|plan|initialSent|initialEmail|onSwitch|onDone|onChangePlan|key|ref|className|style|children)$/]",
+        "message": "<AuthPage> doesn't accept that prop. Declared props: mode, keptText, plan, initialSent, initialEmail, onSwitch, onDone, onChangePlan."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AuthPage'] > JSXAttribute[name.name='mode'] > Literal[value!=/^(?:registro|login)$/]",
+        "message": "<AuthPage> mode must be one of 'registro' | 'login'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='AuthPage'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:unlimited-monthly|unlimited-yearly|pro-monthly|pro-yearly)$/]",
+        "message": "<AuthPage> plan must be one of 'unlimited-monthly' | 'unlimited-yearly' | 'pro-monthly' | 'pro-yearly'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|pill|dot|className|children|key|ref|className|style|children)$/]",
@@ -75,8 +90,40 @@
         "message": "<Card> doesn't accept that prop. Declared props: interactive, className, children."
       },
       {
+        "selector": "JSXOpeningElement[name.name='CheckoutModal'] > JSXAttribute > JSXIdentifier[name!=/^(?:plan|cycle|fixed|onBack|onDismiss|onDone|key|ref|className|style|children)$/]",
+        "message": "<CheckoutModal> doesn't accept that prop. Declared props: plan, cycle, fixed, onBack, onDismiss, onDone."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CheckoutModal'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:unlimited|pro)$/]",
+        "message": "<CheckoutModal> plan must be one of 'unlimited' | 'pro'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CheckoutModal'] > JSXAttribute[name.name='cycle'] > Literal[value!=/^(?:monthly|yearly)$/]",
+        "message": "<CheckoutModal> cycle must be one of 'monthly' | 'yearly'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CheckoutSummary'] > JSXAttribute > JSXIdentifier[name!=/^(?:plan|initialCycle|onBack|onPaid|key|ref|className|style|children)$/]",
+        "message": "<CheckoutSummary> doesn't accept that prop. Declared props: plan, initialCycle, onBack, onPaid."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CheckoutSummary'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:unlimited|pro)$/]",
+        "message": "<CheckoutSummary> plan must be one of 'unlimited' | 'pro'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CheckoutSummary'] > JSXAttribute[name.name='initialCycle'] > Literal[value!=/^(?:monthly|yearly)$/]",
+        "message": "<CheckoutSummary> initialCycle must be one of 'monthly' | 'yearly'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='Chip'] > JSXAttribute > JSXIdentifier[name!=/^(?:pressed|round|className|children|key|ref|className|style|children)$/]",
         "message": "<Chip> doesn't accept that prop. Declared props: pressed, round, className, children."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='EvidenceFinding'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|tone|key|ref|className|style|children)$/]",
+        "message": "<EvidenceFinding> doesn't accept that prop. Declared props: label, tone."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='EvidenceFinding'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:good|warn|bad)$/]",
+        "message": "<EvidenceFinding> tone must be one of 'good' | 'warn' | 'bad'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Highlight'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|children|key|ref|className|style|children)$/]",
@@ -91,12 +138,76 @@
         "message": "<Input> doesn't accept that prop. Declared props: className."
       },
       {
+        "selector": "JSXOpeningElement[name.name='LimitNotice'] > JSXAttribute > JSXIdentifier[name!=/^(?:kind|plan|submitted|ceiling|remaining|dailyLimit|freeDaily|proRequest|unlimitedRequest|resetsIn|renewsOn|topupWords|topupPrice|onAction|key|ref|className|style|children)$/]",
+        "message": "<LimitNotice> doesn't accept that prop. Declared props: kind, plan, submitted, ceiling, remaining, dailyLimit, freeDaily, proRequest, unlimitedRequest, resetsIn, renewsOn, topupWords, topupPrice, onAction."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LimitNotice'] > JSXAttribute[name.name='kind'] > Literal[value!=/^(?:overflow|partial|exhausted|detector)$/]",
+        "message": "<LimitNotice> kind must be one of 'overflow' | 'partial' | 'exhausted' | 'detector'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='LimitNotice'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:anonymous|free|pro)$/]",
+        "message": "<LimitNotice> plan must be one of 'anonymous' | 'free' | 'pro'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OrderSummary'] > JSXAttribute > JSXIdentifier[name!=/^(?:plan|cycle|onCycle|compact|key|ref|className|style|children)$/]",
+        "message": "<OrderSummary> doesn't accept that prop. Declared props: plan, cycle, onCycle, compact."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OrderSummary'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:unlimited|pro)$/]",
+        "message": "<OrderSummary> plan must be one of 'unlimited' | 'pro'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='OrderSummary'] > JSXAttribute[name.name='cycle'] > Literal[value!=/^(?:monthly|yearly)$/]",
+        "message": "<OrderSummary> cycle must be one of 'monthly' | 'yearly'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PaymentForm'] > JSXAttribute > JSXIdentifier[name!=/^(?:amountToday|payLabel|trial|chargeDate|nextAmount|email|status|onPay|key|ref|className|style|children)$/]",
+        "message": "<PaymentForm> doesn't accept that prop. Declared props: amountToday, payLabel, trial, chargeDate, nextAmount, email, status, onPay."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PaymentForm'] > JSXAttribute[name.name='status'] > Literal[value!=/^(?:idle|processing|error)$/]",
+        "message": "<PaymentForm> status must be one of 'idle' | 'processing' | 'error'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Paywall'] > JSXAttribute > JSXIdentifier[name!=/^(?:trigger|account|usedToday|limitToday|attempted|perRequest|toolName|featureName|partialResult|chargeDate|popoverStyle|fixed|onDismiss|onPrimary|onSecondary|key|ref|className|style|children)$/]",
+        "message": "<Paywall> doesn't accept that prop. Declared props: trigger, account, usedToday, limitToday, attempted, perRequest, toolName, featureName, partialResult, chargeDate, popoverStyle, fixed, onDismiss, onPrimary, onSecondary."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Paywall'] > JSXAttribute[name.name='trigger'] > Literal[value!=/^(?:overflow|quota|tool|feature|trialEnd)$/]",
+        "message": "<Paywall> trigger must be one of 'overflow' | 'quota' | 'tool' | 'feature' | 'trialEnd'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Paywall'] > JSXAttribute[name.name='account'] > Literal[value!=/^(?:anonymous|free|pro)$/]",
+        "message": "<Paywall> account must be one of 'anonymous' | 'free' | 'pro'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PricingPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:initialCycle|session|wordsProcessed|since|trialEndsOn|onNavigate|key|ref|className|style|children)$/]",
+        "message": "<PricingPage> doesn't accept that prop. Declared props: initialCycle, session, wordsProcessed, since, trialEndsOn, onNavigate."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PricingPage'] > JSXAttribute[name.name='initialCycle'] > Literal[value!=/^(?:yearly|monthly)$/]",
+        "message": "<PricingPage> initialCycle must be one of 'yearly' | 'monthly'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PricingPage'] > JSXAttribute[name.name='session'] > Literal[value!=/^(?:anon|free|pro|unlimited)$/]",
+        "message": "<PricingPage> session must be one of 'anon' | 'free' | 'pro' | 'unlimited'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PurchaseConfirmation'] > JSXAttribute > JSXIdentifier[name!=/^(?:plan|trial|chargeDate|amount|email|onOpenApp|onManage|key|ref|className|style|children)$/]",
+        "message": "<PurchaseConfirmation> doesn't accept that prop. Declared props: plan, trial, chargeDate, amount, email, onOpenApp, onManage."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='QuotaBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:used|total|plan|unit|showPlan|key|ref|className|style|children)$/]",
         "message": "<QuotaBar> doesn't accept that prop. Declared props: used, total, plan, unit, showPlan."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ScoreGauge'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|label|note|children|key|ref|className|style|children)$/]",
-        "message": "<ScoreGauge> doesn't accept that prop. Declared props: value, label, note, children."
+        "selector": "JSXOpeningElement[name.name='RunCost'] > JSXAttribute > JSXIdentifier[name!=/^(?:words|ceiling|remaining|window|detector|key|ref|className|style|children)$/]",
+        "message": "<RunCost> doesn't accept that prop. Declared props: words, ceiling, remaining, window, detector."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SignupInvite'] > JSXAttribute > JSXIdentifier[name!=/^(?:anonDaily|freeDaily|dismissed|onSignup|onDismiss|key|ref|className|style|children)$/]",
+        "message": "<SignupInvite> doesn't accept that prop. Declared props: anonDaily, freeDaily, dismissed, onSignup, onDismiss."
       },
       {
         "selector": "JSXOpeningElement[name.name='Textarea'] > JSXAttribute > JSXIdentifier[name!=/^(?:className|key|ref|className|style|children)$/]",
@@ -117,6 +228,14 @@
       {
         "selector": "JSXOpeningElement[name.name='UpsellBanner'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:brand|quota)$/]",
         "message": "<UpsellBanner> tone must be one of 'brand' | 'quota'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='UsageMeter'] > JSXAttribute > JSXIdentifier[name!=/^(?:plan|used|limit|resetsIn|renewsOn|trialEndsOn|trialAmount|proMonthly|proRequest|unlimitedMonthly|unlimitedRequest|topup|compact|defaultOpen|onUpgrade|onManage|key|ref|className|style|children)$/]",
+        "message": "<UsageMeter> doesn't accept that prop. Declared props: plan, used, limit, resetsIn, renewsOn, trialEndsOn, trialAmount, proMonthly, proRequest, unlimitedMonthly, unlimitedRequest, topup, compact, defaultOpen, onUpgrade, onManage."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='UsageMeter'] > JSXAttribute[name.name='plan'] > Literal[value!=/^(?:free|pro|unlimited|trial)$/]",
+        "message": "<UsageMeter> plan must be one of 'free' | 'pro' | 'unlimited' | 'trial'."
       }
     ]
   },
@@ -132,6 +251,9 @@
   ],
   "x-omelette": {
     "components": {
+      "AuthPage": {
+        "replaces": []
+      },
       "Badge": {
         "replaces": []
       },
@@ -141,7 +263,16 @@
       "Card": {
         "replaces": []
       },
+      "CheckoutModal": {
+        "replaces": []
+      },
+      "CheckoutSummary": {
+        "replaces": []
+      },
       "Chip": {
+        "replaces": []
+      },
+      "EvidenceFinding": {
         "replaces": []
       },
       "Highlight": {
@@ -150,10 +281,31 @@
       "Input": {
         "replaces": []
       },
+      "LimitNotice": {
+        "replaces": []
+      },
+      "OrderSummary": {
+        "replaces": []
+      },
+      "PaymentForm": {
+        "replaces": []
+      },
+      "Paywall": {
+        "replaces": []
+      },
+      "PricingPage": {
+        "replaces": []
+      },
+      "PurchaseConfirmation": {
+        "replaces": []
+      },
       "QuotaBar": {
         "replaces": []
       },
-      "ScoreGauge": {
+      "RunCost": {
+        "replaces": []
+      },
+      "SignupInvite": {
         "replaces": []
       },
       "Textarea": {
@@ -166,6 +318,9 @@
         "replaces": []
       },
       "UpsellBanner": {
+        "replaces": []
+      },
+      "UsageMeter": {
         "replaces": []
       }
     },
