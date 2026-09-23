@@ -1,11 +1,12 @@
 import {
+  CancelLink,
   ChargeBlock,
   EmailBody,
   EmailButton,
-  EmailFooter,
   EmailHeading,
   EmailShell,
 } from "./layout";
+import { Footer } from "./footer";
 import { emailTranslator, type Locale } from "./translator";
 
 import { pathFor } from "@/lib/i18n/routing";
@@ -35,7 +36,6 @@ export function TrialReminderEmail({
   proAmount: string;
 }) {
   const t = emailTranslator(locale);
-  const app = `${appUrl}${pathFor("/app", locale)}`;
   const account = `${appUrl}${pathFor("/app/account", locale)}`;
 
   return (
@@ -57,14 +57,17 @@ export function TrialReminderEmail({
 
       <EmailBody>{t("reminderStay")}</EmailBody>
       <EmailBody>{t("reminderDowngrade", { amount: proAmount })}</EmailBody>
-      <EmailBody>{t("reminderCancel", { date: chargeDate })}</EmailBody>
 
-      <EmailButton href={app}>{t("goToApp")}</EmailButton>
-      <EmailButton href={account} variant="outline">
-        {t("manageOrCancel")}
-      </EmailButton>
+      <EmailButton href={account}>{t("reviewSubscription")}</EmailButton>
 
-      <EmailFooter lines={[t("footerCompany"), t("footerNotice")]} />
+      <EmailBody>
+        {t("reminderCancel", { date: chargeDate })}{" "}
+        <CancelLink href={`${account}?cancel=1`}>
+          {t("cancelNowLink")}
+        </CancelLink>
+      </EmailBody>
+
+      <Footer locale={locale} appUrl={appUrl} notice={t("footerNotice")} />
     </EmailShell>
   );
 }

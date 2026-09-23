@@ -40,6 +40,16 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  /**
+   * When the welcome email went out, and the lock that keeps it to one.
+   *
+   * A magic link is the same link every time, so nothing in the callback
+   * can tell a first sign-in from a later one on its own. Claiming this
+   * column is what decides it, and the claim is a conditional update: two
+   * tabs finishing at once, or Supabase replaying the callback, leaves one
+   * winner and one no-op.
+   */
+  welcomeSentAt: timestamp("welcome_sent_at", { withTimezone: true }),
 });
 
 export const subscriptions = pgTable("subscriptions", {

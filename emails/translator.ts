@@ -23,5 +23,19 @@ export function emailTranslator(locale: Locale) {
   });
 }
 
+/**
+ * Plan names, for the emails that have to say which plan.
+ *
+ * Same catalogue as the pages: "Ilimitado" cannot be one word on screen
+ * and another in the inbox.
+ */
+export function planTranslator(locale: Locale) {
+  return createTranslator({
+    locale,
+    messages: MESSAGES[locale],
+    namespace: "plans",
+  });
+}
+
 export { HTML_LANG };
 export type { Locale };

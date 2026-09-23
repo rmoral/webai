@@ -2,8 +2,10 @@ import { render } from "@react-email/components";
 import { createTranslator } from "next-intl";
 import { describe, expect, it } from "vitest";
 
+import { CancellationEmail } from "@/emails/cancellation";
 import { SubscriptionConfirmationEmail } from "@/emails/subscription-confirmation";
 import { TrialReminderEmail } from "@/emails/trial-reminder";
+import { WelcomeEmail, welcomeWords } from "@/emails/welcome";
 import { longDate } from "@/lib/billing/notify";
 import es from "@/messages/es.json";
 import en from "@/messages/en.json";
@@ -15,6 +17,17 @@ import en from "@/messages/en.json";
 
 const APP = "https://verbalyx.ai";
 const CHARGE = new Date("2026-09-21T10:00:00Z");
+
+/**
+ * How many anchors in this email look like a button.
+ *
+ * The rule is one per email, and the shape is what says so: an <a> that
+ * carries its own box still reads as a button when images are blocked,
+ * which a background image would not.
+ */
+function buttons(html: string): number {
+  return (html.match(/<a\b[^>]*padding:\s*14px 24px/g) ?? []).length;
+}
 
 function subject(
   locale: "es" | "en",
@@ -50,6 +63,7 @@ describe("subscription confirmation", () => {
         chargeDate: longDate(locale, CHARGE),
         chargeAmount: locale === "es" ? "29,99 US$" : "$29.99",
         paidToday: locale === "es" ? "0,00 US$" : "$0.00",
+        plan: locale === "es" ? "Ilimitado · mensual" : "Unlimited · monthly",
       }),
     );
   }
@@ -61,21 +75,29 @@ describe("subscription confirmation", () => {
     expect(body).toContain("Primer cobro");
   });
 
-  it("says cancelling is two clicks, and works during the trial", async () => {
+  it("says cancelling during the trial costs nothing", async () => {
+    // The paid wording -- access until the end of the period you paid for
+    // -- is not true of a trial, and saying it there would be telling
+    // somebody they had paid for something they have not.
     const body = await html("es");
-    expect(body).toContain("dos clics");
     expect(body).toContain("durante la prueba");
+    expect(body).not.toContain("periodo pagado");
   });
 
-  it("makes cancelling a button rather than a buried link", async () => {
-    // The industry hides this one. An <a> carrying its own box still looks
-    // like a button with images blocked, which a background image would not.
+  it("puts cancelling in the body, as a visible link", async () => {
+    // The industry hides this one in the footer. Here it sits in the
+    // paragraph that explains it, underlined and in brand ink, and it goes
+    // straight to the cancellation flow rather than to the portal's front
+    // page -- which is what makes "two clicks" true.
     const body = await html("es");
-    const anchor = body.match(
-      /<a\b[^>]*>(?:(?!<\/a>)[\s\S])*Gestionar o cancelar/,
-    );
-    expect(anchor).not.toBeNull();
-    expect(anchor![0]).toContain("border-radius");
+    expect(body).toContain("Cancelar la prueba");
+    expect(body).toContain("cancel=1");
+  });
+
+  it("carries one button, and only one", async () => {
+    // Two calls to action is a decision the reader has to make before
+    // they have read anything.
+    expect(buttons(await html("es"))).toBe(1);
   });
 
   it("carries no images, so a blocked client loses nothing", async () => {
@@ -95,6 +117,61 @@ describe("subscription confirmation", () => {
 
   it("asks for no webfont: mail clients do not fetch them reliably", async () => {
     expect(await html("es")).not.toContain("Geist");
+  });
+});
+
+describe("receipt", () => {
+  // The same template with money actually moved: what a customer looks at
+  // when a charge they do not recognise appears on a statement.
+  async function html(locale: "es" | "en") {
+    return render(
+      SubscriptionConfirmationEmail({
+        appUrl: APP,
+        locale,
+        trialDays: null,
+        chargeDate: longDate(locale, CHARGE),
+        chargeAmount: locale === "es" ? "89,88 US$" : "$89.88",
+        paidToday: locale === "es" ? "89,88 US$" : "$89.88",
+        plan: locale === "es" ? "Pro · anual" : "Pro · yearly",
+        receipt: [
+          { key: "Importe pagado", value: "89,88 US$", lead: true },
+          { key: "De los cuales, impuestos", value: "15,60 US$" },
+          { key: "En tu extracto bancario", value: "VERBALYX" },
+          {
+            key: "Factura",
+            value: "Descargar factura (PDF)",
+            href: "https://invoice.stripe.com/i/abc",
+          },
+        ],
+      }),
+    );
+  }
+
+  it("states what was paid and when the next charge falls", async () => {
+    const body = await html("es");
+    expect(body).toContain("89,88");
+    expect(body).toContain("21 de septiembre de 2026");
+    expect(body).toContain("Próxima renovación");
+  });
+
+  it("carries the receipt rows, the statement line among them", async () => {
+    // "What is this charge?" is the question that becomes a dispute. The
+    // string the bank prints is in the email that announced it.
+    const body = await html("es");
+    expect(body).toContain("VERBALYX");
+    expect(body).toContain("15,60");
+    expect(body).toContain("https://invoice.stripe.com/i/abc");
+  });
+
+  it("puts cancelling in the body and sends it straight to the flow", async () => {
+    const body = await html("es");
+    expect(body).toContain("Cómo cancelar");
+    expect(body).toContain("Cancelar la suscripción");
+    expect(body).toContain("cancel=1");
+  });
+
+  it("carries one button, and only one", async () => {
+    expect(buttons(await html("es"))).toBe(1);
   });
 });
 
@@ -148,5 +225,88 @@ describe("trial reminder", () => {
     expect(body).toContain("21 de septiembre de 2026");
     expect(body).not.toMatch(/\bMañana\b/i);
     expect(await html("en")).not.toMatch(/\btomorrow\b/i);
+  });
+});
+
+describe("welcome", () => {
+  async function html(locale: "es" | "en") {
+    return render(
+      WelcomeEmail({
+        appUrl: APP,
+        locale,
+        words: welcomeWords((value) => String(value)),
+      }),
+    );
+  }
+
+  it("says what the free account gives, with the figures", async () => {
+    const body = await html("es");
+    expect(body).toContain("500");
+    expect(body).toContain("300");
+    expect(body).toContain("Humanizador y detector");
+  });
+
+  it("promises not to email about the plans, and keeps it here", async () => {
+    // The one promise worth making to a new free account, and the email
+    // that makes it is the email that has to keep it: no price, no
+    // discount, no link to pricing.
+    const body = await html("es");
+    expect(body).toContain("No te escribiremos para vendértelos");
+    expect(body).not.toMatch(/href="[^"]*\/precios/);
+    expect(buttons(body)).toBe(1);
+  });
+
+  it("says it subscribes the reader to nothing", async () => {
+    expect(await html("es")).toContain("no te suscribe a nada");
+    expect(await html("en")).toContain("subscribes you to nothing");
+  });
+});
+
+describe("cancellation", () => {
+  async function html(locale: "es" | "en", trial: boolean) {
+    return render(
+      CancellationEmail({
+        appUrl: APP,
+        locale,
+        trial,
+        plan: locale === "es" ? "Pro · mensual" : "Pro · monthly",
+        until: longDate(locale, CHARGE),
+        cancelledOn: longDate(locale, new Date("2026-09-14T10:00:00Z")),
+        rows: {
+          lastCharge: trial
+            ? undefined
+            : "14 de septiembre de 2026 · 14,99 US$",
+          freeWords: "500",
+          zero: locale === "es" ? "0,00 US$" : "$0.00",
+        },
+      }),
+    );
+  }
+
+  it("answers the question a cancellation provokes", async () => {
+    // Will I be charged again? Said before it is asked, and said as a
+    // date rather than as a reassurance.
+    const body = await html("es", false);
+    expect(body).toContain("No se te cobrará nada más");
+    expect(body).toContain("21 de septiembre de 2026");
+  });
+
+  it("is unambiguous that a cancelled trial cost nothing", async () => {
+    const body = await html("es", true);
+    expect(body).toContain("No se te ha cobrado nada");
+    expect(body).toContain("0,00 US$");
+  });
+
+  it("does not try to win the customer back", async () => {
+    // Somebody who has just cancelled is not a lead, and arguing with the
+    // decision is how a cancellation becomes a complaint. The one mention
+    // of coming back has nothing to click.
+    for (const trial of [true, false]) {
+      const body = await html("es", trial);
+      expect(body).not.toMatch(/href="[^"]*\/precios/);
+      expect(body).not.toContain("Ver planes");
+      expect(body).not.toContain("descuento");
+      expect(buttons(body)).toBe(1);
+    }
   });
 });

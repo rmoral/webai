@@ -43,6 +43,13 @@
       "when": 1789892891681,
       "tag": "0005_known_squadron_supreme",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790198349894,
+      "tag": "0006_secret_blink",
+      "breakpoints": true
     }
   ]
 }

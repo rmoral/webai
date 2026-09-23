@@ -5,7 +5,12 @@ import type Stripe from "stripe";
 
 import type { FunnelEvents } from "@/lib/analytics/events";
 import { trackServer } from "@/lib/analytics/server";
-import { sendSubscriptionConfirmation } from "@/lib/billing/notify";
+import {
+  planLabel,
+  receiptRows,
+  sendCancellation,
+  sendSubscriptionConfirmation,
+} from "@/lib/billing/notify";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
 import { TOPUP } from "@/lib/billing/plans";
@@ -176,6 +181,60 @@ async function customerEmail(customer: string): Promise<string | null> {
   return record.deleted ? null : record.email;
 }
 
+/**
+ * The language this customer was reading when they paid, put into the
+ * Stripe metadata at checkout. Anything else -- a subscription created
+ * before this shipped, or through the Stripe dashboard -- falls back to
+ * the default rather than guessing.
+ */
+function localeOf(metadata?: Stripe.Metadata | null): Locale {
+  const value = metadata?.locale;
+  return typeof value === "string" && isLocale(value)
+    ? value
+    : routing.defaultLocale;
+}
+
+/** "Pro · anual", from the metadata the checkout wrote. */
+function planOf(locale: Locale, sub: Stripe.Subscription): string {
+  return planLabel(
+    locale,
+    sub.metadata?.plan,
+    sub.items.data[0]?.price?.recurring?.interval,
+  );
+}
+
+/**
+ * The cancellation email, on whichever of the two events reported it.
+ *
+ * Never allowed to fail the webhook: Stripe retries a non-2xx, and a
+ * retried cancellation would re-run everything else in the handler to send
+ * one email again. The customer is cancelled either way.
+ */
+async function cancellationEmail(
+  sub: Stripe.Subscription,
+  appUrl: string,
+): Promise<void> {
+  try {
+    const customer =
+      typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+    const to = await customerEmail(customer);
+    if (!to) return;
+    await sendCancellation({
+      subscription: sub,
+      to,
+      locale: localeOf(sub.metadata),
+      appUrl,
+      // Cancelled before the first charge: nothing was ever taken, which
+      // is the single thing this email has to be unambiguous about.
+      trial: sub.status === "trialing",
+      lastChargeCents: sub.items.data[0]?.price?.unit_amount ?? null,
+      lastChargeAt: sub.start_date ? new Date(sub.start_date * 1000) : null,
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   // Trimmed: a newline picked up while pasting into a dashboard fails
   // verification exactly like a wrong secret, and reads as one.
@@ -220,19 +279,6 @@ export async function POST(request: NextRequest) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
-
-  /**
-   * The language this customer was reading when they paid, put into the
-   * Stripe metadata at checkout. Anything else -- a subscription created
-   * before this shipped, or through the Stripe dashboard -- falls back to
-   * the default rather than guessing.
-   */
-  const localeOf = (metadata?: Stripe.Metadata | null): Locale => {
-    const value = metadata?.locale;
-    return typeof value === "string" && isLocale(value)
-      ? value
-      : routing.defaultLocale;
-  };
 
   try {
     switch (event.type) {
@@ -347,6 +393,9 @@ export async function POST(request: NextRequest) {
           await trackServer(userId, "cancel_done", {
             plan: sub.metadata?.plan === "unlimited" ? "unlimited" : "pro",
           });
+          // Same condition as the event above, so the email is sent once
+          // per subscription for the same reason the count is right.
+          await cancellationEmail(sub, appUrl);
         }
         break;
       }
@@ -373,6 +422,7 @@ export async function POST(request: NextRequest) {
           await trackServer(gone[0].userId, "cancel_done", {
             plan: sub.metadata?.plan === "unlimited" ? "unlimited" : "pro",
           });
+          await cancellationEmail(sub, appUrl);
         }
         break;
       }
@@ -409,12 +459,25 @@ export async function POST(request: NextRequest) {
               : invoice.customer.id,
           );
           if (buyer) {
+            const locale = localeOf(paidSub.metadata);
+            const paidCents = invoice.amount_paid ?? 0;
             await sendSubscriptionConfirmation({
               subscription: paidSub,
               to: buyer,
-              locale: localeOf(paidSub.metadata),
+              locale,
               appUrl,
-              paidTodayCents: invoice.amount_paid ?? 0,
+              paidTodayCents: paidCents,
+              // A trial's first invoice is for nothing, and a receipt for
+              // nothing is a receipt nobody needs.
+              receipt:
+                paidCents > 0
+                  ? await receiptRows({
+                      stripe: getStripe(),
+                      invoice,
+                      locale,
+                      plan: planOf(locale, paidSub),
+                    })
+                  : undefined,
             });
           }
         }
