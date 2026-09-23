@@ -25,7 +25,13 @@ export type WallVariant = "modal" | "inline" | "popover";
 
 /** Why the wall appeared. Mirrors the paywall triggers. */
 export type WallReason =
-  "quota" | "paid_tool" | "overflow" | "feature" | "trial_end";
+  | "quota"
+  | "paid_tool"
+  | "overflow"
+  | "feature"
+  | "trial_end"
+  /** The only one that answers a result rather than a refusal. */
+  | "invite";
 
 export type SignupMethod = "google" | "magic_link";
 
