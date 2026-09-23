@@ -23,6 +23,7 @@ import {
 } from "@/components/tools/highlight";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { track } from "@/lib/analytics/events";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
 import { PLANS, TRIAL, type PlanId } from "@/lib/billing/plans";
@@ -161,6 +162,15 @@ export function ToolEditor({
   async function run() {
     setStatus("loading");
     setError(null);
+    // Measured from the click, not from the response: what the visitor
+    // waits through includes the anti-bot check and the queue.
+    const startedAt = Date.now();
+    track(posthog, "tool_run", {
+      tool,
+      logged_in: plan !== "anonymous",
+      words_in: words,
+      quota_left: remaining,
+    });
     setOutput("");
     setParts(null);
     setReport(null);
@@ -182,16 +192,27 @@ export function ToolEditor({
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
+        // The first thing a visitor ever sees from us must not be an
+        // anti-bot failure, so it is counted apart from every other
+        // refusal. `retry_ok` is false until C3 adds the silent retry.
+        if (res.status === 403 && data?.error === "captcha_failed") {
+          track(posthog, "antibot_error", { tool, retry_ok: false });
+        }
         if (res.status === 429) {
-          posthog?.capture("quota_hit", { tool });
           // The allowance is spent and the server produced the result
           // anyway: wall B shows the beginning of it. When it did not --
           // a paid plan out of monthly words, or the day's one preview
           // already spent -- the banner says so without a teaser.
           if (typeof data?.partialResult === "string") {
+            // The wall counts itself when it opens (PaywallDialog).
             setWithheld(data as WithheldResult);
           } else {
-            posthog?.capture("paywall_shown", { trigger: "quota", tool, plan });
+            track(posthog, "wall_shown", {
+              variant: "inline",
+              reason: "quota",
+              plan,
+              tool,
+            });
             setUpsell(true);
           }
         }
@@ -209,7 +230,11 @@ export function ToolEditor({
           text: sent,
         });
         setStatus("done");
-        posthog?.capture("tool_used", { tool, words });
+        track(posthog, "tool_result", {
+          tool,
+          ms: Date.now() - startedAt,
+          truncated: overflowed,
+        });
         return;
       }
 
@@ -223,8 +248,12 @@ export function ToolEditor({
         setOutput(acc);
       }
       setStatus("done");
+      track(posthog, "tool_result", {
+        tool,
+        ms: Date.now() - startedAt,
+        truncated: overflowed,
+      });
       setParts(await diffParts(sent, acc));
-      posthog?.capture("tool_used", { tool, words, mode });
     } catch {
       setError(t("connectionError"));
       setStatus("idle");

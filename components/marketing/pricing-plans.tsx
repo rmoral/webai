@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { usePostHog } from "posthog-js/react";
 
 import { TrialDisclosure } from "@/components/billing/paywall";
+import { track } from "@/lib/analytics/events";
+import { createClient } from "@/lib/auth/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -40,6 +43,44 @@ export function PricingPlans() {
   // but defaulting to it hides the trial -- the strongest thing this page
   // has to offer -- behind a click.
   const [interval, setInterval] = useState<BillingInterval>("monthly");
+  const posthog = usePostHog();
+
+  // `pricing_view` is the middle of the funnel: everything upstream is
+  // measured by how many people reach it, and everything downstream by how
+  // many leave it for the card field.
+  //
+  // The page is statically prerendered, so whether there is a session is a
+  // question only the browser can answer. `getSession` reads the token the
+  // client already holds -- no request, no cost on an SEO page -- which is
+  // enough to tell a visitor from a customer.
+  useEffect(() => {
+    let active = true;
+    // Wrapped, and wrapped around the client's construction as well as the
+    // call: `createClient` throws synchronously when the Supabase keys are
+    // missing, and a throw inside an effect unmounts the tree above it --
+    // so a misconfigured deployment would render the pricing page blank.
+    // Counting a view is never worth the page that sells.
+    try {
+      createClient()
+        .auth.getSession()
+        .then(({ data }) => {
+          if (!active) return;
+          track(posthog, "pricing_view", {
+            cycle: interval,
+            logged_in: Boolean(data.session),
+          });
+        })
+        .catch(() => {});
+    } catch {
+      track(posthog, "pricing_view", { cycle: interval, logged_in: false });
+    }
+    return () => {
+      active = false;
+    };
+    // Once per visit, with the cycle the page opened on. The toggle is a
+    // change of view, not a second view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posthog]);
 
   const yearly = interval === "yearly";
   const n = (value: number) => format.number(value);
