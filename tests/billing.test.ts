@@ -23,7 +23,7 @@ import {
 } from "@/lib/billing/disclosure";
 import { subscribeRequestSchema } from "@/lib/security/validation";
 import { subscriptionParams } from "@/lib/billing/subscribe";
-import { describeCheckoutRejection } from "@/lib/billing/stripe";
+import { auditStripe, describeCheckoutRejection } from "@/lib/billing/stripe";
 
 describe("plan catalogue", () => {
   it("matches the prices of the pricing study", () => {
@@ -501,5 +501,142 @@ describe("subscriptionParams", () => {
       interval: "monthly",
     });
     expect(params.items).toEqual([{ price: "price_123" }]);
+  });
+});
+
+describe("auditStripe", () => {
+  // What the account can do, as opposed to which variables are set. Going
+  // live is four changes and three of them are silent.
+  const PRICE_KEYS = [
+    "pro_monthly_usd",
+    "pro_yearly_usd",
+    "unlimited_monthly_usd",
+    "unlimited_yearly_usd",
+    "topup_25k_usd",
+  ];
+
+  const ENDPOINT = {
+    url: "https://www.verbalyx.ai/api/stripe/webhook",
+    status: "enabled",
+    livemode: true,
+    enabled_events: [
+      "invoice.paid",
+      "setup_intent.succeeded",
+      "customer.subscription.updated",
+      "customer.subscription.deleted",
+    ],
+  };
+
+  function fakeStripe(options: {
+    prices?: { lookup_key: string; livemode: boolean }[];
+    endpoints?: (typeof ENDPOINT)[];
+    tax?: { status: string; head_office?: { address?: { country?: string } } };
+  }) {
+    return {
+      prices: {
+        list: async () => ({
+          data:
+            options.prices ??
+            PRICE_KEYS.map((lookup_key) => ({ lookup_key, livemode: true })),
+        }),
+      },
+      tax: {
+        settings: {
+          retrieve: async () =>
+            options.tax ?? {
+              status: "active",
+              head_office: { address: { country: "US" } },
+            },
+        },
+      },
+      webhookEndpoints: {
+        list: async () => ({ data: options.endpoints ?? [ENDPOINT] }),
+      },
+      // The audit only reads these three.
+    } as unknown as Parameters<typeof auditStripe>[0];
+  }
+
+  it("says nothing when the account can take a payment", async () => {
+    const audit = await auditStripe(fakeStripe({}));
+    expect(audit.problem).toBeNull();
+    expect(audit.prices.every((p) => p.found && p.live)).toBe(true);
+  });
+
+  it("names the prices that do not exist in this account", async () => {
+    // Prices are per mode: an account with live keys and sandbox prices
+    // answers every checkout with price_not_configured.
+    const audit = await auditStripe(
+      fakeStripe({
+        prices: [{ lookup_key: "pro_monthly_usd", livemode: true }],
+      }),
+    );
+    expect(audit.problem).toMatch(/Faltan 4 de 5 precios/);
+    expect(audit.problem).toContain("unlimited_yearly_usd");
+    expect(audit.prices.filter((p) => !p.found)).toHaveLength(4);
+  });
+
+  it("reports a price that belongs to the other mode", async () => {
+    const audit = await auditStripe(
+      fakeStripe({
+        prices: PRICE_KEYS.map((lookup_key) => ({
+          lookup_key,
+          livemode: false,
+        })),
+      }),
+    );
+    // Found, so nothing is missing -- but the panel can show which mode
+    // each one lives in, which is the tell when the keys were swapped and
+    // the prices were not.
+    expect(audit.problem).toBeNull();
+    expect(audit.prices.every((p) => p.live === false)).toBe(true);
+  });
+
+  it("catches a mode where Stripe Tax cannot price anything", async () => {
+    // Every subscription carries automatic_tax, so an inactive setting
+    // refuses them one by one -- and the setting is per mode, so a
+    // configured sandbox says nothing about live.
+    const audit = await auditStripe(fakeStripe({ tax: { status: "pending" } }));
+    expect(audit.problem).toMatch(/Stripe Tax no está activo/);
+    expect(audit.problem).toMatch(/sin dirección de origen|no tiene dirección/);
+    expect(audit.tax).toEqual({ active: false, headOffice: false });
+  });
+
+  it("survives an account whose tax settings cannot be read", async () => {
+    const stripe = fakeStripe({});
+    (
+      stripe as unknown as { tax: { settings: { retrieve: () => unknown } } }
+    ).tax.settings.retrieve = async () => {
+      throw new Error("permission denied");
+    };
+    const audit = await auditStripe(stripe);
+    expect(audit.tax).toBeNull();
+    // A reading we could not take is not a problem we can name.
+    expect(audit.problem).toBeNull();
+  });
+
+  it("catches an account with no webhook that would activate a plan", async () => {
+    // The most expensive silence there is: the customer pays, Stripe is
+    // happy, and the account stays free.
+    const audit = await auditStripe(fakeStripe({ endpoints: [] }));
+    expect(audit.problem).toMatch(/webhook activo/);
+  });
+
+  it("catches an endpoint that is missing the events a sale needs", async () => {
+    const audit = await auditStripe(
+      fakeStripe({
+        endpoints: [
+          { ...ENDPOINT, enabled_events: ["checkout.session.completed"] },
+        ],
+      }),
+    );
+    expect(audit.problem).toMatch(/webhook activo/);
+    expect(audit.webhooks[0].covers).toBe(false);
+  });
+
+  it("accepts an endpoint subscribed to everything", async () => {
+    const audit = await auditStripe(
+      fakeStripe({ endpoints: [{ ...ENDPOINT, enabled_events: ["*"] }] }),
+    );
+    expect(audit.problem).toBeNull();
   });
 });
