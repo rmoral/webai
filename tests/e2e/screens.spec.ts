@@ -61,7 +61,9 @@ test("the editor keeps the text across a trip to sign-up", async ({ page }) => {
   await page.goto("/humanizador-de-texto-ia");
   await typeInto(page, "Texto de entrada", draft);
 
-  await page.goto("/registro");
+  // The way out of the editor carries where it came from, which is both
+  // how the reader gets back and how the page knows the line is true.
+  await page.goto("/registro?next=%2Fhumanizador-de-texto-ia");
   await expect(page.getByText(/Tu texto sigue en el editor/)).toBeVisible();
 
   await page.goto("/humanizador-de-texto-ia");
