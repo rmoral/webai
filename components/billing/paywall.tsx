@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
@@ -71,26 +71,38 @@ interface PaywallContext {
   tool?: string;
 }
 
-const dismissalKey = (trigger: PaywallTrigger) =>
-  `paywall_dismissed_${trigger}`;
+const dismissalKey = (trigger: PaywallTrigger, tool?: string) =>
+  `paywall_dismissed_${trigger}${tool ? `_${tool}` : ""}`;
 
 /**
- * Dismissed once means gone for the session, per trigger. A wall that comes
- * back after the user closed it stops being an offer and becomes an
- * obstacle. `trialEnd` is exempt: it is the one wall with no way out,
- * because the alternative is charging someone who never chose.
+ * Dismissed once means gone for the session, per trigger AND per tool.
+ *
+ * A wall that comes back after the user closed it stops being an offer and
+ * becomes an obstacle. But the key used to be the trigger alone, so
+ * closing the paraphraser's wall silenced the corrector's too -- and the
+ * corrector's button, whose only job was to open that wall, became a
+ * button that did nothing at all. Two tools are two offers.
+ *
+ * `trialEnd` is exempt: it is the one wall with no way out, because the
+ * alternative is charging someone who never chose.
  */
-export function paywallDismissed(trigger: PaywallTrigger): boolean {
+export function paywallDismissed(
+  trigger: PaywallTrigger,
+  tool?: string,
+): boolean {
   try {
-    return sessionStorage.getItem(dismissalKey(trigger)) === "1";
+    return sessionStorage.getItem(dismissalKey(trigger, tool)) === "1";
   } catch {
     return false;
   }
 }
 
-export function rememberPaywallDismissal(trigger: PaywallTrigger): void {
+export function rememberPaywallDismissal(
+  trigger: PaywallTrigger,
+  tool?: string,
+): void {
   try {
-    sessionStorage.setItem(dismissalKey(trigger), "1");
+    sessionStorage.setItem(dismissalKey(trigger, tool), "1");
   } catch {
     // Private mode, or storage denied. Losing the memory shows the wall
     // once more; failing the render would show nothing at all.
@@ -142,6 +154,7 @@ export function PaywallDialog({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const posthog = usePostHog();
+  const t = useTranslations("paywall");
 
   useEffect(() => {
     track(posthog, "wall_shown", context);
@@ -205,8 +218,21 @@ export function PaywallDialog({
         aria-labelledby={labelledBy}
         tabIndex={-1}
         style={{ maxWidth: width }}
-        className="bg-card max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border p-6 shadow-lg outline-none min-[520px]:rounded-2xl"
+        className="bg-card relative max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border p-6 shadow-lg outline-none min-[520px]:rounded-2xl"
       >
+        {/* A cross, because Escape is not a way out that anybody can see.
+            The wall was closable only by a key nobody was told about, on a
+            phone that has no such key at all. */}
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={() => onDismiss("x")}
+            aria-label={t("close")}
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-brand/30 absolute top-3 right-3 flex size-8 items-center justify-center rounded-full text-lg leading-none focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            ×
+          </button>
+        )}
         {children}
       </div>
     </div>
@@ -242,10 +268,74 @@ export function TrialDisclosure({
 }
 
 export interface WithheldResult {
-  partialResult: string;
-  visibleChars: number;
+  /** The result the reader paid for with the words they had left. */
+  visibleText: string;
+  /**
+   * How many words the allowance could not cover. A count, never the
+   * words: the server no longer writes them at all.
+   */
+  withheldWords: number;
   usedToday: number;
   limitToday: number;
+}
+
+const FILLER_SYLLABLES = [
+  "ne",
+  "ra",
+  "lo",
+  "si",
+  "te",
+  "ma",
+  "co",
+  "de",
+  "in",
+  "tu",
+  "pa",
+  "ri",
+  "so",
+  "ca",
+  "men",
+  "tra",
+  "li",
+  "do",
+  "es",
+  "que",
+];
+
+/**
+ * The blur.
+ *
+ * Shapes generated here, never text. The withheld half used to be the real
+ * result: the server produced the whole answer for a request it had just
+ * refused, sent it to the browser and hid it behind `blur` and
+ * `user-select: none` -- which is not hiding. Every word was in the DOM,
+ * readable from the inspector by anyone who thought to look, and paid for
+ * in inference by us.
+ *
+ * Now there is nothing to hide, because those words were never written.
+ * What is left to convey is a quantity, and a quantity is a shape.
+ *
+ * Deterministic from the count, so the block does not reshuffle itself on
+ * every render while the reader is looking at it. Capped, because the
+ * panel shows a few lines and a thousand spans help nobody.
+ */
+function blurFiller(words: number): string {
+  let seed = (words * 2654435761) % 2147483647 || 7;
+  const next = () =>
+    (seed = (seed * 1103515245 + 12345) % 2147483647) / 2147483647;
+
+  const out: string[] = [];
+  for (let i = 0; i < Math.min(words, 120); i++) {
+    const syllables = 1 + Math.floor(next() * 3);
+    let word = "";
+    for (let s = 0; s < syllables; s++) {
+      word += FILLER_SYLLABLES[Math.floor(next() * FILLER_SYLLABLES.length)];
+    }
+    // Punctuation now and then, so the block has the texture of prose
+    // rather than of a list.
+    out.push(next() < 0.08 ? `${word},` : next() < 0.05 ? `${word}.` : word);
+  }
+  return out.join(" ");
 }
 
 /**
@@ -289,8 +379,11 @@ export function QuotaPaywall({
     tool,
   };
 
-  const visible = result.partialResult.slice(0, result.visibleChars);
-  const withheld = result.partialResult.slice(result.visibleChars);
+  // The blurred half is filler, generated from a count. See blurFiller.
+  const filler = useMemo(
+    () => blurFiller(result.withheldWords),
+    [result.withheldWords],
+  );
 
   return (
     <PaywallDialog
@@ -342,7 +435,7 @@ export function QuotaPaywall({
           </p>
 
           <div className="bg-muted/40 mt-4 max-h-56 overflow-hidden rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap">
-            {visible}
+            {result.visibleText}{" "}
             <span
               aria-hidden
               className="blur-[4.5px] select-none"
@@ -357,9 +450,14 @@ export function QuotaPaywall({
                   "linear-gradient(to bottom, #000 0%, transparent 85%)",
               }}
             >
-              {withheld}
+              {filler}
             </span>
           </div>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {t("quotaWithheld", {
+              words: format.number(result.withheldWords),
+            })}
+          </p>
 
           <ul className="mt-4 space-y-1.5 text-sm">
             <li>

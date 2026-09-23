@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
@@ -27,7 +27,7 @@ import { track } from "@/lib/analytics/events";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
 import { PLANS, TRIAL, type PlanId } from "@/lib/billing/plans";
-import { Link } from "@/lib/i18n/navigation";
+import { Link, usePathname } from "@/lib/i18n/navigation";
 import { countWords } from "@/lib/security/validation";
 
 declare global {
@@ -62,6 +62,11 @@ export function ToolEditor({
   const t = useTranslations("editor");
   const names = useTranslations("tools");
   const modeLabel = useTranslations("modes");
+  const wall = useTranslations("paywall");
+  const format = useFormatter();
+  // Where to come back to after creating an account: this page, with the
+  // text still in the box.
+  const here = usePathname();
   // The API is not under [locale], so it cannot resolve the language from
   // the URL. The client knows it and says so; the server validates it.
   const locale = useLocale();
@@ -84,9 +89,13 @@ export function ToolEditor({
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [upsell, setUpsell] = useState(false);
-  // Wall B. Set only when the server answered a refused request with the
-  // result anyway; otherwise the refusal falls back to the quota banner.
+  // Wall B. Set when the allowance covered only part of what was asked
+  // for: the reader has a real result and some words that were not done.
   const [withheld, setWithheld] = useState<WithheldResult | null>(null);
+  // The same fact, in the flow, once the wall has been closed. Closing the
+  // wall used to take the result with it, which is the one thing the
+  // reader was there for.
+  const [quotaNotice, setQuotaNotice] = useState<WithheldResult | null>(null);
   // Wall C, dismissed. Read from session storage on mount rather than
   // during render, because sessionStorage does not exist on the server and
   // reading it in the body would make the two renders disagree.
@@ -165,11 +174,13 @@ export function ToolEditor({
     setReport(null);
     setError(null);
     setWithheld(null);
+    setQuotaNotice(null);
+    setUpsell(false);
     setStatus("idle");
   }, [tool]);
 
   useEffect(() => {
-    setToolWallDismissed(paywallDismissed("tool"));
+    setToolWallDismissed(paywallDismissed("tool", tool));
     setWantedTool(false);
   }, [tool]);
 
@@ -254,6 +265,8 @@ export function ToolEditor({
     setParts(null);
     setReport(null);
     setWithheld(null);
+    setQuotaNotice(null);
+    setUpsell(false);
     // Frozen so the diff compares against what was actually sent, even if
     // the user keeps typing while the answer streams in.
     const sent = input;
@@ -296,31 +309,47 @@ export function ToolEditor({
         // Only an anti-bot refusal is worth a retry button: every other
         // failure here means trying again changes nothing.
         setRetryable(res.status === 403 && data?.error === "captcha_failed");
-        if (res.status === 429) {
-          // The allowance is spent and the server produced the result
-          // anyway: wall B shows the beginning of it. When it did not --
-          // a paid plan out of monthly words, or the day's one preview
-          // already spent -- the banner says so without a teaser.
-          if (typeof data?.partialResult === "string") {
-            // The wall counts itself when it opens (PaywallDialog).
-            setWithheld(data as WithheldResult);
-          } else {
-            track(posthog, "wall_shown", {
-              variant: "inline",
-              reason: "quota",
-              plan,
-              tool,
-            });
-            setUpsell(true);
+        // A 429 now means the allowance is spent outright -- the server
+        // reserves words before it calls the model, so there is no result
+        // to show and nothing was generated. When some words were left,
+        // the answer is a normal one with fewer words in it.
+        if (res.status === 429 && data?.error === "quota_exceeded") {
+          if (typeof data.used === "number" && typeof data.limit === "number") {
+            setRemaining(Math.max(0, data.limit - data.used));
           }
+          track(posthog, "wall_shown", {
+            variant: "inline",
+            reason: "quota",
+            plan,
+            tool,
+          });
+          setUpsell(true);
         }
         setError(data?.message ?? t("genericError"));
         setStatus("idle");
         return;
       }
 
-      const remainingHeader = res.headers.get("x-words-remaining");
-      if (remainingHeader !== null) setRemaining(Number(remainingHeader));
+      // One reading of the allowance, from the response that just spent
+      // it: the header bar, the editor and the wall are all written from
+      // these three numbers, so they cannot disagree.
+      const header = (name: string) => {
+        const value = res.headers.get(name);
+        return value === null ? null : Number(value);
+      };
+      const processed = header("x-words-processed");
+      const limitToday = header("x-words-limit");
+      const usedToday = header("x-words-used");
+      const left = header("x-words-remaining");
+      if (left !== null) setRemaining(left);
+
+      // What the allowance could not cover. `wanted` is what the request
+      // asked for after wall A's cut, so this counts only the words denied
+      // for want of quota -- the ones wall A removed are already named by
+      // its own notice.
+      const wanted = Math.min(words, ceiling);
+      const shortfall =
+        processed === null ? 0 : Math.max(0, wanted - processed);
 
       if (measures) {
         setReport({
@@ -349,9 +378,22 @@ export function ToolEditor({
       track(posthog, "tool_result", {
         tool,
         ms: Date.now() - startedAt,
-        truncated: overflowed,
+        truncated: overflowed || shortfall > 0,
       });
       setParts(await diffParts(sent, acc));
+
+      if (shortfall > 0 && limitToday !== null) {
+        const ran = {
+          visibleText: acc,
+          withheldWords: shortfall,
+          usedToday: usedToday ?? limitToday,
+          limitToday,
+        };
+        // Closed once this session, for this tool: the offer stays, in the
+        // flow, instead of taking over the screen a second time.
+        if (paywallDismissed("quota", tool)) setQuotaNotice(ran);
+        else setWithheld(ran);
+      }
     } catch {
       setError(t("connectionError"));
       setStatus("idle");
@@ -390,7 +432,7 @@ export function ToolEditor({
           tool={tool}
           plan={plan}
           onDismiss={() => {
-            rememberPaywallDismissal("tool");
+            rememberPaywallDismissal("tool", tool);
             setToolWallDismissed(true);
           }}
         />
@@ -526,13 +568,44 @@ export function ToolEditor({
         </UpsellBanner>
       )}
 
-      {withheld && !paywallDismissed("quota") && (
+      {/* Closing wall B keeps the result. It used to take it with it:
+          the reader pressed Escape -- the only way out there was -- and
+          the words they had just waited for went with the modal. */}
+      {quotaNotice && (
+        <UpsellBanner
+          tone="quota"
+          action={
+            plan === "anonymous" ? (
+              <Button size="sm" asChild>
+                <Link href={{ pathname: "/signup", query: { next: here } }}>
+                  {wall("createAccount", {
+                    words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+                  })}
+                </Link>
+              </Button>
+            ) : (
+              <Button size="sm" asChild>
+                <Link href="/pricing">{t("seePlans")}</Link>
+              </Button>
+            )
+          }
+        >
+          {wall("quotaInline", {
+            words: format.number(quotaNotice.withheldWords),
+          })}
+        </UpsellBanner>
+      )}
+
+      {withheld && (
         <QuotaPaywall
           tool={tool}
           plan={plan}
           result={withheld}
           onDismiss={() => {
-            rememberPaywallDismissal("quota");
+            rememberPaywallDismissal("quota", tool);
+            // The offer moves into the flow, and the result stays where
+            // the reader left it.
+            setQuotaNotice(withheld);
             setWithheld(null);
           }}
         />

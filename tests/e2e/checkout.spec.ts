@@ -280,22 +280,20 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
 }) => {
   await page.route("**/api/ai/humanize", (route) =>
     route.fulfill({
-      status: 429,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: "quota_exceeded",
-        message: "Has agotado tus palabras de hoy.",
-        partialResult:
-          "Un resultado cualquiera, lo bastante largo para partirlo.",
-        visibleChars: 20,
-        usedToday: 300,
-        limitToday: 300,
-      }),
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "12",
+        "x-words-limit": "300",
+        "x-words-used": "300",
+        "x-words-remaining": "0",
+      },
+      body: "Un resultado cualquiera, con las palabras que quedaban.",
     }),
   );
 
   await page.goto("/humanizador-de-texto-ia");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "palabra ".repeat(40).trim());
   await page.getByRole("button", { name: "Humanizador" }).click();
 
   const dialog = page.getByRole("dialog");

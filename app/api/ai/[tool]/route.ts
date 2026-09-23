@@ -8,7 +8,7 @@ import type { ToolId } from "@/lib/ai/tools";
 import { estimateCostCents, streamCompletion } from "@/lib/ai/provider";
 import { getSession } from "@/lib/auth/server";
 import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
-import { PLANS, type Plan } from "@/lib/billing/plans";
+import { PLANS } from "@/lib/billing/plans";
 import { saveDocument } from "@/lib/documents/store";
 import { hashIp } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
@@ -20,8 +20,8 @@ import {
 import { routing, splitLocale } from "@/lib/i18n/routing";
 import {
   checkBurstLimit,
-  claimOverQuotaPreview,
-  consumeWords,
+  reserveWords,
+  type QuotaGrant,
 } from "@/lib/usage/quotas";
 import { recordUsage } from "@/lib/usage/tracking";
 
@@ -48,6 +48,28 @@ function localeFromReferer(request: NextRequest) {
 }
 
 /**
+ * What the client needs to keep every counter in the product agreeing,
+ * carried on the response rather than in the body: the rewrite answers
+ * with a stream, and a stream has nowhere to put a number.
+ *
+ * `processed` is the figure wall B and the excess notice are written
+ * from -- how many words were actually paid for and seen by the model --
+ * and it is the only honest source for "we processed the first N".
+ */
+function quotaHeaders(grant: QuotaGrant): Record<string, string> {
+  return {
+    "x-words-processed": String(grant.granted),
+    ...(grant.limit !== null
+      ? {
+          "x-words-limit": String(grant.limit),
+          "x-words-used": String(grant.used ?? 0),
+          "x-words-remaining": String(grant.remaining ?? 0),
+        }
+      : {}),
+  };
+}
+
+/**
  * Boundary catch. The anti-abuse layer fails closed by throwing when a
  * required secret is missing (hashIp without IP_HASH_SECRET, Redis without
  * Upstash credentials in production). Failing closed is right; failing with
@@ -55,88 +77,6 @@ function localeFromReferer(request: NextRequest) {
  * mal" and the cause is invisible from both ends. Answer with JSON and
  * report it, so a misconfiguration is diagnosable instead of silent.
  */
-/**
- * Characters of the result shown sharp in wall B. The rest is blurred and
- * hidden from assistive technology. See components/billing/paywall.tsx.
- */
-const VISIBLE_CHARS = 210;
-
-interface Withheld {
-  partialResult: string;
-  visibleChars: number;
-  usedToday: number;
-  limitToday: number;
-}
-
-/**
- * Wall B: the allowance is spent, so the request is refused -- but the
- * result is produced anyway and returned withheld, the first 210 characters
- * legible and the remainder blurred behind the offer. Showing someone the
- * beginning of their own text is the whole mechanism; a placeholder
- * converts nobody.
- *
- * It is bounded on three sides, because this runs the model for a request
- * that was already refused:
- *
- *   - daily tiers only. A paid plan that exhausts its month has a top-up to
- *     buy and no reason to be shown a teaser of what it already paid for.
- *   - rewrites only. The detector costs nothing to run and answers with a
- *     band, which is not a thing that can be shown half-blurred.
- *   - once per subject per day, claimed atomically, so the giveaway is a
- *     single generation and not an open tap (see claimOverQuotaPreview).
- *
- * The withheld half does travel to the browser and is readable from the
- * developer tools. That is deliberate and it is the user's own text coming
- * back to them -- not somebody else's, and nothing that is stored: the free
- * tiers keep no document. Holding it server-side instead would mean
- * persisting a free user's text, which CLAUDE.md forbids outright.
- */
-async function withheldResult(args: {
-  plan: Plan;
-  prompt: ReturnType<typeof promptFor>;
-  input: string;
-  mode: string | undefined;
-  subject: string;
-  userId: string | null;
-  tool: string;
-  wordsIn: number;
-  quota: { remaining: number | null; limit: number | null };
-}): Promise<Withheld | null> {
-  const { plan, prompt, quota } = args;
-  if (plan.limits.wordsPerDay === null || !prompt) return null;
-  if (quota.limit === null) return null;
-  if (!(await claimOverQuotaPreview(args.subject))) return null;
-
-  const message = await streamCompletion({
-    system: prompt.system,
-    user: prompt.user(args.input, args.mode),
-    wordCount: args.wordsIn,
-  }).finalMessage();
-
-  const output = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("");
-
-  after(() =>
-    recordUsage({
-      subjectKey: args.subject,
-      userId: args.userId,
-      tool: args.tool as ToolId,
-      wordsIn: args.wordsIn,
-      wordsOut: countWords(output),
-      costCents: estimateCostCents(message.model, message.usage),
-    }).catch(() => {}),
-  );
-
-  return {
-    partialResult: output,
-    visibleChars: VISIBLE_CHARS,
-    usedToday: quota.limit - (quota.remaining ?? 0),
-    limitToday: quota.limit,
-  };
-}
-
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ tool: string }> },
@@ -244,35 +184,53 @@ async function handle(
   }
 
   const ceiling = plan.limits.maxWordsPerRequest;
-  const overflowed = submitted > ceiling;
-  const input = overflowed ? truncateToWords(text, ceiling) : text;
-  const wordsIn = overflowed ? ceiling : submitted;
+  // Wall A: an over-long paste is not refused, it is cut. This is the cut
+  // CLAUDE.md asks for, and the only thing the model can ever see.
+  const wanted = Math.min(submitted, ceiling);
 
-  const quota = await consumeWords(subject, subscriber, wordsIn);
-  if (!quota.allowed) {
-    const withheld = await withheldResult({
-      plan,
-      prompt,
-      input,
-      mode,
-      subject,
-      userId: user?.id ?? null,
-      tool,
-      wordsIn,
-      quota,
-    });
-    if (withheld) {
-      return NextResponse.json(
-        { ...withheld, error: "quota_exceeded", message: t("quota_daily") },
-        { status: 429, headers: { "cache-control": "no-store" } },
-      );
-    }
-    return error(
-      429,
-      "quota_exceeded",
-      plan.limits.wordsPerDay !== null ? t("quota_daily") : t("quota_monthly"),
+  // The allowance is spent BEFORE the model is called, and the model only
+  // ever sees what was paid for.
+  //
+  // It used to be the other way round: a refused request generated the
+  // whole answer anyway, sent it to the browser and blurred it with CSS --
+  // so we paid for inference on a request we had just refused, and the
+  // text was in the DOM for anyone who opened the inspector. The wall now
+  // shows the reader a real result they paid for with the words they had
+  // left, and the rest was never written.
+  //
+  // The detector asks for all or nothing: a score measured over the first
+  // 200 words of a 900-word text is a wrong answer about that text, not a
+  // partial one.
+  const grant = await reserveWords(
+    subject,
+    subscriber,
+    wanted,
+    tool !== "detect",
+  );
+
+  if (grant.granted === 0) {
+    return NextResponse.json(
+      {
+        error: "quota_exceeded",
+        message:
+          plan.limits.wordsPerDay !== null
+            ? t("quota_daily")
+            : t("quota_monthly"),
+        // The wall is written from these, so it can say "500 / 500 today"
+        // without a limit hardcoded in a component.
+        used: grant.used,
+        limit: grant.limit,
+      },
+      {
+        status: 429,
+        headers: { "cache-control": "no-store", ...quotaHeaders(grant) },
+      },
     );
   }
+
+  const input =
+    grant.granted < submitted ? truncateToWords(text, grant.granted) : text;
+  const wordsIn = grant.granted;
 
   if (tool === "detect") {
     // Measured against the anchors of the language being read. See the note
@@ -296,12 +254,7 @@ async function handle(
       }).catch(() => {}),
     );
     return NextResponse.json(result, {
-      headers: {
-        "cache-control": "no-store",
-        ...(quota.remaining !== null
-          ? { "x-words-remaining": String(quota.remaining) }
-          : {}),
-      },
+      headers: { "cache-control": "no-store", ...quotaHeaders(grant) },
     });
   }
 
@@ -362,9 +315,7 @@ async function handle(
     headers: {
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "no-store",
-      ...(quota.remaining !== null
-        ? { "x-words-remaining": String(quota.remaining) }
-        : {}),
+      ...quotaHeaders(grant),
     },
   });
 }
