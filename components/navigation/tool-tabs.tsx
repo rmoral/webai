@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 
+import { Badge } from "@/components/ui/badge";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
@@ -15,15 +17,26 @@ import { cn } from "@/lib/utils";
 //
 // Wrapped in Suspense because useSearchParams would otherwise opt every
 // marketing page out of static rendering.
-export function ToolTabs({ className }: { className?: string }) {
+export function ToolTabs({
+  className,
+  plan = "anonymous",
+}: {
+  className?: string;
+  /**
+   * Whose tabs these are. Inside /app the layout knows it; on the
+   * marketing pages, which are static and mostly read by people with no
+   * session, anonymous is both the default and the common case.
+   */
+  plan?: PlanId;
+}) {
   return (
     <Suspense fallback={<div className="h-[3.75rem]" />}>
-      <Tabs className={className} />
+      <Tabs className={className} plan={plan} />
     </Suspense>
   );
 }
 
-function Tabs({ className }: { className?: string }) {
+function Tabs({ className, plan }: { className?: string; plan: PlanId }) {
   // next-intl's usePathname: the internal pathname, so matching a tool works
   // the same in both languages without a table of translated URLs here.
   const pathname = usePathname();
@@ -48,6 +61,19 @@ function Tabs({ className }: { className?: string }) {
         const selected = tool.id === current;
         const reachable = inApp ? tool.live : tool.landing;
         const name = t(`tools.${tool.id}.name`);
+        // Wall C opens on the first attempt to use one of these, which is
+        // a surprise if nothing said so beforehand. It stays a link: the
+        // tab is how somebody finds out what the tool does, and the wall
+        // is a better argument with the tool in front of it.
+        const locked = !PLANS[plan].limits.tools.includes(tool.id);
+        const mark = locked && (
+          <Badge
+            variant="brand"
+            className="ml-1.5 px-1 py-0 text-[0.625rem] leading-4"
+          >
+            {t("plans.pro")}
+          </Badge>
+        );
         const classes = cn(
           "relative shrink-0 px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors",
           selected ? "text-brand" : "text-muted-foreground",
@@ -83,6 +109,7 @@ function Tabs({ className }: { className?: string }) {
             className={classes}
           >
             {name}
+            {mark}
             {underline}
           </Link>
         );
