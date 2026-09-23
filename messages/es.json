@@ -403,6 +403,8 @@
     "paywallCta": "Requiere un plan de pago",
     "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
     "processing": "Procesando…",
+    "verifying": "Verificando…",
+    "retry": "Reintentar",
     "copyResult": "Copiar resultado",
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
     "seePlans": "Ver planes",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
@@ -35,7 +35,15 @@ declare global {
     turnstile?: {
       render: (
         el: HTMLElement,
-        opts: { sitekey: string; callback: (token: string) => void },
+        opts: {
+          sitekey: string;
+          callback: (token: string) => void;
+          // A token lasts five minutes and is good for one request. Without
+          // these two the widget goes quiet on expiry and the editor keeps
+          // sending a token the server will refuse.
+          "expired-callback"?: () => void;
+          "error-callback"?: () => void;
+        },
       ) => string;
       reset: (id: string) => void;
     };
@@ -86,10 +94,42 @@ export function ToolEditor({
   // Whether they have reached for the tool yet. See wall C below.
   const [wantedTool, setWantedTool] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
+  // Whether the failed request can simply be tried again, which is true of
+  // an anti-bot refusal and of nothing else.
+  const [retryable, setRetryable] = useState(false);
   const tokenRef = useRef<string>("");
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string>(null);
   const posthog = usePostHog();
+
+  // The anti-bot check is only asked of visitors without a session -- that
+  // is the rule the server enforces -- and the marketing pages are static,
+  // so everyone reading one counts as anonymous here.
+  const needsToken = Boolean(TURNSTILE_KEY) && plan === "anonymous";
+  // Whether a usable token is in hand. Held in state and not only in a ref
+  // because the run button waits on it: the button used to be live before
+  // Turnstile had resolved, so the first click of the visit -- the first
+  // thing anyone does with the product -- answered "anti-bot check failed".
+  const [hasToken, setHasToken] = useState(false);
+  // Callers waiting for the next token, so a silent retry can ask for one
+  // and wait for the widget instead of guessing at a delay.
+  const waiting = useRef<((token: string) => void)[]>([]);
+  // The escape hatch. If the widget never resolves -- the script blocked,
+  // Cloudflare unreachable -- the button must not stay disabled forever:
+  // after ten seconds the visitor goes through and the server decides.
+  // An ad blocker should cost a round trip, not the product.
+  const [waived, setWaived] = useState(false);
+
+  const receiveToken = useCallback((token: string) => {
+    tokenRef.current = token;
+    setHasToken(true);
+    waiting.current.splice(0).forEach((resolve) => resolve(token));
+  }, []);
+
+  const loseToken = useCallback(() => {
+    tokenRef.current = "";
+    setHasToken(false);
+  }, []);
 
   // What was typed survives leaving the page and coming back -- which is
   // exactly what signing up is. "Your text is still in the editor" is a
@@ -134,18 +174,26 @@ export function ToolEditor({
   }, [tool]);
 
   useEffect(() => {
-    if (!TURNSTILE_KEY || !widgetRef.current || widgetId.current) return;
+    if (!needsToken || !widgetRef.current || widgetId.current) return;
     const interval = setInterval(() => {
       if (window.turnstile && widgetRef.current && !widgetId.current) {
         widgetId.current = window.turnstile.render(widgetRef.current, {
-          sitekey: TURNSTILE_KEY,
-          callback: (token) => (tokenRef.current = token),
+          sitekey: TURNSTILE_KEY!,
+          callback: receiveToken,
+          "expired-callback": loseToken,
+          "error-callback": loseToken,
         });
         clearInterval(interval);
       }
     }, 300);
     return () => clearInterval(interval);
-  }, []);
+  }, [needsToken, receiveToken, loseToken]);
+
+  useEffect(() => {
+    if (!needsToken || hasToken || waived) return;
+    const timer = setTimeout(() => setWaived(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [needsToken, hasToken, waived]);
 
   const words = countWords(input);
   // Wall A. The ceiling is the plan's, never a number written here.
@@ -158,10 +206,41 @@ export function ToolEditor({
   // sees the paywall before writing, not as a 403 after pressing the
   // button. The server enforces it either way.
   const included = PLANS[plan].limits.tools.includes(tool);
+  // Waiting on the anti-bot check, and not yet waived.
+  const verifying = needsToken && !hasToken && !waived;
+
+  /**
+   * Asks the widget for a new token and waits for it.
+   *
+   * A token is spent by the request that carries it, and it expires after
+   * five minutes, so the commonest anti-bot failure is a token that was
+   * simply used or too old -- not a visitor who looks like a robot. Asking
+   * for another one and trying again is what turns that into nothing the
+   * reader ever sees. Resolves empty if the widget does not answer, and
+   * then the failure is real.
+   */
+  function freshToken(): Promise<string> {
+    const widget = widgetId.current;
+    if (!widget || !window.turnstile) return Promise.resolve("");
+    loseToken();
+    window.turnstile.reset(widget);
+    return new Promise((resolve) => {
+      const waiter = (token: string) => {
+        clearTimeout(timer);
+        resolve(token);
+      };
+      const timer = setTimeout(() => {
+        waiting.current = waiting.current.filter((w) => w !== waiter);
+        resolve("");
+      }, 8_000);
+      waiting.current.push(waiter);
+    });
+  }
 
   async function run() {
     setStatus("loading");
     setError(null);
+    setRetryable(false);
     // Measured from the click, not from the response: what the visitor
     // waits through includes the anti-bot check and the queue.
     const startedAt = Date.now();
@@ -178,26 +257,45 @@ export function ToolEditor({
     // Frozen so the diff compares against what was actually sent, even if
     // the user keeps typing while the answer streams in.
     const sent = input;
-    try {
-      const res = await fetch(`/api/ai/${tool}`, {
+    const send = (token: string) =>
+      fetch(`/api/ai/${tool}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           text: input,
           mode,
           locale,
-          turnstileToken: tokenRef.current || undefined,
+          turnstileToken: token || undefined,
         }),
       });
 
+    try {
+      let res = await send(tokenRef.current);
+
+      // One silent retry with a fresh token. The first thing a visitor
+      // ever sees from us must not be "anti-bot check failed", and an
+      // expired or already-spent token is the usual cause -- neither is
+      // anything the reader can act on, so they are not told about it.
+      if (res.status === 403) {
+        const refusal = await res
+          .clone()
+          .json()
+          .catch(() => null);
+        if (refusal?.error === "captcha_failed") {
+          const fresh = await freshToken();
+          if (fresh) res = await send(fresh);
+          track(posthog, "antibot_error", {
+            tool,
+            retry_ok: fresh !== "" && res.ok,
+          });
+        }
+      }
+
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        // The first thing a visitor ever sees from us must not be an
-        // anti-bot failure, so it is counted apart from every other
-        // refusal. `retry_ok` is false until C3 adds the silent retry.
-        if (res.status === 403 && data?.error === "captcha_failed") {
-          track(posthog, "antibot_error", { tool, retry_ok: false });
-        }
+        // Only an anti-bot refusal is worth a retry button: every other
+        // failure here means trying again changes nothing.
+        setRetryable(res.status === 403 && data?.error === "captcha_failed");
         if (res.status === 429) {
           // The allowance is spent and the server produced the result
           // anyway: wall B shows the beginning of it. When it did not --
@@ -258,13 +356,20 @@ export function ToolEditor({
       setError(t("connectionError"));
       setStatus("idle");
     } finally {
-      if (widgetId.current) window.turnstile?.reset(widgetId.current);
+      // The token that was just sent is spent, whatever came back. Clearing
+      // it alongside the reset is what stops the *second* run from going
+      // out with a dead token -- the same race as the first click, one
+      // request later, and the button now waits for the new one.
+      if (widgetId.current) {
+        loseToken();
+        window.turnstile?.reset(widgetId.current);
+      }
     }
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {TURNSTILE_KEY && (
+      {needsToken && (
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           strategy="lazyOnload"
@@ -366,14 +471,18 @@ export function ToolEditor({
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
             onClick={included ? run : () => setWantedTool(true)}
-            disabled={included && (status === "loading" || words === 0)}
+            disabled={
+              included && (status === "loading" || words === 0 || verifying)
+            }
             size="lg"
           >
             {!included
               ? t("paywallCta")
               : status === "loading"
                 ? t("processing")
-                : names(`${tool}.name`)}
+                : verifying
+                  ? t("verifying")
+                  : names(`${tool}.name`)}
           </Button>
           {status === "done" && !measures && (
             <Button
@@ -388,8 +497,18 @@ export function ToolEditor({
       </div>
 
       {error && (
-        <p className="text-destructive text-sm" role="alert">
+        <p
+          className="text-destructive flex flex-wrap items-center gap-3 text-sm"
+          role="alert"
+        >
           {error}
+          {/* An anti-bot failure that survived the silent retry is the one
+              error with a way out, so it carries the way out. */}
+          {retryable && (
+            <Button size="sm" variant="outline" onClick={run}>
+              {t("retry")}
+            </Button>
+          )}
         </p>
       )}
 

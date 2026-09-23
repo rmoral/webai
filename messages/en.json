@@ -403,6 +403,8 @@
     "paywallCta": "Requires a paid plan",
     "genericError": "Something went wrong. Try again.",
     "processing": "Working…",
+    "verifying": "Verifying…",
+    "retry": "Try again",
     "copyResult": "Copy result",
     "connectionError": "Connection error. Try again.",
     "seePlans": "See plans",
