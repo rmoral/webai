@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Pago integrado en el sitio</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--muted);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+.page{max-width:1300px;margin:0 auto;padding:40px 24px 80px}
+h1{margin:0;font-size:var(--text-2xl);font-weight:600;letter-spacing:-.01em}
+.lede{margin:8px 0 0;color:var(--muted-foreground);max-width:50rem;line-height:1.55}
+.callout{margin:20px 0 0;padding:16px 18px;border:1px solid var(--brand-line);background:var(--brand-softer);border-radius:var(--radius-xl);max-width:50rem}
+.callout p{margin:0;font-size:14px;line-height:1.6;color:var(--brand-ink)}
+.callout p + p{margin-top:8px}
+.sec{margin-top:44px;padding-top:28px;border-top:1px solid var(--border)}
+.sec h2{margin:0 0 4px;font-size:var(--text-lg);font-weight:600}
+.kind{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;background:var(--brand-soft);border:1px solid var(--brand-line);color:var(--brand-ink);font-size:11px;font-weight:600;margin-bottom:8px}
+.sec p.note{margin:0 0 18px;color:var(--muted-foreground);max-width:50rem;line-height:1.55}
+.row{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+.spec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.spec-cap{padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground)}
+.spec iframe{display:block;border:0;background:var(--background)}
+.ann{max-width:320px;font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.ann b{color:var(--foreground)}
+.ann ul{margin:10px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+.try{display:inline-block;margin-top:6px;font-size:12px;color:var(--brand);font-weight:500}
+</style></head>
+<body><div class="page">
+<h1>Pago integrado en el sitio</h1>
+<p class="lede">El cobro ocurre dentro de Verbalyx. No hay redirección a una página alojada por Stripe: los campos de tarjeta son un Payment Element embebido, y quien choca con un muro paga sin salir del editor.</p>
+
+<div class="callout">
+<p><b>Por qué importa aquí más que en otros productos.</b> El muro de cuota aparece justo después de enseñarle al usuario su resultado a medias. Mandarlo en ese momento a otro dominio es pedirle que abandone su texto para ir a rellenar una tarjeta. Los dos referentes del estudio que mejor convierten cobran dentro de su propia interfaz.</p>
+<p><b>Lo que no cambia:</b> la tarjeta la sigue procesando Stripe. El Payment Element envía los datos cifrados directamente a Stripe y no pasan por el servidor de Verbalyx, así que el alcance de PCI es el mismo que con la redirección. Eso se dice en la propia pantalla, porque un formulario embebido sin esa nota genera más desconfianza que la redirección.</p>
+</div>
+
+<div class="sec">
+<span class="kind">flujo principal · interactivo</span>
+<h2>Del muro al cobro sin cambiar de página</h2>
+<p class="note">Pulsa «Probar Ilimitado 3 días gratis» en el muro: el modal se convierte en el formulario de pago con el editor todavía detrás. Marca la casilla y paga para ver el estado de procesado y el de éxito. La flecha vuelve al muro; la X devuelve al editor con el texto intacto.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 900 × 840 · empieza en el muro</div><iframe src="pay-stage.html?v=chain&amp;start=paywall" width="900" height="840" title="escritorio · 900 × 840 · empieza en el muro" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 860 · hoja inferior</div><iframe src="pay-stage.html?v=chain&amp;start=pay" width="390" height="860" title="móvil · 390 × 860 · hoja inferior" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>El ciclo <b>no</b> se elige aquí: ya se decidió en el muro. El modal solo cobra.</li>
+<li>Resumen compacto arriba, con el desglose hasta «Hoy pagas 0,00 US$» verificable.</li>
+<li>Monederos primero: en móvil resuelven el pago en un gesto.</li>
+<li>El botón dice el importe: «Empezar la prueba — 0,00 US$ hoy».</li>
+<li>El éxito ocurre <b>en el mismo modal</b> y su CTA primario es «Seguir donde estaba»: el usuario vino a por su texto.</li>
+<li>En móvil es hoja inferior, igual que el muro del que nace.</li>
+</ul>
+<span class="try">Pruébalo: los dos recuadros son interactivos.</span></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">componente</span>
+<h2>El formulario, en detalle</h2>
+<p class="note">En producción el recuadro de tarjeta es un Stripe Payment Element; lo de aquí es la apariencia que hay que pasarle en <code>appearance</code>. El resto de campos y toda la divulgación son nuestros.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 480 × 760</div><iframe src="pay-stage.html?v=page" width="480" height="760" title="escritorio · 480 × 760" loading="lazy"></iframe></div>
+<div class="ann"><b>Orden de los bloques.</b><ul>
+<li>Monederos → «o paga con tarjeta» → correo → tarjeta → nombre → país y CP.</li>
+<li>Tarjeta en un solo recuadro con divisiones internas: número arriba, caducidad y CVC abajo.</li>
+<li>Divulgación a 14 px dentro del formulario, encima de la casilla. El botón no se activa sin marcarla.</li>
+<li>El error de rechazo aclara que <b>no se ha cobrado nada</b>: es la duda inmediata.</li>
+<li>La nota de seguridad explica por qué es seguro pagar aquí.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">/checkout</span>
+<h2>La página completa, para quien llega desde precios</h2>
+<p class="note">Mismo pago, otra puerta. Resumen y ciclo a la izquierda, formulario a la derecha. Cambia el ciclo y verás moverse a la vez el desglose, el importe del botón y la divulgación.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 1120 × 900 · mensual con prueba</div><iframe src="pay-stage.html?v=page" width="1120" height="900" title="escritorio · 1120 × 900 · mensual con prueba" loading="lazy"></iframe></div>
+<div class="ann"><b>La regla que cierra el agujero de facturación.</b><ul>
+<li>En mensual: botón «Empezar la prueba — 0,00 US$ hoy» y divulgación con la fecha del primer cargo.</li>
+<li>En anual: botón «Pagar — 179,88 US$ hoy» y divulgación de cobro inmediato. <b>Sin prueba.</b></li>
+<li>El número del botón y el de la divulgación coinciden siempre. Hoy, en el sitio vivo, no coinciden nunca.</li>
+<li>«¿Cómo cancelo?» da los dos pasos reales antes de pedir la tarjeta.</li>
+</ul></div>
+</div>
+<div class="row" style="margin-top:22px">
+<div class="spec"><div class="spec-cap">escritorio · 1120 × 900 · anual, sin prueba</div><iframe src="pay-stage.html?v=page-anual" width="1120" height="900" title="escritorio · 1120 × 900 · anual, sin prueba" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 1180</div><iframe src="pay-stage.html?v=page" width="390" height="1180" title="móvil · 390 × 1180" loading="lazy"></iframe></div>
+<div class="ann">En móvil las dos columnas se apilan: primero el resumen, después el pago. Los botones suben a 48 px.</div>
+</div></div>
+
+<div class="sec">
+<span class="kind">post-compra</span>
+<h2>Confirmación</h2>
+<p class="note">Para quien pagó desde <code>/checkout</code>. Quien pagó desde el muro no ve esta pantalla: se queda en el editor, que es de donde no quería salir.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 900 × 660</div><iframe src="pay-stage.html?v=confirmacion" width="900" height="660" title="escritorio · 900 × 660" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 740</div><iframe src="pay-stage.html?v=confirmacion" width="390" height="740" title="móvil · 390 × 740" loading="lazy"></iframe></div>
+<div class="ann">La fecha del primer cobro es el elemento más grande. «Gestionar suscripción» está visible desde el primer segundo.</div>
+</div></div>
+
+</div></body></html>

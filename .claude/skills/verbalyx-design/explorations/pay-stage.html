@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Pay stage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<style>
+html,body{margin:0;min-height:100%}
+body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+#root{position:relative;min-height:100vh;overflow:hidden}
+.behind{position:absolute;inset:0;padding:20px;overflow:hidden}
+.behind h3{margin:0;font-size:20px;font-weight:600}
+.behind .ed{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden}
+.behind .bar{display:flex;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--muted)}
+.behind .pn{padding:12px;font-size:13px;line-height:1.6;color:var(--muted-foreground);min-height:150px}
+.behind .cols{display:grid;grid-template-columns:1fr 1px 1fr}
+.behind .rl{background:var(--border)}
+@media (max-width:520px){.behind .cols{grid-template-columns:1fr}.behind .rl{display:none}.behind .pn:last-child{border-top:1px solid var(--border)}}
+.chipr{height:28px;padding:0 12px;line-height:26px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--muted-foreground)}
+.chipr.on{line-height:28px;background:var(--brand);color:#fff;border-color:var(--brand)}
+.runbar{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--border);background:var(--muted)}
+.btnp{height:40px;padding:0 20px;border-radius:8px;background:var(--brand);color:#fff;font:500 14px/40px var(--font-sans);border:0}
+</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { Paywall, CheckoutModal, CheckoutSummary, PurchaseConfirmation } = window.VerbalyxDesignSystem_caebf9;
+const P = new URLSearchParams(location.search);
+const v = P.get('v') || 'chain';
+const start = P.get('start') || 'paywall';
+const RESULT = "El ritmo de una frase dice más que su vocabulario. Cuando todas miden lo mismo, el texto suena a máquina aunque cada palabra sea correcta. Aquí las alternamos: una larga que desarrolla la idea, una corta que la remata. El significado no se mueve, y los datos, los nombres propios y la terminología técnica siguen exactamente donde estaban, porque reescribir no es cambiar lo que dijiste.";
+
+function Editor(){
+  return <div className="behind">
+    <h3>Humanizador</h3>
+    <div className="ed">
+      <div className="bar"><span className="chipr">Académico</span><span className="chipr on">Neutro</span><span className="chipr">Informal</span></div>
+      <div className="cols">
+        <div className="pn">Es importante destacar que la implementación de estas metodologías resulta fundamental para optimizar los resultados obtenidos…</div>
+        <div className="rl"></div>
+        <div className="pn">El resultado aparecerá aquí</div>
+      </div>
+      <div className="runbar"><button className="btnp">Humanizador</button><span style={{fontSize:13,color:'var(--muted-foreground)'}}>No guardamos tu texto.</span></div>
+    </div>
+  </div>;
+}
+
+function Chain(){
+  const [step,setStep] = React.useState(start);
+  return <React.Fragment>
+    <Editor/>
+    {step==='paywall' && <Paywall trigger="quota" account="anonymous" usedToday={300} limitToday={300} partialResult={RESULT} onPrimary={()=>setStep('pay')} onDismiss={()=>setStep('paywall')}/>}
+    {step==='pay' && <CheckoutModal plan="unlimited" cycle="monthly" onBack={()=>setStep('paywall')} onDismiss={()=>setStep('paywall')} onDone={()=>setStep('paywall')}/>}
+  </React.Fragment>;
+}
+
+function App(){
+  if(v==='page') return <CheckoutSummary plan="unlimited" initialCycle="monthly"/>;
+  if(v==='page-anual') return <CheckoutSummary plan="unlimited" initialCycle="yearly"/>;
+  if(v==='confirmacion') return <PurchaseConfirmation/>;
+  return <Chain/>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script></body></html>

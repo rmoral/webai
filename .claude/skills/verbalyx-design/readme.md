@@ -23,7 +23,7 @@ Stack for context: Next.js 15 App Router · TypeScript · Tailwind CSS 4 + **sha
 | Marketing site | `/`, `/humanizador-de-texto-ia`, `/precios`, `/legal/[slug]` | `ui_kits/marketing/` |
 | Signed-in app | `/login`, `/app`, `/app/cuenta` | `ui_kits/app/` |
 | Backoffice | `/admin` | `ui_kits/admin/` |
-| Transactional email | `emails/welcome.tsx`, `emails/trial-ending.tsx` | not recreated (plain `sans-serif` on `#fafafa`, no brand styling upstream) |
+| Transactional email | `emails/layout.tsx`, `emails/subscription-confirmation.tsx`, `emails/trial-reminder.tsx` | `emails/*.html` — sistema D6, cinco plantillas + variantes (Sept 23, 2026) |
 
 ## Components
 
@@ -40,9 +40,17 @@ Built strictly from the repository's own inventory — `components/ui/` plus the
 | `ToolTabs` | — | **Added Sept 2026.** Primary navigation. The repo navigated tools through a card grid; the category uses top tabs. |
 | `Chip` | `components/tools/tool-editor.tsx` | Mode/register selector, promoted out of the editor so a mode row stops reading as four competing buttons. |
 | `Highlight`, `HighlightLegend` | — | **Added Sept 2026.** Marks what the tool rewrote (amber) vs added (green). Every serious competitor does this. |
-| `ScoreGauge` | `lib/ai/tools.ts` (`detect`) | **Added Sept 2026.** Score readout for the Detector de IA, which has no UI upstream. |
+| `EvidenceBand` | `lib/ai/tools.ts` (`detect`), página del detector en verbalyx.ai | **Added Sept 19, 2026**, sustituyendo a `ScoreGauge`. Banda cualitativa más evidencias, **sin porcentajes** — el detector del sitio explica por qué una cifra "sería inventada". |
 | `QuotaBar` | `lib/billing/plans.ts`, `lib/usage/summary.ts` | **Added Sept 2026.** The daily allowance, visible before the 429. |
 | `UpsellBanner` | `components/marketing/checkout-button.tsx` | **Added Sept 2026.** In-context Pro offer; upstream the paywall was only a red error line. |
+| `UsageMeter` | `app/[locale]/(app)/layout.tsx`, `lib/usage/quotas.ts` (`peekWords`) | **Added Sept 23, 2026 (D1).** Saldo de la cabecera de /app con tooltip: gratis, agotado, Pro, Ilimitado, prueba. Sustituye a `Badge` + `QuotaBar` en la cabecera. |
+| `LimitNotice` | `components/tools/overflow.tsx` | **Added Sept 23, 2026 (D3).** Franja ámbar del editor: exceso por petición, saldo parcial, agotado, detector. Sustituye a `OverflowNotice`. |
+| `RunCost` | `components/tools/tool-editor.tsx` | **Added Sept 23, 2026 (D3).** Coste antes de ejecutar, junto al botón. |
+| `SignupInvite` | — | **Added Sept 23, 2026 (D5).** Invitación en línea bajo el primer resultado anónimo. |
+| `Paywall` | `REGISTRO_Y_PAYWALL_ESTUDIO.md` §4.2 | **Added Sept 18, 2026.** Muro de pago, cinco disparadores: A barra en el editor, B modal de cuota, C herramienta bloqueada, D popover de función, E fin del trial a pantalla completa. |
+| `AuthPage` | `REGISTRO_Y_PAYWALL_ESTUDIO.md` §4.1 | **Added Sept 18, 2026.** `/registro` y `/login`, sin contraseña. |
+| `CheckoutSummary`, `PurchaseConfirmation` | `REGISTRO_Y_PAYWALL_ESTUDIO.md` §4.4-4.5 | **Added Sept 18, 2026.** Página de pago y confirmación post-compra. |
+| `PaymentForm`, `OrderSummary`, `CheckoutModal` | — | **Added Sept 19, 2026.** Pago integrado en el sitio: Payment Element embebido, resumen compartido y cobro en contexto desde el muro. Sin redirección a Stripe. |
 
 Beyond the six additions above — each listed with the reason it exists — nothing was invented. There is still no Dialog, Toast, Tooltip, Select, Switch, Avatar or Table component in Verbalyx — the backoffice table is plain `<table>` markup, and confirmation happens by swapping a button for two inline buttons (see `delete-account-button.tsx`). If you need one of those, you are designing something new; say so out loud.
 
@@ -133,16 +141,24 @@ Rules: no second accent, **no gradients anywhere**, no coloured text on coloured
 | `components/forms/` | `Input`, `Textarea`, `Chip` |
 | `components/surfaces/` | `Card` + slots |
 | `components/navigation/` | `ToolTabs` |
-| `components/tools/` | `ToolEditor`, `Highlight`, `ScoreGauge` |
-| `components/feedback/` | `QuotaBar`, `UpsellBanner` |
+| `components/tools/` | `ToolEditor`, `Highlight`, `EvidenceBand`, `LimitNotice`, `RunCost` |
+| `components/feedback/` | `QuotaBar`, `UpsellBanner`, `UsageMeter`, `SignupInvite` |
+| `components/billing/` | `Paywall` (A, B, C, D, E), `PaymentForm`, `OrderSummary`, `CheckoutModal` |
 | `guidelines/` | 22 specimen cards (Colors, Type, Spacing, Brand) |
-| `ui_kits/marketing/` | header + tabs, home with live editor, humanizador, detector, precios, SEO footer |
-| `ui_kits/app/` | login, shell with tabs + quota, tool page with score and upsell, mi cuenta |
-| `ui_kits/admin/` | backoffice |
-| `explorations/` | the two directions reviewed in Sept 2026 — "Tinta" (chosen) and "Señal" |
+| `ui_kits/marketing/` | `SiteHeader`, `MarketingHome`, `HumanizerLanding`, `DetectorLanding`, `PricingPage`, `MarketingFooter` |
+| `ui_kits/app/` | `AppLogin`, `AppShell`, `AppToolPage`, `AppAccount` |
+| `ui_kits/admin/` | `AdminBackoffice` |
+| `ui_kits/auth/` | `AuthPage` — `/registro` y `/login` |
+| `ui_kits/checkout/` | `CheckoutSummary`, `PurchaseConfirmation` |
+| `emails/` | D6: confirmación, bienvenida, compra (+ prueba), fin de prueba, cancelación (+ prueba), cabecera y pie |
+| `explorations/` | direcciones «Tinta» (elegida) y «Señal»; muro y pago; D1–D6 del funnel (`D1 Cabecera app.html` … `D6 Emails.html`) |
+| `IMPLEMENTACION/FUNNEL/` | guía por ticket C7–C14 para Claude Code |
 | `templates/tool-landing/` | starting template for a new tool landing page |
 | `assets/favicon.ico` | the only image asset that exists upstream |
 | `github.md` | source repo + sync record |
+| `REVISION_SITIO.md` | revisión de verbalyx.ai en vivo (18 sept 2026) y divergencias con este sistema |
+| `HANDOFF.md` | cómo llevar este diseño al repositorio (versión corta) |
+| `IMPLEMENTACION/` | paquete completo para Claude Code: prompt, 7 fases, copy literal y plan de QA |
 | `SKILL.md` | Agent Skills entry point |
 
 Each component directory also holds `<Name>.d.ts` (props contract) and `<Name>.prompt.md` (when to use it, with an example).

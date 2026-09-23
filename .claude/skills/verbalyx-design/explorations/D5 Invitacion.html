@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>D5 · Invitación tras el primer resultado</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--muted);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+a{color:var(--brand)}a:hover{color:var(--brand-hover)}
+.page{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+h1{margin:0;font-size:var(--text-2xl);font-weight:600;letter-spacing:-.01em}
+.lede{margin:8px 0 0;color:var(--muted-foreground);max-width:52rem;line-height:1.55;text-wrap:pretty}
+.sec{margin-top:44px;padding-top:28px;border-top:1px solid var(--border)}
+.sec h2{margin:0 0 4px;font-size:var(--text-lg);font-weight:600}
+.kind{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;background:var(--brand-soft);border:1px solid var(--brand-line);color:var(--brand-ink);font-size:11px;font-weight:600;margin-bottom:8px}
+.sec p.note{margin:0 0 18px;color:var(--muted-foreground);max-width:52rem;line-height:1.55;text-wrap:pretty}
+.row{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+.row + .row{margin-top:22px}
+.spec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.spec-cap{padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground)}
+.spec iframe{display:block;border:0;background:var(--background)}
+.ann{max-width:320px;font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.ann b{color:var(--foreground)}
+.ann ul{margin:10px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+.ann code,.note code{font-family:var(--font-mono);font-size:12px;color:var(--foreground)}
+</style></head>
+<body><div class="page">
+<h1>D5 · Invitación tras el primer resultado</h1>
+<p class="lede">Consume C13. Una tarjeta en línea bajo el resultado anónimo, en el momento bueno (resultado entregado) y nunca en el malo (bloqueo). No es un modal, no tapa nada y no reaparece si se descarta.</p><div class="sec"><span class="kind">visible</span><h2>Tarjeta bajo el resultado</h2><p class="note">Aparece cuando el resultado ya está en pantalla, en su marcado de cambios. El beneficio va con sus dos cifras.</p><div class="row"><div class="spec"><div class="spec-cap">escritorio · 1000 × 720</div><iframe src="funnel-stage.html?v=invite" width="1000" height="720" title="escritorio · 1000 × 720" loading="lazy"></iframe></div><div class="spec"><div class="spec-cap">móvil · 390 × 1080</div><iframe src="funnel-stage.html?v=invite" width="390" height="1080" title="móvil · 390 × 1080" loading="lazy"></iframe></div><div class="ann"><b>Decisiones</b><ul><li>«Con una cuenta gratis tienes 500 palabras al día, no 300.» Las dos cifras salen de <code>PLANS</code>.</li><li>Dos acciones: «Crear cuenta gratis» (<code>soft</code>, secundario) y «Ahora no» (<code>ghost</code>). El único primario sigue siendo el botón de la herramienta.</li><li>«Este resultado se queda aquí»: el borrador sobrevive al registro gracias a <code>sessionStorage</code> (ya está en main).</li><li>Solo si no hay en pantalla un muro B, la franja de cuota ni un error.</li></ul></div></div></div><div class="sec"><span class="kind">descartada</span><h2>Estado descartado</h2><p class="note">Al pulsar «Ahora no», la tarjeta se sustituye por una línea que dice dónde queda la opción. Desaparece en la siguiente ejecución y no vuelve.</p><div class="row"><div class="spec"><div class="spec-cap">escritorio · 1000 × 660</div><iframe src="funnel-stage.html?v=invite-dismissed" width="1000" height="660" title="escritorio · 1000 × 660" loading="lazy"></iframe></div><div class="ann"><b>Decisiones</b><ul><li>La descarta <code>localStorage</code> (<code>vbx:invite:dismissed</code>), no <code>sessionStorage</code>: «no reaparece» vale también para mañana.</li><li>Eventos: <code>wall_shown</code> con <code>{ variant: "inline", reason: "invite" }</code> y <code>wall_dismissed</code> con <code>method: "x"</code> o <code>"cta"</code>. Hay que añadir <code>"invite"</code> a <code>WallReason</code>.</li></ul></div></div></div></div></body></html>

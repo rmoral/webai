@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Paywall — las cinco variantes</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;background:var(--muted);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}
+.page{max-width:1300px;margin:0 auto;padding:40px 24px 80px}
+h1{margin:0;font-size:var(--text-2xl);font-weight:600;letter-spacing:-.01em}
+.lede{margin:8px 0 0;color:var(--muted-foreground);max-width:48rem;line-height:1.55}
+.sec{margin-top:44px;padding-top:28px;border-top:1px solid var(--border)}
+.sec h2{margin:0 0 4px;font-size:var(--text-lg);font-weight:600}
+.sec .kind{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;background:var(--brand-soft);border:1px solid var(--brand-line);color:var(--brand-ink);font-size:11px;font-weight:600;margin-bottom:8px}
+.sec p.note{margin:0 0 18px;color:var(--muted-foreground);max-width:48rem;line-height:1.55}
+.row{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap}
+.spec{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-sm)}
+.spec-cap{padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-family:var(--font-mono);color:var(--muted-foreground)}
+.spec iframe{display:block;border:0;background:var(--background)}
+.ann{max-width:320px;font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.ann b{color:var(--foreground)}
+.ann ul{margin:10px 0 0;padding-left:16px;display:flex;flex-direction:column;gap:7px}
+</style></head>
+<body><div class="page">
+<h1>Paywall — las cinco variantes</h1>
+<p class="lede">Un componente, cinco disparadores. Cada uno tiene una forma distinta a propósito: A es un estado del editor, D un popover anclado y E una pantalla completa. Cada recuadro es un viewport real.</p>
+
+<div class="sec">
+<span class="kind">A · exceso por petición</span>
+<h2>Pegas más de 300 palabras</h2>
+<p class="note">No interrumpe. El texto sobrante se atenúa en el propio editor desde la palabra 301, el contador marca el tope y la barra explica qué se va a procesar. El usuario puede ejecutar igual: se humanizan las 300 primeras.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 560</div><iframe src="paywall-stage.html?v=A" width="880" height="560" title="escritorio · 880 × 560" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 720</div><iframe src="paywall-stage.html?v=A" width="390" height="720" title="móvil · 390 × 720" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Ámbar, no rojo: no es un error, es un tope.</li>
+<li>El contador «300 / 300» en mono, para que se lea como dato.</li>
+<li>CTA <code>soft</code>, el nivel más bajo del sistema: informa, no presiona.</li>
+<li>Dice los dos topes de pago (3.000 y 8.000) para que el usuario sepa a qué plan saltar.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">B · cuota diaria agotada</span>
+<h2>Pulsas «Humanizador» sin palabras — validada</h2>
+<p class="note">Ya la aprobaste. La incluyo aquí para verla junto al resto: modal con el resultado real, principio nítido y resto difuminado.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 820 · anónimo</div><iframe src="paywall-stage.html?v=B&amp;account=anonymous&amp;used=300&amp;limit=300" width="880" height="820" title="escritorio · 880 × 820 · anónimo" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 844 · cuenta gratis</div><iframe src="paywall-stage.html?v=B&amp;account=free&amp;used=500&amp;limit=500" width="390" height="844" title="móvil · 390 × 844 · cuenta gratis" loading="lazy"></iframe></div>
+<div class="ann"><b>Sin cambios</b> respecto a lo que validaste. El secundario sigue cambiando con el estado de cuenta.</div>
+</div></div>
+
+<div class="sec">
+<span class="kind">C · herramienta de pago</span>
+<h2>Entras al parafraseador desde un plan gratuito</h2>
+<p class="note">El editor se queda visible detrás de un velo suave con desenfoque de 2 px: el usuario ve que la herramienta existe y qué aspecto tiene. Modal estrecho, no el ancho de B, porque no hay resultado que enseñar.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 700</div><iframe src="paywall-stage.html?v=C" width="880" height="700" title="escritorio · 880 × 700" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 800</div><iframe src="paywall-stage.html?v=C" width="390" height="800" title="móvil · 390 × 800" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Velo claro, no oscuro: no expulsa, deja ver.</li>
+<li>Abre recordando lo que <i>sí</i> es gratis (humanizador y detector). Evita la sensación de muro total.</li>
+<li>Secundario «Ver planes» en vez de «Crear cuenta»: aquí el usuario ya está dentro.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">D · función de pago</span>
+<h2>Pulsas el candado del historial</h2>
+<p class="note">Popover anclado a la fila, no modal. El usuario no sale de donde está y ve el resto de la pantalla. Es el muro más leve del sistema: dos acciones, sin divulgación legal porque no inicia ningún cobro.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 420</div><iframe src="paywall-stage.html?v=D" width="880" height="420" title="escritorio · 880 × 420" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 480</div><iframe src="paywall-stage.html?v=D" width="390" height="480" title="móvil · 390 × 480" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Sin trial aquí: el salto natural desde una función suelta es Pro, no Ilimitado.</li>
+<li>Sin divulgación legal, porque el CTA lleva a precios, no al cobro.</li>
+<li>Explica el matiz de privacidad: en pago se guarda cifrado; en gratis, solo el recuento.</li>
+<li>En móvil el popover se ancla a los márgenes en vez de a 19 rem fijos.</li>
+</ul></div>
+</div></div>
+
+<div class="sec">
+<span class="kind">E · fin del trial</span>
+<h2>Día 3, al entrar en la app, antes del cobro</h2>
+<p class="note">Única variante a pantalla completa y única no descartable. Los dos CTA tienen el mismo tamaño y ancho por exigencia legal, y la cancelación está en la misma pantalla, no escondida en ajustes.</p>
+<div class="row">
+<div class="spec"><div class="spec-cap">escritorio · 880 × 760</div><iframe src="paywall-stage.html?v=E" width="880" height="760" title="escritorio · 880 × 760" loading="lazy"></iframe></div>
+<div class="spec"><div class="spec-cap">móvil · 390 × 900</div><iframe src="paywall-stage.html?v=E" width="390" height="900" title="móvil · 390 × 900" loading="lazy"></iframe></div>
+<div class="ann"><b>Decisiones.</b><ul>
+<li>Dos tarjetas de igual peso, botones del mismo tamaño: uno azul de marca, otro negro tinta. Ninguno es «el bueno».</li>
+<li>El titular dice primero que todavía no se ha cobrado nada.</li>
+<li>«Cancelar mi suscripción» es un tercer botón visible, en <code>ghost</code>. Es lo que el sector esconde y lo que evita las disputas.</li>
+<li>La divulgación explica las tres salidas, incluido el prorrateo al bajar a Pro.</li>
+</ul></div>
+</div></div>
+
+</div></body></html>

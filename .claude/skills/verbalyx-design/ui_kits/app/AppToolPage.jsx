@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "../../components/core/Button.jsx";
 import { ToolEditor } from "../../components/tools/ToolEditor.jsx";
-import { ScoreGauge } from "../../components/tools/ScoreGauge.jsx";
+import { EvidenceBand } from "../../components/tools/EvidenceBand.jsx";
 import { UpsellBanner } from "../../components/feedback/UpsellBanner.jsx";
 
 export function AppToolPage({ tool = { id: "humanize", label: "Humanizador", modes: [] }, plan = "Gratis", remaining = 265, onNavigate = () => {} }) {
@@ -21,9 +21,16 @@ export function AppToolPage({ tool = { id: "humanize", label: "Humanizador", mod
       />
 
       <div style={{ marginTop: "var(--space-6)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", background: "var(--card)", boxShadow: "var(--shadow-sm)", padding: "var(--space-5)" }}>
-        <ScoreGauge value={72}>
+        <EvidenceBand
+          band="none"
+          findings={[
+            { label: "Longitud de frase variable, como en la escritura humana", tone: "good" },
+            { label: "Conectores sin repetición mecánica", tone: "good" },
+            { label: "Dos párrafos mantienen un ritmo algo uniforme", tone: "warn" },
+          ]}
+        >
           <Button variant="outline" size="sm" style={{ marginLeft: "auto", flex: "none" }}>Ver detalle</Button>
-        </ScoreGauge>
+        </EvidenceBand>
       </div>
 
       {plan !== "Pro" && (

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Funnel stage</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+html,body{margin:0;min-height:100%}body{background:var(--background);color:var(--foreground);font-family:var(--font-sans);font-size:var(--text-sm)}#root{min-height:100vh}
+a{color:var(--brand)}a:hover{color:var(--brand-hover)}
+.st-hdr{border-bottom:1px solid var(--border);background:var(--card)}
+.st-wrap{max-width:65rem;margin:0 auto;padding:0 var(--gutter-page)}
+.st-row{display:flex;align-items:center;gap:var(--space-5);height:56px}
+.st-mark{font-weight:var(--font-bold);font-size:var(--text-base);letter-spacing:-0.02em;white-space:nowrap}
+.st-mark span{color:var(--brand)}
+.st-nav{margin-left:auto;display:flex;align-items:center;gap:var(--space-4);font-size:var(--text-sm)}
+.st-nav a{color:var(--muted-foreground);text-decoration:none;cursor:pointer}.st-nav a:hover{color:var(--foreground)}
+.st-lock{display:inline-flex;align-items:center;gap:6px;color:var(--muted-foreground)}
+.st-lock em{font-style:normal;font-size:11px;font-weight:var(--font-semibold);color:var(--brand-ink);background:var(--brand-soft);border:1px solid var(--brand-line);border-radius:6px;padding:0 6px;line-height:18px}
+.st-tabs{display:flex;gap:var(--space-5);overflow-x:auto;scrollbar-width:none}
+.st-tabs a{flex:none;padding:10px 0 11px;font-size:var(--text-sm);font-weight:var(--font-medium);color:var(--muted-foreground);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.st-tabs a[aria-current="page"]{color:var(--foreground);border-bottom-color:var(--brand)}
+.st-main{max-width:65rem;margin:0 auto;padding:var(--space-8) var(--gutter-page) var(--space-12)}
+.st-main h1{margin:0 0 var(--space-6);font-size:var(--text-2xl);font-weight:var(--font-semibold);letter-spacing:-0.01em}
+.st-ed{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-sm);overflow:hidden}
+.st-chips{display:flex;gap:var(--space-2);flex-wrap:wrap;padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border)}
+.st-chip{height:28px;padding:0 12px;border-radius:var(--radius-full);border:1px solid var(--border);background:var(--background);font:inherit;font-size:var(--text-sm);color:var(--foreground)}
+.st-chip[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand-ink);font-weight:var(--font-medium)}
+.st-panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.st-pane{display:flex;flex-direction:column;min-width:0}
+.st-pane + .st-pane{border-left:1px solid var(--border)}
+.st-in{position:relative;height:15rem;overflow:auto;padding:var(--space-5);font-size:var(--text-sm);line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.st-in .dim{opacity:.38}
+.st-in .cutmark{display:inline-block;width:2px;height:1.1em;margin:0 1px -3px;background:var(--warning-fill);border-radius:1px}
+.st-count{padding:var(--space-2) var(--space-5);border-top:1px solid var(--border);font-size:var(--text-xs);color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.st-count b{font-weight:var(--font-medium)}
+.st-count b.over{color:var(--danger-ink)}
+.st-out{flex:1;height:15rem;overflow:auto;padding:var(--space-5);font-size:var(--text-sm);line-height:1.65;white-space:pre-wrap}
+.st-out .ph{color:var(--muted-foreground)}
+.st-out mark{background:var(--hl-rewritten);box-shadow:inset 0 -1px 0 var(--hl-rewritten-line);color:inherit;border-radius:2px;padding:0 1px}
+.st-out mark.add{background:var(--hl-added);box-shadow:inset 0 -1px 0 var(--hl-added-line)}
+.st-legend{display:flex;gap:var(--space-4);padding:var(--space-2) var(--space-5);border-top:1px solid var(--border);font-size:var(--text-xs);color:var(--muted-foreground)}
+.st-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--hl-rewritten);border:1px solid var(--hl-rewritten-line)}
+.st-legend i.add{background:var(--hl-added);border-color:var(--hl-added-line)}
+.st-acts{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-4);padding:var(--space-3) var(--space-5);border-top:1px solid var(--border)}
+.st-below{margin-top:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4)}
+.st-menu{position:relative}
+@media (max-width:767px){
+  .st-panes{grid-template-columns:minmax(0,1fr)}
+  .st-pane + .st-pane{border-left:0;border-top:1px solid var(--border)}
+  .st-in,.st-out{height:11rem;font-size:var(--text-base)}
+  .st-out{height:auto;min-height:8rem}
+  .st-acts .vbx-btn--lg{width:100%;min-height:44px}
+}
+@media (max-width:639px){
+  .st-wrap{padding:0 var(--space-4)}
+  .st-row{gap:var(--space-3);height:52px}
+  .st-main{padding:var(--space-6) var(--space-4) var(--space-10)}
+  .st-main h1{font-size:var(--text-xl);margin-bottom:var(--space-4)}
+  .st-acts{padding:var(--space-3) var(--space-4)}
+  .st-in,.st-out,.st-count,.st-chips,.st-legend{padding-left:var(--space-4);padding-right:var(--space-4)}
+}
+</style>
+</head><body><div id="root"></div>
+<script type="text/x-app" id="app">
+const { Button, UsageMeter, LimitNotice, RunCost, SignupInvite, PricingPage, AuthPage } = G;
+const P = new URLSearchParams(location.search);
+const v = P.get('v') || 'hdr-free';
+const q = (k, d) => P.get(k) ?? d;
+const useMobile = () => { const [m, set] = React.useState(innerWidth < 640); React.useEffect(() => { const f = () => set(innerWidth < 640); addEventListener('resize', f); return () => removeEventListener('resize', f); }, []); return m; };
+
+const PARA = "La inteligencia artificial ha cambiado la forma en que escribimos trabajos, correos y artículos. Es importante destacar que muchas herramientas prometen resultados perfectos, pero el texto que devuelven suele tener un ritmo plano y demasiado regular. Cabe señalar que un buen borrador necesita revisión humana: frases de distinta longitud, ejemplos concretos y una voz que se reconozca. En el mundo actual, la rapidez juega un papel fundamental, aunque no debería sustituir al criterio de quien firma el texto.";
+const PW = PARA.split(' ');
+const makeText = (n) => { const out = []; for (let i = 0; i < n; i++) { out.push(PW[i % PW.length]); if (i % PW.length === PW.length - 1 && i < n - 1) out.push('\n\n'); } return out.join(' ').replace(/ \n\n /g, '\n\n'); };
+const RESULT = [
+  "La inteligencia artificial ha cambiado cómo escribimos trabajos, correos y artículos. ",
+  ["r", "Muchas herramientas prometen resultados perfectos."],
+  " Lo que devuelven, sin embargo, ",
+  ["r", "suena plano: todas las frases miden casi lo mismo."],
+  "\n\nUn buen borrador necesita que alguien lo revise. ",
+  ["a", "Hace falta alternar frases largas y cortas,"],
+  " poner ejemplos concretos y encontrar una voz que se reconozca. ",
+  ["r", "La rapidez importa, pero no sustituye al criterio de quien firma."],
+];
+
+function Header({ plan, used, limit, current = 'humanize' }) {
+  const mobile = useMobile();
+  const meter = { plan, used, limit, resetsIn: '5 h', renewsOn: '14 de octubre', trialEndsOn: '26 de septiembre', trialAmount: '29,99 US$', topup: plan === 'pro' ? 25000 : 0, compact: mobile, defaultOpen: q('tip') === '1' };
+  return (
+    <header className="st-hdr">
+      <div className="st-wrap">
+        <div className="st-row">
+          <span className="st-mark">Verbaly<span>x</span></span>
+          <UsageMeter {...meter} />
+          {mobile ? (
+            <div className="st-nav"><Button size="sm" variant="ghost">Menú</Button></div>
+          ) : (
+            <nav className="st-nav">
+              {plan === 'free' ? <span className="st-lock">Historial <em>Pro</em></span> : <a>Historial</a>}
+              <a>Mi cuenta</a>
+              <Button size="sm" variant="outline">Salir</Button>
+            </nav>
+          )}
+        </div>
+        <nav className="st-tabs">
+          {[['humanize','Humanizador'],['detect','Detector de IA'],['paraphrase','Parafraseador'],['correct','Corrector']].map(([id, l]) => (
+            <a key={id} aria-current={id === current ? 'page' : undefined}>{l}</a>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function Editor({ plan = 'anonymous', tool = 'humanize', words = 142, ceiling = 300, remaining = null, dailyLimit = 300, result = false, invite = null, notice: forced }) {
+  const detector = tool === 'detect';
+  const text = makeText(words);
+  const cap = remaining === null ? ceiling : Math.min(ceiling, remaining);
+  const processable = Math.min(words, cap);
+  const kind = forced ?? (remaining === 0 ? 'exhausted'
+    : detector && remaining !== null && remaining < Math.min(words, ceiling) ? 'detector'
+    : remaining !== null && remaining < Math.min(words, ceiling) ? 'partial'
+    : words > ceiling ? 'overflow' : null);
+  const dims = kind === 'overflow' || kind === 'partial';
+  const toks = text.split(/(\s+)/); let count = 0, cut = toks.length;
+  if (dims) for (let i = 0; i < toks.length; i++) { if (/\S/.test(toks[i])) { count++; if (count === processable + 1) { cut = i; break; } } }
+  const kept = toks.slice(0, cut).join(''), rest = toks.slice(cut).join('');
+  // Mock only: start the box a few lines before the cut, as if scrolled there.
+  const keptWords = kept.split(/(\s+)/); const shownKept = dims && keptWords.length > 70 ? '… ' + keptWords.slice(-70).join('').trimStart() : kept;
+  const inRef = React.useRef(null), cutRef = React.useRef(null);
+  React.useEffect(() => { const go = () => { if (cutRef.current && inRef.current) inRef.current.scrollTop = Math.max(0, cutRef.current.offsetTop - 110); }; go(); const t = setTimeout(go, 300); const t2 = setTimeout(go, 1200); return () => { clearTimeout(t); clearTimeout(t2); }; }, [kind, words]);
+  const blocked = kind === 'exhausted' || kind === 'detector';
+  const over = words > processable || blocked;
+  const label = detector ? 'Analizar texto' : 'Humanizar';
+  const windowWord = plan === 'pro' ? 'este mes' : 'hoy';
+  return (
+    <>
+      <div className="st-ed">
+        {!detector && <div className="st-chips">{['Académico','Neutro','Informal'].map((m, i) => <button key={m} className="st-chip" aria-pressed={i === 1}>{m}</button>)}</div>}
+        <div className="st-panes">
+          <div className="st-pane">
+            <div className="st-in" ref={inRef} aria-label="Texto de entrada">{shownKept}{dims && <span ref={cutRef} className="cutmark" aria-hidden="true"></span>}<span className="dim">{rest}</span></div>
+            <p className="st-count" style={{ margin: 0 }}><b className={over ? 'over' : ''}>{words.toLocaleString('es-ES')} palabras</b>{dims && <> · máx. {processable.toLocaleString('es-ES')} en esta petición</>}</p>
+          </div>
+          <div className="st-pane">
+            <div className="st-out">
+              {result ? RESULT.map((r, i) => typeof r === 'string' ? r : <mark key={i} className={r[0] === 'a' ? 'add' : ''}>{r[1]}</mark>)
+                : <span className="ph">{detector ? 'El análisis aparecerá aquí' : 'El resultado aparecerá aquí'}</span>}
+            </div>
+            {result && <div className="st-legend"><span><i></i>Reescrito</span><span><i className="add"></i>Añadido</span></div>}
+          </div>
+        </div>
+        {kind && <LimitNotice kind={kind} plan={plan} submitted={words} ceiling={ceiling} remaining={remaining ?? 0} dailyLimit={dailyLimit} resetsIn="5 h" renewsOn="14 de octubre" />}
+        <div className="st-acts">
+          <Button size="lg" disabled={blocked}>{blocked ? (detector && kind === 'detector' ? 'Analizar texto' : `Sin palabras ${windowWord}`) : label}</Button>
+          {result && <Button variant="outline">Copiar resultado</Button>}
+          <RunCost words={words} ceiling={ceiling} remaining={remaining} window={windowWord} detector={detector} />
+        </div>
+      </div>
+      {invite && <div className="st-below"><SignupInvite dismissed={invite === 'dismissed'} /></div>}
+    </>
+  );
+}
+
+function AppPage({ plan, used, limit, editor }) {
+  const det = editor.tool === 'detect';
+  return (<><Header plan={plan} used={used} limit={limit} current={det ? 'detect' : 'humanize'} /><main className="st-main"><h1>{det ? 'Detector de IA' : 'Humanizador'}</h1><Editor {...editor} /></main></>);
+}
+function Landing({ editor, title = 'Humanizador de texto IA' }) {
+  return (<><header className="st-hdr"><div className="st-wrap"><div className="st-row"><span className="st-mark">Verbaly<span>x</span></span><div className="st-nav"><a>Precios</a><Button size="sm" variant="ghost">Entrar</Button><Button size="sm">Crear cuenta gratis</Button></div></div></div></header><main className="st-main"><h1>{title}</h1><Editor {...editor} /></main></>);
+}
+
+function App() {
+  const plan = q('plan', 'anonymous');
+  const daily = plan === 'free' ? 500 : 300;
+  const shell = (ed) => plan === 'anonymous' ? <Landing editor={ed} title={ed.tool === 'detect' ? 'Detector de IA en español' : undefined} /> : <AppPage plan={plan === 'pro' ? 'pro' : 'free'} used={plan === 'pro' ? 60000 : daily - (ed.remaining ?? daily)} limit={plan === 'pro' ? 60000 : daily} editor={ed} />;
+  switch (v) {
+    case 'hdr-free': return <AppPage plan="free" used={280} limit={500} editor={{ plan: 'free', words: 142, remaining: 220, dailyLimit: 500 }} />;
+    case 'hdr-spent': return <AppPage plan="free" used={500} limit={500} editor={{ plan: 'free', words: 142, remaining: 0, dailyLimit: 500 }} />;
+    case 'hdr-pro': return <AppPage plan="pro" used={12400} limit={60000} editor={{ plan: 'pro', words: 1240, ceiling: 3000, remaining: 47600 }} />;
+    case 'hdr-unl': return <AppPage plan="unlimited" editor={{ plan: 'pro', words: 1240, ceiling: 8000, remaining: null }} />;
+    case 'hdr-trial': return <AppPage plan="trial" editor={{ plan: 'pro', words: 1240, ceiling: 8000, remaining: null }} />;
+    case 'ed-ok': return shell({ plan, words: 142, remaining: plan === 'anonymous' ? null : 358, dailyLimit: daily });
+    case 'ed-overflow': return shell({ plan, words: 923, remaining: plan === 'anonymous' ? 300 : 500, dailyLimit: daily });
+    case 'ed-partial': return shell({ plan, words: 280, remaining: 200, dailyLimit: daily });
+    case 'ed-partial-over': return shell({ plan, words: 923, remaining: 200, dailyLimit: daily });
+    case 'ed-spent': return shell({ plan, words: 280, remaining: 0, dailyLimit: daily });
+    case 'ed-unknown': return shell({ plan, words: 923, remaining: null, dailyLimit: daily });
+    case 'ed-detector': return shell({ plan, tool: 'detect', words: 280, remaining: 200, dailyLimit: daily });
+    case 'ed-pro-spent': return <AppPage plan="pro" used={60000} limit={60000} editor={{ plan: 'pro', words: 1240, ceiling: 3000, remaining: 0 }} />;
+    case 'invite': return <Landing editor={{ plan: 'anonymous', words: 96, remaining: 204, result: true, invite: 'open' }} />;
+    case 'invite-dismissed': return <Landing editor={{ plan: 'anonymous', words: 96, remaining: 204, result: true, invite: 'dismissed' }} />;
+    case 'precios': return <PricingPage initialCycle="yearly" wordsProcessed={q('proof', '1') === '1' ? '12,4 millones' : null} />;
+    case 'precios-mensual': return <PricingPage initialCycle="monthly" wordsProcessed="12,4 millones" />;
+    case 'precios-free': return <PricingPage initialCycle="yearly" session="free" wordsProcessed="12,4 millones" />;
+    case 'precios-pro': return <PricingPage initialCycle="monthly" session="pro" wordsProcessed="12,4 millones" />;
+    case 'registro': return <AuthPage mode="registro" />;
+    case 'registro-plan': return <AuthPage mode="registro" plan="unlimited-monthly" keptText={false} />;
+    case 'registro-plan-anual': return <AuthPage mode="registro" plan="pro-yearly" keptText={false} />;
+    case 'registro-enviado': return <AuthPage mode="registro" initialSent initialEmail="lucia.m@correo.com" />;
+    case 'login': return <AuthPage mode="login" keptText={false} />;
+    default: return null;
+  }
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script>
+// Loads the design-system sources directly so this stage always reflects
+// the current files, compiled bundle or not.
+(async () => { try {
+  const FILES = ['../components/core/Button.jsx', '../components/core/Badge.jsx', '../components/forms/Input.jsx', '../components/feedback/UsageMeter.jsx', '../components/tools/RunCost.jsx', '../components/tools/LimitNotice.jsx', '../components/feedback/SignupInvite.jsx', '../ui_kits/marketing/PricingPage.jsx', '../ui_kits/auth/AuthPage.jsx'];
+  const G = {};
+  for (const f of FILES) {
+    let src = await (await fetch(f)).text();
+    const names = [];
+    src = src.replace(/^import .*$/mg, '').replace(/export function (\w+)/g, (m, n) => { names.push(n); return 'function ' + n; }).replace(/export const (\w+)/g, (m, n) => { names.push(n); return 'const ' + n; });
+    const code = Babel.transform(src, { presets: ['react'] }).code;
+    const keys = Object.keys(G);
+    Object.assign(G, new Function('React', ...keys, code + '\nreturn {' + names.join(',') + '};')(React, ...keys.map((k) => G[k])));
+  }
+  window.G = G;
+  const app = Babel.transform(document.getElementById('app').textContent, { presets: ['react'] }).code;
+  new Function('G', app)(G);
+} catch (e) { console.error(e); document.getElementById('root').textContent = 'Stage error: ' + e.message; } })();
+</script></body></html>
