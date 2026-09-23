@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { createClient } from "@/lib/auth/client";
 import { Link } from "@/lib/i18n/navigation";
+import { safeNext } from "@/lib/security/validation";
 
 // Implicit-flow landing: the tokens arrive in the URL fragment, which the
 // server never receives. The browser client picks them up and writes the
@@ -13,8 +14,7 @@ import { Link } from "@/lib/i18n/navigation";
 function Finish() {
   const t = useTranslations("login");
   const [failed, setFailed] = useState(false);
-  const nextParam = useSearchParams().get("next");
-  const next = nextParam?.startsWith("/") ? nextParam : "/app";
+  const next = safeNext(useSearchParams().get("next"));
 
   useEffect(() => {
     const supabase = createClient();
