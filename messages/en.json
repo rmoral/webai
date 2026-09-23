@@ -416,6 +416,14 @@
     "connectionError": "Connection error. Try again.",
     "seePlans": "See plans"
   },
+  "invite": {
+    "lead": "A free account gives you {free} words a day",
+    "leadTail": ", not {anon}.",
+    "body": "No password and no card: with Google or with a link to your email. This result stays where it is.",
+    "cta": "Create a free account",
+    "dismiss": "Not now",
+    "dismissed": "Done, we will not show it again. If you change your mind, “Create a free account” is at the top right."
+  },
   "paywall": {
     "seePlans": "See plans",
     "overflowLead": "We will process the first {words} words",

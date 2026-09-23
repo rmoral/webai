@@ -617,3 +617,72 @@ test("a locked tool never spends a request to be told no", async ({ page }) => {
 
   expect(asked).toEqual([]);
 });
+
+// D5 · the one offer that answers a result instead of a refusal.
+
+const ASKED = "palabra ".repeat(20).trim();
+const RESULT = "Este es el resultado, entero y sin nada retenido.";
+
+/** A clean answer: everything asked for, paid for, with words to spare. */
+async function fullAnswer(page: Page) {
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "20",
+        "x-words-limit": "300",
+        "x-words-used": "20",
+        "x-words-remaining": "280",
+      },
+      body: RESULT,
+    }),
+  );
+}
+
+async function firstResult(page: Page) {
+  await fullAnswer(page);
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", ASKED);
+  await page.getByTestId("run").click();
+  return page.getByTestId("signup-invite");
+}
+
+test("invites an anonymous reader once the result is on screen", async ({
+  page,
+}) => {
+  const invite = await firstResult(page);
+  await expect(invite).toBeVisible();
+
+  // The two figures, from the plan catalogue, so the offer is an amount
+  // and not an adjective.
+  await expect(invite).toContainText("500 palabras al día");
+  await expect(invite).toContainText("no 300");
+  // What the reader is about to lose, answered before they can ask it.
+  await expect(invite).toContainText("Este resultado se queda aquí");
+
+  // Not a modal, and not over the result: the text they came for is still
+  // the thing on screen.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(RESULT)).toBeVisible();
+
+  // The offer carries where to come back to.
+  await expect(
+    invite.getByRole("link", { name: "Crear cuenta gratis" }),
+  ).toHaveAttribute("href", /\/registro\?next=/);
+});
+
+test("turned down once, it stays down", async ({ page }) => {
+  const invite = await firstResult(page);
+  await invite.getByRole("button", { name: "Ahora no" }).click();
+
+  // It says where the offer went rather than vanishing without a word.
+  await expect(page.getByText(/no volveremos a mostrarlo/)).toBeVisible();
+
+  // And the next run does not bring it back -- not in this visit and, by
+  // localStorage rather than sessionStorage, not tomorrow either.
+  await page.getByTestId("run").click();
+  await expect(page.getByText(RESULT)).toBeVisible();
+  await expect(page.getByTestId("signup-invite")).toHaveCount(0);
+  await expect(page.getByText(/no volveremos a mostrarlo/)).toHaveCount(0);
+});

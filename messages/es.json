@@ -416,6 +416,14 @@
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
     "seePlans": "Ver planes"
   },
+  "invite": {
+    "lead": "Con una cuenta gratis tienes {free} palabras al día",
+    "leadTail": ", no {anon}.",
+    "body": "Sin contraseña ni tarjeta: con Google o con un enlace a tu correo. Este resultado se queda aquí.",
+    "cta": "Crear cuenta gratis",
+    "dismiss": "Ahora no",
+    "dismissed": "Hecho, no volveremos a mostrarlo. Si cambias de idea, «Crear cuenta gratis» está arriba a la derecha."
+  },
   "paywall": {
     "seePlans": "Ver planes",
     "overflowLead": "Procesaremos las primeras {words} palabras",

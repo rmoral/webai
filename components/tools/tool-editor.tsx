@@ -15,6 +15,7 @@ import {
   rememberPaywallDismissal,
   type WithheldResult,
 } from "@/components/billing/paywall";
+import { SignupInvite } from "@/components/billing/signup-invite";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
 import {
   EditorInput,
@@ -829,6 +830,16 @@ export function ToolEditor({
           }}
         />
       )}
+
+      {/* D5. The one offer that answers a result instead of a refusal, so
+          it only appears when the result is the whole of what happened:
+          no wall, no spent allowance, no error. Under the card and never
+          over it -- the reader came for the text, not for us. */}
+      {plan === "anonymous" &&
+        status === "done" &&
+        !withheld &&
+        !quotaNotice &&
+        !error && <SignupInvite tool={tool} next={here} />}
     </div>
   );
 }
