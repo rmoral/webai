@@ -35,6 +35,7 @@ import { Chip } from "@/components/ui/chip";
 import { track } from "@/lib/analytics/events";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
+import { useViewer } from "@/components/marketing/viewer";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -65,7 +66,7 @@ const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export function ToolEditor({
   tool,
-  plan = "anonymous",
+  plan: serverPlan = "anonymous",
   initialRemaining = null,
   periodEnd = null,
 }: {
@@ -141,10 +142,20 @@ export function ToolEditor({
   const widgetId = useRef<string>(null);
   const posthog = usePostHog();
 
-  // The anti-bot check is only asked of visitors without a session -- that
-  // is the rule the server enforces -- and the marketing pages are static,
-  // so everyone reading one counts as anonymous here.
-  const needsToken = Boolean(TURNSTILE_KEY) && plan === "anonymous";
+  // Who is reading, on a page whose server render could not know.
+  //
+  // Nothing here trusts the browser with anything it could gain by lying:
+  // the endpoint checks the session itself and answers to that. What this
+  // fixes is the opposite failure -- a customer being offered a free
+  // account, walled out of a tool they pay for, or held to the anonymous
+  // ceiling, on a page that had simply assumed the worst about them.
+  const viewer = useViewer();
+  const plan = viewer?.plan ?? serverPlan;
+
+  // The anti-bot check, though, stays keyed to what the server said. A
+  // browser that claimed a plan could otherwise skip it; claiming to be
+  // anonymous only ever means answering one more challenge.
+  const needsToken = Boolean(TURNSTILE_KEY) && serverPlan === "anonymous";
   // Whether a usable token is in hand. Held in state and not only in a ref
   // because the run button waits on it: the button used to be live before
   // Turnstile had resolved, so the first click of the visit -- the first
@@ -340,6 +351,15 @@ export function ToolEditor({
   useEffect(() => {
     if (askedAllowance.current || words === 0) return;
     if (remaining !== null || allowance) return;
+    // A signed-in reader on a landing already has one: the viewer asked
+    // for it on mount, and asking twice would spend a second read of the
+    // same counter to learn the same number.
+    if (viewer?.allowance) {
+      setRemaining(viewer.allowance.remaining);
+      reportAllowance(viewer.allowance);
+      askedAllowance.current = true;
+      return;
+    }
     askedAllowance.current = true;
     fetch("/api/usage", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -351,7 +371,7 @@ export function ToolEditor({
       .catch(() => {
         // A number we could not read is a number we do not show.
       });
-  }, [words, remaining, allowance, reportAllowance]);
+  }, [words, remaining, allowance, reportAllowance, viewer]);
 
   // Waiting on the anti-bot check, and not yet waived.
   const verifying = needsToken && !hasToken && !waived;

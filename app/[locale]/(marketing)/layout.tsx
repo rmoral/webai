@@ -2,6 +2,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { HeaderAuth } from "@/components/marketing/header-auth";
+import { AnonymousOnly } from "@/components/marketing/viewer";
+import { ViewerProvider } from "@/components/marketing/viewer-provider";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
 import { TOOLS } from "@/lib/ai/tools";
 import { Link } from "@/lib/i18n/navigation";
@@ -30,7 +32,13 @@ export default async function MarketingLayout({
       title: t("footer.product"),
       links: [
         { href: "/pricing" as const, label: t("nav.pricing") },
-        { href: "/signup" as const, label: t("nav.signup") },
+        // Offered to whoever has not taken it. The header stopped telling
+        // customers to sign up long ago; the footer never did.
+        {
+          href: "/signup" as const,
+          label: t("nav.signup"),
+          anonymousOnly: true,
+        },
       ],
     },
     {
@@ -47,7 +55,7 @@ export default async function MarketingLayout({
   ];
 
   return (
-    <>
+    <ViewerProvider>
       <header className="bg-background/90 sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto max-w-[65rem] px-6">
           <div className="flex h-14 items-center gap-6">
@@ -79,24 +87,36 @@ export default async function MarketingLayout({
                   {group.title}
                 </p>
                 <div className="mt-3 flex flex-col gap-2">
-                  {group.links.map(({ href, label }) =>
-                    href ? (
+                  {group.links.map((link) => {
+                    const { href, label } = link;
+                    if (!href) {
+                      return (
+                        <span
+                          key={label}
+                          className="text-muted-foreground/60 text-sm"
+                        >
+                          {label} · {t("footer.soon")}
+                        </span>
+                      );
+                    }
+                    const anchor = (
                       <Link
-                        key={label}
                         href={href}
                         className="text-muted-foreground hover:text-foreground text-sm"
                       >
                         {label}
                       </Link>
-                    ) : (
-                      <span
-                        key={label}
-                        className="text-muted-foreground/60 text-sm"
-                      >
-                        {label} · {t("footer.soon")}
+                    );
+                    return (
+                      <span key={label} className="contents">
+                        {"anonymousOnly" in link && link.anonymousOnly ? (
+                          <AnonymousOnly>{anchor}</AnonymousOnly>
+                        ) : (
+                          anchor
+                        )}
                       </span>
-                    ),
-                  )}
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -110,6 +130,6 @@ export default async function MarketingLayout({
           </div>
         </div>
       </footer>
-    </>
+    </ViewerProvider>
   );
 }
