@@ -4,7 +4,8 @@ import { getSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
 import { hashIp } from "@/lib/security/crypto";
-import { QUOTA_TIMEZONE, checkBurstLimit, peekWords } from "@/lib/usage/quotas";
+import { QUOTA_TIMEZONE } from "@/lib/usage/day";
+import { checkBurstLimit, peekWords } from "@/lib/usage/quotas";
 
 // What is left, for a surface that has no server render to read it from.
 //

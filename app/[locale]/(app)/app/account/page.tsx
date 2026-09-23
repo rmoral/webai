@@ -14,7 +14,8 @@ import { requireSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
 import { Link } from "@/lib/i18n/navigation";
 import { getUserUsage } from "@/lib/usage/summary";
-import { QUOTA_TIMEZONE, peekWords } from "@/lib/usage/quotas";
+import { QUOTA_TIMEZONE } from "@/lib/usage/day";
+import { peekWords } from "@/lib/usage/quotas";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");

@@ -2,7 +2,7 @@ import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { PRICES, type PaidTier } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
-import { quotaDay } from "@/lib/usage/quotas";
+import { quotaDay } from "@/lib/usage/day";
 import { subscriptions, usageDaily, users } from "@/lib/db/schema";
 
 // Read models for the account area and the admin backoffice.

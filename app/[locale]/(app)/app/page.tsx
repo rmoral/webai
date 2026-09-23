@@ -4,6 +4,7 @@ import { ToolEditor } from "@/components/tools/tool-editor";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { requireSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
+import { peekWords } from "@/lib/usage/quotas";
 
 // The signed-in area is the editor. Which tool it runs comes from the tab
 // strip in the layout; the card grid it replaced said nothing the tabs don't.
@@ -22,6 +23,11 @@ export default async function AppPage({
       : "humanize";
 
   const subscriber = await getSubscriber(user.id).catch(() => null);
+  // The balance, so the editor can say what a run will cost before the
+  // reader presses anything. The same read the header does.
+  const allowance = subscriber
+    ? await peekWords(`user:${user.id}`, subscriber).catch(() => null)
+    : null;
 
   return (
     <main className="mx-auto max-w-[65rem] px-6 py-8">
@@ -34,7 +40,12 @@ export default async function AppPage({
         </p>
       )}
       <div className="mt-6">
-        <ToolEditor tool={tool} plan={subscriber?.plan.id} />
+        <ToolEditor
+          tool={tool}
+          plan={subscriber?.plan.id}
+          initialRemaining={allowance?.remaining ?? null}
+          periodEnd={subscriber?.periodEnd?.toISOString() ?? null}
+        />
       </div>
     </main>
   );
