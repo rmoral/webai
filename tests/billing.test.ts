@@ -18,6 +18,7 @@ import {
 } from "@/lib/billing/plans";
 import {
   paymentDisclosure,
+  planRows,
   renewalDate,
   trialDisclosure,
 } from "@/lib/billing/disclosure";
@@ -664,5 +665,60 @@ describe("meterKind", () => {
     // one we have not sold yet: show the smallest allowance, never the
     // largest.
     expect(on("legacy-beta")).toBe("free");
+  });
+});
+
+describe("planRows", () => {
+  // Fixed, because the whole point of these rows is the date.
+  const NOW = new Date("2026-09-23T10:00:00.000Z");
+  const keys = (tier: "pro" | "unlimited", interval: "monthly" | "yearly") =>
+    planRows(tier, interval, NOW).map((row) => row.key);
+  const row = <K extends string>(
+    tier: "pro" | "unlimited",
+    interval: "monthly" | "yearly",
+    key: K,
+  ) => planRows(tier, interval, NOW).find((r) => r.key === key);
+
+  it("charges nothing today when there is a trial, and says when it ends", () => {
+    expect(keys("unlimited", "monthly")).toEqual([
+      "trial",
+      "today",
+      "firstCharge",
+      "after",
+    ]);
+    expect(row("unlimited", "monthly", "today")).toMatchObject({ amount: 0 });
+    // Three days from today, which is the date the disclosure promises and
+    // the date Stripe will actually charge.
+    expect(
+      (row("unlimited", "monthly", "firstCharge") as { date: Date }).date,
+    ).toEqual(new Date("2026-09-26T10:00:00.000Z"));
+  });
+
+  it("charges the whole year today, and shows what that works out at", () => {
+    expect(keys("pro", "yearly")).toEqual(["today", "equivalent", "renewal"]);
+    expect(row("pro", "yearly", "today")).toMatchObject({
+      amount: PRICES.pro.yearly.amount,
+    });
+    expect(row("pro", "yearly", "equivalent")).toMatchObject({
+      perMonth: PRICES.pro.yearly.monthlyEquivalent,
+    });
+    expect((row("pro", "yearly", "renewal") as { date: Date }).date).toEqual(
+      new Date("2027-09-23T10:00:00.000Z"),
+    );
+  });
+
+  it("charges today on a monthly plan with no trial, and renews in a month", () => {
+    // Pro has no trial on either cycle: the trial is Ilimitado's.
+    expect(keys("pro", "monthly")).toEqual(["today", "renewal", "after"]);
+    expect(row("pro", "monthly", "today")).toMatchObject({
+      amount: PRICES.pro.monthly.amount,
+    });
+    expect((row("pro", "monthly", "renewal") as { date: Date }).date).toEqual(
+      new Date("2026-10-23T10:00:00.000Z"),
+    );
+  });
+
+  it("never promises a yearly plan a trial it does not have", () => {
+    expect(keys("unlimited", "yearly")).not.toContain("trial");
   });
 });

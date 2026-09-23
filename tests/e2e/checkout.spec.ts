@@ -39,8 +39,10 @@ test("choosing a plan without a session opens sign-up, keeping the plan", async 
   await page.goto("/precios?cycle=monthly");
   await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
   await page.waitForURL(/\/registro/);
+  // Arriving with a plan, the page says where the payment went rather than
+  // selling the free account again.
   await expect(
-    page.getByRole("heading", { name: /Tu cuenta gratis/ }),
+    page.getByRole("heading", { name: /Primero, tu cuenta/ }),
   ).toBeVisible();
 
   // The plan and the cycle survive the door.
@@ -329,16 +331,24 @@ test("sign-up keeps the chosen plan in view, and its promises true", async ({
     "historial",
   );
 
-  // The plan survives the trip and says so, in view for the whole alta.
+  // The plan survives the trip and says so, in view for the whole alta --
+  // with the four facts /pago will repeat, so the two pages cannot
+  // disagree about the date or the amount.
   const aside = page.getByRole("complementary");
-  await expect(aside.getByText("Plan elegido")).toBeVisible();
-  await expect(aside.getByText("Ilimitado")).toBeVisible();
-  await expect(aside.getByText(/29,99\s*US\$ al mes/)).toBeVisible();
-  await expect(aside.getByText("3 días gratis")).toBeVisible();
-  // Changing your mind must not mean starting over.
-  await expect(
-    aside.getByRole("link", { name: "Cambiar de plan" }),
-  ).toBeVisible();
+  await expect(aside.getByText("Tu elección")).toBeVisible();
+  await expect(aside.getByText(/Ilimitado · mensual/)).toBeVisible();
+  await expect(aside.getByTestId("plan-row-trial")).toContainText("3 días");
+  await expect(aside.getByTestId("plan-row-today")).toContainText("0,00");
+  await expect(aside.getByTestId("plan-row-after")).toContainText(/29,99/);
+  // The date of the first charge is the fact that decides whether this
+  // turns into a chargeback, so it is stated rather than implied.
+  await expect(aside.getByTestId("plan-row-firstCharge")).not.toBeEmpty();
+
+  // Changing your mind must not mean starting over, and it lands on the
+  // cycle they were looking at.
+  const change = aside.getByRole("link", { name: "Cambiar de plan" });
+  await expect(change).toBeVisible();
+  await expect(change).toHaveAttribute("href", /cycle=monthly/);
 
   // The documents are linked, not merely named: an acceptance of something
   // the reader cannot open is not an acceptance.
@@ -355,5 +365,39 @@ test("no plan in the query, no aside", async ({ page }) => {
   // column of nothing beside the form.
   await page.goto("/registro");
   await expect(page.getByRole("complementary")).toHaveCount(0);
-  await expect(page.getByText("Plan elegido")).toHaveCount(0);
+  await expect(page.getByText("Tu elección")).toHaveCount(0);
+});
+
+test("says the text is kept only where there is text to keep", async ({
+  page,
+}) => {
+  // The line was printed on every sign-up, including the ones reached from
+  // pricing with nothing typed anywhere.
+  await page.goto("/registro");
+  await expect(page.getByText(/Tu texto sigue en el editor/)).toHaveCount(0);
+
+  await page.goto("/registro?next=%2Fpago%3Fplan%3Dpro%26cycle%3Dyearly");
+  await expect(page.getByText(/Tu texto sigue en el editor/)).toHaveCount(0);
+
+  await page.goto("/registro?next=%2Fhumanizador-de-texto-ia");
+  await expect(page.getByText(/Tu texto sigue en el editor/)).toBeVisible();
+});
+
+test("the link that never arrives has a way back to the form", async ({
+  page,
+}) => {
+  await page.goto("/registro");
+  await page.getByLabel("tu@correo.com").fill("alguien@example.com");
+  await page.getByRole("button", { name: /Enviarme un enlace/ }).click();
+
+  // Whatever Supabase answers, the form must not be a dead end: either the
+  // link was sent and spam is the next place to look, or it failed and the
+  // error says so.
+  const retry = page.getByRole("button", { name: "usa otra dirección" });
+  const failed = page.getByRole("alert");
+  await expect(retry.or(failed).first()).toBeVisible();
+  if (await retry.isVisible()) {
+    await retry.click();
+    await expect(page.getByLabel("tu@correo.com")).toBeVisible();
+  }
 });
