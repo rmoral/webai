@@ -640,6 +640,162 @@ export function ToolPaywall({
  * goes to the pricing page and starts no charge. No trial either: the
  * natural step up from one locked feature is Pro, not the top plan.
  */
+/**
+ * The popover shell: the lightest wall in the set.
+ *
+ * Anchored to whatever opened it rather than taking the screen, because
+ * these two answer a lock the reader is looking at -- the history they
+ * cannot open, the breakdown they cannot see, the tool they cannot run --
+ * and making them leave that to read the offer is what turns an offer into
+ * an eviction.
+ *
+ * It counts itself the way every other wall does: shown once when it
+ * opens, dismissed with the method that closed it.
+ */
+function LockPopover({
+  context,
+  title,
+  body,
+  actions,
+  onClose,
+  align = "left",
+}: {
+  context: PaywallContext;
+  title: string;
+  body?: string;
+  /** The offer. Rendered before the close button. */
+  actions: React.ReactNode;
+  onClose: (method: DismissMethod) => void;
+  align?: "left" | "right";
+}) {
+  const t = useTranslations("paywall");
+  const posthog = usePostHog();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    track(posthog, "wall_shown", context);
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      track(posthog, "wall_dismissed", { ...context, method: "esc" });
+      onClose("esc");
+    }
+    function onClick(event: MouseEvent) {
+      if (ref.current?.contains(event.target as Node)) return;
+      track(posthog, "wall_dismissed", { ...context, method: "x" });
+      onClose("x");
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+    // The context object is rebuilt on every render; its fields are what
+    // identify the wall, and they do not change while it is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      role="dialog"
+      aria-label={title}
+      // Anchored to the lock on a wide screen; pinned to the margins on a
+      // narrow one, where 19rem of fixed width overflows the viewport.
+      className={cn(
+        "bg-card absolute z-40 mt-2 w-[19rem] max-w-[calc(100vw-2rem)] rounded-xl border p-4 shadow-lg max-[420px]:fixed max-[420px]:inset-x-4 max-[420px]:w-auto",
+        align === "right" ? "right-0" : "left-0",
+      )}
+    >
+      <p className="text-sm font-semibold">{title}</p>
+      {body && (
+        <p className="text-muted-foreground mt-2 text-sm leading-normal">
+          {body}
+        </p>
+      )}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {actions}
+        <Button size="sm" variant="ghost" onClick={() => onClose("x")}>
+          {t("close")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Wall C, second time.
+ *
+ * The modal is shown once per tool per session; after that the button that
+ * opens it had nothing left to do, so pressing it did nothing at all --
+ * a dead control on the one screen where the reader is asking to buy.
+ * The same offer, in a popover under the button.
+ */
+export function ToolLockPopover({
+  tool,
+  plan,
+  onClose,
+}: {
+  tool: ToolId;
+  plan: PlanId;
+  onClose: () => void;
+}) {
+  const t = useTranslations("paywall");
+  const names = useTranslations("tools");
+  const locale = useLocale() as Locale;
+  const posthog = usePostHog();
+  const router = useRouter();
+  const accountState = accountStateOf(plan);
+  const context = {
+    variant: "popover" as const,
+    reason: "paid_tool" as const,
+    plan,
+    tool,
+  };
+
+  return (
+    <LockPopover
+      context={context}
+      title={t("toolTitle", {
+        tool: names(`${tool}.name`).toLocaleLowerCase(locale),
+      })}
+      body={t("toolBody")}
+      onClose={onClose}
+      actions={
+        <Button
+          size="sm"
+          onClick={() => {
+            track(posthog, "wall_dismissed", {
+              ...context,
+              method: "cta",
+              action: "primary",
+            });
+            router.push({
+              pathname: accountState === "anonymous" ? "/signup" : "/checkout",
+              query:
+                accountState === "anonymous"
+                  ? { next: trialCheckoutPath(locale) }
+                  : { plan: "unlimited", cycle: "monthly" },
+            });
+          }}
+        >
+          {t("tryUnlimited", { days: TRIAL.days })}
+        </Button>
+      }
+    />
+  );
+}
+
+/**
+ * Wall D — a locked feature, answered where it sits.
+ *
+ * No disclosure and no trial: the natural step up from one locked feature
+ * is Pro, not the top plan. What changed is where "unlock" goes. It used
+ * to be a link to the pricing page, which takes somebody out of the app to
+ * read about a plan they had already decided to buy; now the card field
+ * opens over the lock, and only a reader with no account to bill is sent
+ * through the sign-up door first -- carrying where they were.
+ */
 export function FeatureLock({
   feature,
   plan,
@@ -651,10 +807,13 @@ export function FeatureLock({
   label: string;
 }) {
   const t = useTranslations("paywall");
+  const checkout = useTranslations("checkout");
   const detector = useTranslations("detector");
   const posthog = usePostHog();
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [paying, setPaying] = useState(false);
+  const here = usePathname();
+  const accountState = accountStateOf(plan);
   const title =
     feature === "history" ? t("historyLockTitle") : detector("gated");
   const context = {
@@ -664,30 +823,8 @@ export function FeatureLock({
     tool: feature,
   };
 
-  useEffect(() => {
-    if (!open) return;
-    track(posthog, "wall_shown", context);
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      track(posthog, "wall_dismissed", { ...context, method: "esc" });
-      setOpen(false);
-    }
-    function onClick(event: MouseEvent) {
-      if (ref.current?.contains(event.target as Node)) return;
-      track(posthog, "wall_dismissed", { ...context, method: "x" });
-      setOpen(false);
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onClick);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onClick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="relative inline-block">
       <button
         type="button"
         onClick={() => setOpen((was) => !was)}
@@ -698,49 +835,70 @@ export function FeatureLock({
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label={title}
-          // Anchored to the lock on a wide screen; pinned to the margins on
-          // a narrow one, where 19rem of fixed width overflows the viewport.
-          className="bg-card absolute z-40 mt-2 w-[19rem] max-w-[calc(100vw-2rem)] rounded-xl border p-4 shadow-lg max-[420px]:fixed max-[420px]:inset-x-4 max-[420px]:w-auto"
-        >
-          <p className="text-sm font-semibold">{title}</p>
-          {/* The history gate has a second line because the privacy nuance
-              matters there: free plans keep the count, not the text. The
-              breakdown says everything it needs in one. */}
-          {feature === "history" && (
-            <p className="text-muted-foreground mt-2 text-sm leading-normal">
-              {t("historyLockBody")}
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button size="sm" asChild>
-              <Link
-                href="/pricing"
-                onClick={() =>
+        <LockPopover
+          context={context}
+          title={title}
+          // The history gate has a second line because the privacy nuance
+          // matters there: free plans keep the count, not the text. The
+          // breakdown says everything it needs in one.
+          body={feature === "history" ? t("historyLockBody") : undefined}
+          align="right"
+          onClose={() => setOpen(false)}
+          actions={
+            accountState === "anonymous" ? (
+              <Button size="sm" asChild>
+                <Link
+                  href={{ pathname: "/signup", query: { next: here } }}
+                  onClick={() =>
+                    track(posthog, "wall_dismissed", {
+                      ...context,
+                      method: "cta",
+                      action: "primary",
+                    })
+                  }
+                >
+                  {t("unlockWithPro")}
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => {
                   track(posthog, "wall_dismissed", {
                     ...context,
                     method: "cta",
                     action: "primary",
-                  })
-                }
+                  });
+                  setOpen(false);
+                  setPaying(true);
+                }}
               >
                 {t("unlockWithPro")}
-              </Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                track(posthog, "wall_dismissed", { ...context, method: "x" });
-                setOpen(false);
-              }}
-            >
-              {t("close")}
-            </Button>
-          </div>
-        </div>
+              </Button>
+            )
+          }
+        />
+      )}
+
+      {/* The card field, over the lock. Leaving the app to buy the thing
+          you just asked for is a step nobody needs to take. */}
+      {paying && (
+        <PaywallDialog
+          context={{ ...context, variant: "modal" }}
+          labelledBy="feature-lock-title"
+          onDismiss={(method) => {
+            track(posthog, "wall_dismissed", { ...context, method });
+            setPaying(false);
+          }}
+        >
+          <h2 id="feature-lock-title" className="font-semibold">
+            {checkout("modalTitle")}
+          </h2>
+          <CheckoutPanel
+            target={{ tier: "pro", interval: "monthly" }}
+            onBack={() => setPaying(false)}
+          />
+        </PaywallDialog>
       )}
     </div>
   );

@@ -526,7 +526,7 @@
     "cancel": "Cancelar"
   },
   "auth": {
-    "signupTitle": "Tu cuenta gratis: {words} palabras al día e historial de sesión",
+    "signupTitle": "Tu cuenta gratis: {words} palabras al día",
     "signupLede": "Sin contraseña y sin tarjeta. Tardas menos que en leer esta frase.",
     "signinTitle": "Vuelve a tu cuenta",
     "signinLede": "Entra con Google o pídenos un enlace de acceso. Nunca hubo contraseña que recordar.",
@@ -543,7 +543,13 @@
     "privacy": "No guardamos tus textos en el plan gratuito: solo el recuento de palabras para aplicar los límites. Sin tarjeta.",
     "crossToSignin": "¿Ya tienes cuenta? Iniciar sesión",
     "crossToSignup": "¿Aún no tienes cuenta? Crear cuenta gratis",
-    "legal": "Al crear la cuenta aceptas los términos del servicio y la política de privacidad.",
+    "legal": "Al crear la cuenta aceptas los <terms>términos del servicio</terms> y la <privacy>política de privacidad</privacy>.",
+    "planChosen": "Plan elegido",
+    "planBilledMonthly": "{amount} al mes",
+    "planBilledYearly": "{amount} al año",
+    "planTrialBadge": "{days} días gratis",
+    "planTrialNote": "Hoy no se te cobra nada. Cancelas online en dos clics.",
+    "planChange": "Cambiar de plan",
     "signupMetaTitle": "Crear cuenta gratis",
     "signinMetaTitle": "Iniciar sesión"
   },

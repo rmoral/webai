@@ -9,6 +9,7 @@ import type { Change } from "diff";
 import { useAllowance } from "@/components/billing/allowance";
 import {
   QuotaPaywall,
+  ToolLockPopover,
   ToolPaywall,
   paywallDismissed,
   rememberPaywallDismissal,
@@ -103,6 +104,8 @@ export function ToolEditor({
   const [toolWallDismissed, setToolWallDismissed] = useState(true);
   // Whether they have reached for the tool yet. See wall C below.
   const [wantedTool, setWantedTool] = useState(false);
+  // Wall C, second time: the compact form, under the button.
+  const [toolPopover, setToolPopover] = useState(false);
   // The allowance, shared with the header. `report` is what makes every
   // counter move at the same moment; outside the signed-in shell it is a
   // no-op and the editor keeps its own copy.
@@ -189,6 +192,7 @@ export function ToolEditor({
   useEffect(() => {
     setToolWallDismissed(paywallDismissed("tool", tool));
     setWantedTool(false);
+    setToolPopover(false);
   }, [tool]);
 
   useEffect(() => {
@@ -590,7 +594,18 @@ export function ToolEditor({
 
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
-            onClick={included ? run : () => setWantedTool(true)}
+            onClick={
+              included
+                ? run
+                : () => {
+                    setWantedTool(true);
+                    // The modal is shown once per tool per session. After
+                    // that this button had nothing left to open, so it did
+                    // nothing at all -- a dead control on the one screen
+                    // where the reader is asking to buy.
+                    if (toolWallDismissed) setToolPopover(true);
+                  }
+            }
             disabled={
               included && (status === "loading" || words === 0 || verifying)
             }
@@ -611,6 +626,15 @@ export function ToolEditor({
             >
               {t("copyResult")}
             </Button>
+          )}
+          {toolPopover && !included && (
+            <div className="relative">
+              <ToolLockPopover
+                tool={tool}
+                plan={plan}
+                onClose={() => setToolPopover(false)}
+              />
+            </div>
           )}
           <div ref={widgetRef} className="ml-auto" />
         </div>
