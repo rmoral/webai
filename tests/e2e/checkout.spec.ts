@@ -117,7 +117,11 @@ test("the home page offers the tool, and the upsell waits until it is earned", a
 
   // It appears the moment the limit costs the visitor something -- here,
   // a paste past the per-request ceiling -- and that is the way to pricing.
-  await box.fill(
+  // Through the helper: a value filled before hydration never reaches
+  // React state, and then the notice this test is about never renders.
+  await typeInto(
+    page,
+    "Texto de entrada",
     Array.from({ length: 400 }, (_, i) => `palabra${i}`).join(" "),
   );
   await expect(page.getByText(/Procesaremos las primeras/)).toBeVisible();

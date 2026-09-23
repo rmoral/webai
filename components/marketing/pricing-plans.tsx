@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { TrialDisclosure } from "@/components/billing/paywall";
@@ -50,6 +51,11 @@ export function PricingPlans() {
   // who has one -- and then correcting it -- is worse than waiting a
   // moment for the truth.
   const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  // Where they came from, when the link said so. Read against the one
+  // value we set rather than trusted: it is a query parameter, so anyone
+  // can write anything in it.
+  const from =
+    useSearchParams().get("from") === "header" ? "header" : undefined;
 
   // `pricing_view` is the middle of the funnel: everything upstream is
   // measured by how many people reach it, and everything downstream by how
@@ -75,12 +81,17 @@ export function PricingPlans() {
           track(posthog, "pricing_view", {
             cycle: interval,
             logged_in: Boolean(data.session),
+            from,
           });
         })
         .catch(() => {});
     } catch {
       setSignedIn(false);
-      track(posthog, "pricing_view", { cycle: interval, logged_in: false });
+      track(posthog, "pricing_view", {
+        cycle: interval,
+        logged_in: false,
+        from,
+      });
     }
     return () => {
       active = false;

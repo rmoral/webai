@@ -65,7 +65,12 @@ export interface FunnelEvents {
   signup_done: { method: SignupMethod; next: string };
   signin_start: { method: SignupMethod; next: string };
 
-  pricing_view: { cycle: BillingInterval; logged_in: boolean };
+  pricing_view: {
+    cycle: BillingInterval;
+    logged_in: boolean;
+    /** Where the reader came from, when the link said so. */
+    from?: "header";
+  };
   /** The embedded checkout page opened. */
   checkout_view: { plan: PaidTier; cycle: BillingInterval; logged_in: boolean };
   /** The hosted Stripe session for a top-up was requested. */

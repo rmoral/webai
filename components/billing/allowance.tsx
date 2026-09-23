@@ -7,9 +7,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useTranslations } from "next-intl";
-
-import { QuotaBar } from "@/components/billing/quota-bar";
 import type { Allowance } from "@/lib/usage/quotas";
 
 // The allowance, shared by every surface that shows it.
@@ -61,21 +58,4 @@ export function AllowanceProvider({
  */
 export function useAllowance(): Store {
   return useContext(AllowanceContext) ?? { allowance: null, report: () => {} };
-}
-
-/** The header's bar, reading the shared figure instead of a stale render. */
-export function HeaderAllowance() {
-  const t = useTranslations("app");
-  const { allowance } = useAllowance();
-  if (!allowance) return null;
-
-  return (
-    <QuotaBar
-      used={allowance.used}
-      limit={allowance.limit}
-      unit={allowance.metered ? t("wordsToday") : t("wordsMonth")}
-      showPlan={false}
-      className="w-40"
-    />
-  );
 }

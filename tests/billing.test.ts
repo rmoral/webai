@@ -24,6 +24,7 @@ import {
 import { subscribeRequestSchema } from "@/lib/security/validation";
 import { subscriptionParams } from "@/lib/billing/subscribe";
 import { auditStripe, describeCheckoutRejection } from "@/lib/billing/stripe";
+import { meterKind } from "@/components/billing/usage-meter";
 
 describe("plan catalogue", () => {
   it("matches the prices of the pricing study", () => {
@@ -638,5 +639,30 @@ describe("auditStripe", () => {
       fakeStripe({ endpoints: [{ ...ENDPOINT, enabled_events: ["*"] }] }),
     );
     expect(audit.problem).toBeNull();
+  });
+});
+
+describe("meterKind", () => {
+  const on = (id: string, trialEnd: Date | null = null) =>
+    meterKind({ plan: { id }, trialEnd });
+
+  it("reads the header state off the plan", () => {
+    expect(on("free")).toBe("free");
+    expect(on("pro")).toBe("pro");
+    expect(on("unlimited")).toBe("unlimited");
+  });
+
+  it("puts a trial ahead of the plan it runs on", () => {
+    // A trial is Ilimitado that has not been charged yet. Everywhere else
+    // it reads as Ilimitado; here it must not, because the date of the
+    // first charge is the only thing this block exists to say.
+    expect(on("unlimited", new Date("2026-09-26T00:00:00Z"))).toBe("trial");
+  });
+
+  it("treats an unknown plan as free", () => {
+    // Stripe metadata is the source of the id. A tier we do not know is
+    // one we have not sold yet: show the smallest allowance, never the
+    // largest.
+    expect(on("legacy-beta")).toBe("free");
   });
 });
