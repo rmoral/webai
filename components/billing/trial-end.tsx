@@ -7,6 +7,7 @@ import { usePostHog } from "posthog-js/react";
 import { PaywallDialog } from "@/components/billing/paywall";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics/events";
 import { PLANS, PRICES, TRIAL, formatUsd } from "@/lib/billing/plans";
 import { useRouter } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
@@ -37,18 +38,24 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
   const [error, setError] = useState<string | null>(null);
 
   const context = {
-    trigger: "trialEnd" as const,
+    variant: "modal" as const,
+    reason: "trial_end" as const,
     plan: "unlimited" as const,
-    accountState: "paid" as const,
   };
 
   async function act(action: Action) {
     setBusy(action);
     setError(null);
-    posthog?.capture(
-      action === "cancel" ? "trial_cancelled" : "trial_downgraded",
-      context,
-    );
+    // Cancelling starts here and finishes in Stripe, so `cancel_done` is
+    // emitted by the webhook rather than by this button: what matters is
+    // whether the subscription actually ended, not whether the click
+    // reached us. Stepping down to Pro is not a cancellation and is
+    // counted apart, or the churn number reads every rescue as a loss.
+    if (action === "cancel") {
+      track(posthog, "cancel_start", { plan: "unlimited" });
+    } else {
+      track(posthog, "plan_downgraded", { plan: "unlimited" });
+    }
 
     const res = await fetch("/api/billing/manage", {
       method: "POST",

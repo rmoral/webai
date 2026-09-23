@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
@@ -14,6 +14,12 @@ const CheckoutPanel = dynamic(() =>
 );
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  track,
+  type DismissMethod,
+  type WallReason,
+  type WallVariant,
+} from "@/lib/analytics/events";
 import type { ToolId } from "@/lib/ai/tools";
 import { trialDisclosure } from "@/lib/billing/disclosure";
 import {
@@ -24,7 +30,12 @@ import {
   type PlanId,
 } from "@/lib/billing/plans";
 import type { Locale } from "@/lib/i18n/routing";
-import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
+import {
+  Link,
+  getPathname,
+  usePathname,
+  useRouter,
+} from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 // The paywall. One shell, five triggers, and the rule that holds them all
@@ -46,37 +57,75 @@ export function accountStateOf(plan: PlanId): AccountState {
   return plan === "free" ? "free" : "paid";
 }
 
+/**
+ * What every wall reports about itself.
+ *
+ * Shaped as the analytics event rather than as the component's own idea of
+ * itself, so that the five walls are one row in the funnel: `variant` is
+ * the shape, `reason` is what the reader ran into. See lib/analytics.
+ */
 interface PaywallContext {
-  trigger: PaywallTrigger;
+  variant: WallVariant;
+  reason: WallReason;
   plan: PlanId;
-  accountState: AccountState;
-  toolId?: string;
+  tool?: string;
 }
 
-const dismissalKey = (trigger: PaywallTrigger) =>
-  `paywall_dismissed_${trigger}`;
+const dismissalKey = (trigger: PaywallTrigger, tool?: string) =>
+  `paywall_dismissed_${trigger}${tool ? `_${tool}` : ""}`;
 
 /**
- * Dismissed once means gone for the session, per trigger. A wall that comes
- * back after the user closed it stops being an offer and becomes an
- * obstacle. `trialEnd` is exempt: it is the one wall with no way out,
- * because the alternative is charging someone who never chose.
+ * Dismissed once means gone for the session, per trigger AND per tool.
+ *
+ * A wall that comes back after the user closed it stops being an offer and
+ * becomes an obstacle. But the key used to be the trigger alone, so
+ * closing the paraphraser's wall silenced the corrector's too -- and the
+ * corrector's button, whose only job was to open that wall, became a
+ * button that did nothing at all. Two tools are two offers.
+ *
+ * `trialEnd` is exempt: it is the one wall with no way out, because the
+ * alternative is charging someone who never chose.
  */
-export function paywallDismissed(trigger: PaywallTrigger): boolean {
+export function paywallDismissed(
+  trigger: PaywallTrigger,
+  tool?: string,
+): boolean {
   try {
-    return sessionStorage.getItem(dismissalKey(trigger)) === "1";
+    return sessionStorage.getItem(dismissalKey(trigger, tool)) === "1";
   } catch {
     return false;
   }
 }
 
-export function rememberPaywallDismissal(trigger: PaywallTrigger): void {
+export function rememberPaywallDismissal(
+  trigger: PaywallTrigger,
+  tool?: string,
+): void {
   try {
-    sessionStorage.setItem(dismissalKey(trigger), "1");
+    sessionStorage.setItem(dismissalKey(trigger, tool), "1");
   } catch {
     // Private mode, or storage denied. Losing the memory shows the wall
     // once more; failing the render would show nothing at all.
   }
+}
+
+/**
+ * Where "try it free" has to end up: the card field, with the trial plan
+ * already chosen, in the language being read.
+ *
+ * `/checkout` is an internal route name -- the URL is /pago in Spanish --
+ * so a `next` built from the name alone 404s the reader it was meant to
+ * bring back. The plan comes from TRIAL, which is the one place that
+ * decides which plan has a trial at all.
+ */
+function trialCheckoutPath(locale: Locale): string {
+  return getPathname({
+    href: {
+      pathname: "/checkout",
+      query: { plan: TRIAL.tier, cycle: TRIAL.interval },
+    },
+    locale,
+  });
 }
 
 const FOCUSABLE =
@@ -97,16 +146,18 @@ export function PaywallDialog({
   children,
 }: {
   context: PaywallContext;
-  onDismiss?: () => void;
+  /** How it was closed is the measurement: see `wall_dismissed`. */
+  onDismiss?: (method: DismissMethod) => void;
   labelledBy: string;
   width?: string;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const posthog = usePostHog();
+  const t = useTranslations("paywall");
 
   useEffect(() => {
-    posthog?.capture("paywall_shown", { ...context });
+    track(posthog, "wall_shown", context);
     // The context object is rebuilt on every render; its fields are what
     // identify the wall, and they do not change while it is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,7 +174,7 @@ export function PaywallDialog({
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape" && onDismiss) {
         event.preventDefault();
-        onDismiss();
+        onDismiss("esc");
         return;
       }
       if (event.key !== "Tab") return;
@@ -157,7 +208,7 @@ export function PaywallDialog({
       // makes it read as an eviction.
       className="bg-background/62 fixed inset-0 z-50 flex items-end justify-center backdrop-blur-[2px] min-[520px]:items-center min-[520px]:p-6"
       onMouseDown={(event) => {
-        if (onDismiss && event.target === event.currentTarget) onDismiss();
+        if (onDismiss && event.target === event.currentTarget) onDismiss("x");
       }}
     >
       <div
@@ -167,8 +218,21 @@ export function PaywallDialog({
         aria-labelledby={labelledBy}
         tabIndex={-1}
         style={{ maxWidth: width }}
-        className="bg-card max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border p-6 shadow-lg outline-none min-[520px]:rounded-2xl"
+        className="bg-card relative max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border p-6 shadow-lg outline-none min-[520px]:rounded-2xl"
       >
+        {/* A cross, because Escape is not a way out that anybody can see.
+            The wall was closable only by a key nobody was told about, on a
+            phone that has no such key at all. */}
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={() => onDismiss("x")}
+            aria-label={t("close")}
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-brand/30 absolute top-3 right-3 flex size-8 items-center justify-center rounded-full text-lg leading-none focus-visible:ring-[3px] focus-visible:outline-none"
+          >
+            ×
+          </button>
+        )}
         {children}
       </div>
     </div>
@@ -204,10 +268,74 @@ export function TrialDisclosure({
 }
 
 export interface WithheldResult {
-  partialResult: string;
-  visibleChars: number;
+  /** The result the reader paid for with the words they had left. */
+  visibleText: string;
+  /**
+   * How many words the allowance could not cover. A count, never the
+   * words: the server no longer writes them at all.
+   */
+  withheldWords: number;
   usedToday: number;
   limitToday: number;
+}
+
+const FILLER_SYLLABLES = [
+  "ne",
+  "ra",
+  "lo",
+  "si",
+  "te",
+  "ma",
+  "co",
+  "de",
+  "in",
+  "tu",
+  "pa",
+  "ri",
+  "so",
+  "ca",
+  "men",
+  "tra",
+  "li",
+  "do",
+  "es",
+  "que",
+];
+
+/**
+ * The blur.
+ *
+ * Shapes generated here, never text. The withheld half used to be the real
+ * result: the server produced the whole answer for a request it had just
+ * refused, sent it to the browser and hid it behind `blur` and
+ * `user-select: none` -- which is not hiding. Every word was in the DOM,
+ * readable from the inspector by anyone who thought to look, and paid for
+ * in inference by us.
+ *
+ * Now there is nothing to hide, because those words were never written.
+ * What is left to convey is a quantity, and a quantity is a shape.
+ *
+ * Deterministic from the count, so the block does not reshuffle itself on
+ * every render while the reader is looking at it. Capped, because the
+ * panel shows a few lines and a thousand spans help nobody.
+ */
+function blurFiller(words: number): string {
+  let seed = (words * 2654435761) % 2147483647 || 7;
+  const next = () =>
+    (seed = (seed * 1103515245 + 12345) % 2147483647) / 2147483647;
+
+  const out: string[] = [];
+  for (let i = 0; i < Math.min(words, 120); i++) {
+    const syllables = 1 + Math.floor(next() * 3);
+    let word = "";
+    for (let s = 0; s < syllables; s++) {
+      word += FILLER_SYLLABLES[Math.floor(next() * FILLER_SYLLABLES.length)];
+    }
+    // Punctuation now and then, so the block has the texture of prose
+    // rather than of a list.
+    out.push(next() < 0.08 ? `${word},` : next() < 0.05 ? `${word}.` : word);
+  }
+  return out.join(" ");
 }
 
 /**
@@ -245,21 +373,24 @@ export function QuotaPaywall({
   const here = usePathname();
   const accountState = accountStateOf(plan);
   const context = {
-    trigger: "quota" as const,
+    variant: "modal" as const,
+    reason: "quota" as const,
     plan,
-    accountState,
-    toolId: tool,
+    tool,
   };
 
-  const visible = result.partialResult.slice(0, result.visibleChars);
-  const withheld = result.partialResult.slice(result.visibleChars);
+  // The blurred half is filler, generated from a count. See blurFiller.
+  const filler = useMemo(
+    () => blurFiller(result.withheldWords),
+    [result.withheldWords],
+  );
 
   return (
     <PaywallDialog
       context={context}
       labelledBy="paywall-quota-title"
-      onDismiss={() => {
-        posthog?.capture("paywall_dismissed", context);
+      onDismiss={(method) => {
+        track(posthog, "wall_dismissed", { ...context, method });
         onDismiss();
       }}
     >
@@ -304,7 +435,7 @@ export function QuotaPaywall({
           </p>
 
           <div className="bg-muted/40 mt-4 max-h-56 overflow-hidden rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap">
-            {visible}
+            {result.visibleText}{" "}
             <span
               aria-hidden
               className="blur-[4.5px] select-none"
@@ -319,9 +450,14 @@ export function QuotaPaywall({
                   "linear-gradient(to bottom, #000 0%, transparent 85%)",
               }}
             >
-              {withheld}
+              {filler}
             </span>
           </div>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {t("quotaWithheld", {
+              words: format.number(result.withheldWords),
+            })}
+          </p>
 
           <ul className="mt-4 space-y-1.5 text-sm">
             <li>
@@ -340,14 +476,24 @@ export function QuotaPaywall({
             <Button
               size="lg"
               onClick={() => {
-                posthog?.capture("paywall_primary_clicked", context);
+                track(posthog, "wall_dismissed", {
+                  ...context,
+                  method: "cta",
+                  action: "primary",
+                });
                 // Nobody can be billed without an account to bill. A signed-out
                 // reader goes through the door first and comes back; the editor
                 // still holds their text either way.
+                //
+                // They come back to the card field with this plan already
+                // chosen -- not to the pricing page, and not to a sign-in
+                // screen that drops what they pressed. `/checkout` is an
+                // internal route name, so it is resolved to the path this
+                // language actually serves before it becomes a `next`.
                 if (accountState === "anonymous") {
                   router.push({
-                    pathname: "/login",
-                    query: { next: "/pricing" },
+                    pathname: "/signup",
+                    query: { next: trialCheckoutPath(locale) },
                   });
                   return;
                 }
@@ -364,7 +510,11 @@ export function QuotaPaywall({
                     : { pathname: "/pricing" as const }
                 }
                 onClick={() =>
-                  posthog?.capture("paywall_secondary_clicked", context)
+                  track(posthog, "wall_dismissed", {
+                    ...context,
+                    method: "cta",
+                    action: "secondary",
+                  })
                 }
               >
                 {accountState === "anonymous"
@@ -408,13 +558,12 @@ export function ToolPaywall({
   const locale = useLocale() as Locale;
   const posthog = usePostHog();
   const router = useRouter();
-  const here = usePathname();
   const accountState = accountStateOf(plan);
   const context = {
-    trigger: "tool" as const,
+    variant: "modal" as const,
+    reason: "paid_tool" as const,
     plan,
-    accountState,
-    toolId: tool,
+    tool,
   };
 
   return (
@@ -422,8 +571,8 @@ export function ToolPaywall({
       context={context}
       labelledBy="paywall-tool-title"
       width="27rem"
-      onDismiss={() => {
-        posthog?.capture("paywall_dismissed", context);
+      onDismiss={(method) => {
+        track(posthog, "wall_dismissed", { ...context, method });
         onDismiss();
       }}
     >
@@ -442,12 +591,19 @@ export function ToolPaywall({
         <Button
           size="lg"
           onClick={() => {
-            posthog?.capture("paywall_primary_clicked", context);
+            track(posthog, "wall_dismissed", {
+              ...context,
+              method: "cta",
+              action: "primary",
+            });
+            // Signed out, the account comes first and the card field after
+            // it -- carrying the plan, so the trial they just pressed is
+            // still the one waiting on the other side.
             router.push({
               pathname: accountState === "anonymous" ? "/signup" : "/checkout",
               query:
                 accountState === "anonymous"
-                  ? { next: here }
+                  ? { next: trialCheckoutPath(locale) }
                   : { plan: "unlimited", cycle: "monthly" },
             });
           }}
@@ -458,7 +614,11 @@ export function ToolPaywall({
           <Link
             href="/pricing"
             onClick={() =>
-              posthog?.capture("paywall_secondary_clicked", context)
+              track(posthog, "wall_dismissed", {
+                ...context,
+                method: "cta",
+                action: "secondary",
+              })
             }
           >
             {t("seePlans")}
@@ -498,20 +658,24 @@ export function FeatureLock({
   const title =
     feature === "history" ? t("historyLockTitle") : detector("gated");
   const context = {
-    trigger: "feature" as const,
+    variant: "popover" as const,
+    reason: "feature" as const,
     plan,
-    accountState: accountStateOf(plan),
-    toolId: feature,
+    tool: feature,
   };
 
   useEffect(() => {
     if (!open) return;
-    posthog?.capture("paywall_shown", context);
+    track(posthog, "wall_shown", context);
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      track(posthog, "wall_dismissed", { ...context, method: "esc" });
+      setOpen(false);
     }
     function onClick(event: MouseEvent) {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+      if (ref.current?.contains(event.target as Node)) return;
+      track(posthog, "wall_dismissed", { ...context, method: "x" });
+      setOpen(false);
     }
     document.addEventListener("keydown", onKey);
     document.addEventListener("mousedown", onClick);
@@ -555,13 +719,24 @@ export function FeatureLock({
               <Link
                 href="/pricing"
                 onClick={() =>
-                  posthog?.capture("paywall_primary_clicked", context)
+                  track(posthog, "wall_dismissed", {
+                    ...context,
+                    method: "cta",
+                    action: "primary",
+                  })
                 }
               >
                 {t("unlockWithPro")}
               </Link>
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                track(posthog, "wall_dismissed", { ...context, method: "x" });
+                setOpen(false);
+              }}
+            >
               {t("close")}
             </Button>
           </div>

@@ -5,8 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
 
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics/events";
 import type { BillingInterval } from "@/lib/billing/plans";
-import { useRouter } from "@/lib/i18n/navigation";
+import { getPathname, useRouter } from "@/lib/i18n/navigation";
 
 // Stripe refusing us is our problem, not the customer's, and there is
 // nothing for them to retry. Four settings fail the same way from the
@@ -60,7 +61,7 @@ export function CheckoutButton({
     setLoading(true);
     setError(null);
     onStart?.();
-    posthog?.capture("checkout_started", { plan, interval });
+    track(posthog, "checkout_start", { plan, cycle: interval });
 
     const res = await fetch("/api/stripe/checkout", {
       method: "POST",
@@ -71,7 +72,13 @@ export function CheckoutButton({
     });
 
     if (res.status === 401) {
-      router.push({ pathname: "/login", query: { next: "/pricing" } });
+      // The `next` is the localised path: "/pricing" is an internal route
+      // name, and handing it to the auth callback lands a Spanish reader
+      // on a 404 instead of back on the page they were buying from.
+      router.push({
+        pathname: "/login",
+        query: { next: getPathname({ href: "/pricing", locale }) },
+      });
       return;
     }
     if (res.status === 403) {

@@ -89,3 +89,30 @@ export const manageSubscriptionSchema = z.object({
 export type ManageSubscriptionRequest = z.infer<
   typeof manageSubscriptionSchema
 >;
+
+/**
+ * The `next` a redirect will actually follow.
+ *
+ * Every door into the app carries one -- the middleware writes it, the
+ * pricing page writes it, the paywall writes it -- and it survives a round
+ * trip through Supabase, so by the time it is used it has been outside the
+ * process. An open redirect here is a phishing page that starts on our
+ * domain and ends on theirs, with our sign-in form in the middle.
+ *
+ * `startsWith("/")` is not enough on its own: `//evil.example` and
+ * `/\evil.example` are protocol-relative URLs, and every browser reads
+ * them as another origin. So is a backslash after the slash, which some
+ * parsers normalise. Anything not plainly an internal path falls back.
+ */
+export function safeNext(
+  value: string | null | undefined,
+  fallback = "/app",
+): string {
+  if (!value || value.length > 512) return fallback;
+  if (!value.startsWith("/")) return fallback;
+  if (/^\/[/\\]/.test(value)) return fallback;
+  // A control character or whitespace in a Location header is how a header
+  // injection starts; no legitimate path we generate contains either.
+  if (/[\s\u0000-\u001f\u007f]/.test(value)) return fallback;
+  return value;
+}

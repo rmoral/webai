@@ -5,6 +5,7 @@ import {
   aiToolRequestSchema,
   countWords,
   MAX_INPUT_CHARS,
+  safeNext,
   truncateToWords,
 } from "@/lib/security/validation";
 
@@ -109,5 +110,47 @@ describe("truncateToWords", () => {
 
   it("keeps nothing when the limit is zero", () => {
     expect(truncateToWords(text, 0)).toBe("");
+  });
+});
+
+describe("safeNext", () => {
+  it("keeps an internal path, query and all", () => {
+    // This is the whole point of C2: the plan chosen on the pricing page
+    // has to survive the round trip through the sign-up form.
+    expect(safeNext("/pago?plan=unlimited&cycle=yearly")).toBe(
+      "/pago?plan=unlimited&cycle=yearly",
+    );
+    expect(safeNext("/en/checkout?plan=pro&cycle=monthly")).toBe(
+      "/en/checkout?plan=pro&cycle=monthly",
+    );
+  });
+
+  it("refuses anything that leaves the site", () => {
+    // A protocol-relative URL starts with a slash and is another origin:
+    // a sign-in form on our domain that hands the visitor to theirs.
+    for (const hostile of [
+      "https://evil.example/login",
+      "//evil.example",
+      "/\\evil.example",
+      "javascript:alert(1)",
+      "evil.example",
+    ]) {
+      expect(safeNext(hostile)).toBe("/app");
+    }
+  });
+
+  it("refuses whitespace, control characters and absurd lengths", () => {
+    expect(safeNext("/app\r\nLocation: https://evil.example")).toBe("/app");
+    expect(safeNext("/app con espacio")).toBe("/app");
+    expect(safeNext(`/${"a".repeat(600)}`)).toBe("/app");
+  });
+
+  it("falls back when there is nothing to honour", () => {
+    expect(safeNext(null)).toBe("/app");
+    expect(safeNext(undefined)).toBe("/app");
+    expect(safeNext("")).toBe("/app");
+    // The caller decides the fallback: a redirect with no destination is
+    // how the checkout page asks for "no next at all".
+    expect(safeNext("//evil.example", "")).toBe("");
   });
 });

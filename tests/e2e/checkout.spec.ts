@@ -28,15 +28,40 @@ test("the trial discloses charge date and amount before payment", async ({
   await expect(disclosure).toContainText("cancelar");
 });
 
-test("checkout without a session sends the visitor to login", async ({
+test("choosing a plan without a session opens sign-up, keeping the plan", async ({
   page,
 }) => {
+  // The leak this closes: pressing "try it free" used to land on "welcome
+  // back", with no `next` -- so a brand new visitor met a returning-user
+  // screen and the plan they had just chosen was gone.
   await page.goto("/precios");
   await page.getByRole("link", { name: /Probar 3 días gratis/ }).click();
-  await page.waitForURL(/\/login/);
+  await page.waitForURL(/\/registro/);
   await expect(
-    page.getByRole("heading", { name: "Vuelve a tu cuenta" }),
+    page.getByRole("heading", { name: /Tu cuenta gratis/ }),
   ).toBeVisible();
+
+  // The plan and the cycle survive the door.
+  const next = new URL(page.url()).searchParams.get("next");
+  expect(next).toContain("/pago");
+  expect(next).toContain("plan=unlimited");
+  expect(next).toContain("cycle=monthly");
+
+  // And somebody who turns out to have an account already crosses over
+  // without dropping it.
+  await page.getByRole("link", { name: /Ya tienes cuenta/ }).click();
+  await page.waitForURL(/\/login/);
+  expect(new URL(page.url()).searchParams.get("next")).toBe(next);
+});
+
+test("a next pointing off-site is ignored", async ({ page }) => {
+  // `next` survives a round trip through Supabase, so it is treated as
+  // hostile input: a protocol-relative URL starts with a slash and ends up
+  // on somebody else's domain, with our sign-in form in the middle.
+  await page.goto("/registro?next=//example.com");
+  await page.getByRole("link", { name: /Ya tienes cuenta/ }).click();
+  await page.waitForURL(/\/login/);
+  expect(new URL(page.url()).searchParams.get("next")).toBe("/app");
 });
 
 test("trial checkout with a test card, without leaving the site", async ({
@@ -241,13 +266,13 @@ test("checkout refuses to load without an account to bill", async ({
   page,
 }) => {
   // Nobody can be charged without somewhere to attach the subscription, so
-  // the page sends them to sign in rather than rendering a card field that
-  // would fail on submit.
-  await page.goto("/pago?plan=unlimited&cycle=monthly");
-  await page.waitForURL(/\/login/);
-  await expect(
-    page.getByRole("heading", { name: "Vuelve a tu cuenta" }),
-  ).toBeVisible();
+  // the page sends them to create one rather than rendering a card field
+  // that would fail on submit -- carrying this exact URL, so the account
+  // they create lands back on this plan.
+  await page.goto("/pago?plan=pro&cycle=yearly");
+  await page.waitForURL(/\/registro/);
+  const next = new URL(page.url()).searchParams.get("next");
+  expect(next).toBe("/pago?plan=pro&cycle=yearly");
 });
 
 test("the paywall sends a signed-out reader to sign in, not to a card", async ({
@@ -255,22 +280,20 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
 }) => {
   await page.route("**/api/ai/humanize", (route) =>
     route.fulfill({
-      status: 429,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: "quota_exceeded",
-        message: "Has agotado tus palabras de hoy.",
-        partialResult:
-          "Un resultado cualquiera, lo bastante largo para partirlo.",
-        visibleChars: 20,
-        usedToday: 300,
-        limitToday: 300,
-      }),
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "12",
+        "x-words-limit": "300",
+        "x-words-used": "300",
+        "x-words-remaining": "0",
+      },
+      body: "Un resultado cualquiera, con las palabras que quedaban.",
     }),
   );
 
   await page.goto("/humanizador-de-texto-ia");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "palabra ".repeat(40).trim());
   await page.getByRole("button", { name: "Humanizador" }).click();
 
   const dialog = page.getByRole("dialog");
@@ -278,5 +301,10 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
   await dialog
     .getByRole("button", { name: /Probar Ilimitado 3 días gratis/ })
     .click();
-  await page.waitForURL(/\/login/);
+  // Sign-up, not sign-in: they have no account. And the card field waits
+  // for them on the other side with the trial plan already chosen.
+  await page.waitForURL(/\/registro/);
+  expect(new URL(page.url()).searchParams.get("next")).toBe(
+    "/pago?plan=unlimited&cycle=monthly",
+  );
 });

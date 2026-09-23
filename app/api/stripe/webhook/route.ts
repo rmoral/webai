@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import type { FunnelEvents } from "@/lib/analytics/events";
+import { trackServer } from "@/lib/analytics/server";
 import { sendSubscriptionConfirmation } from "@/lib/billing/notify";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import { resolveEntitlements } from "@/lib/billing/metadata";
@@ -101,13 +103,15 @@ async function upsertSubscription(userId: string, sub: Stripe.Subscription) {
  * The subscription metadata carries the user id, so any later event can
  * repair the state instead of discarding it.
  */
-async function applySubscription(sub: Stripe.Subscription) {
+async function applySubscription(
+  sub: Stripe.Subscription,
+): Promise<string | null> {
   const updated = await getDb()
     .update(subscriptions)
     .set(await subscriptionFields(sub))
     .where(eq(subscriptions.stripeSubscriptionId, sub.id))
     .returning({ userId: subscriptions.userId });
-  if (updated.length > 0) return;
+  if (updated.length > 0) return updated[0].userId;
 
   const userId = sub.metadata?.user_id;
   if (!userId) {
@@ -118,13 +122,53 @@ async function applySubscription(sub: Stripe.Subscription) {
       level: "error",
       extra: { subscriptionId: sub.id },
     });
-    return;
+    return null;
   }
 
   await upsertSubscription(userId, sub);
   console.warn(
     `[webhook] recreated the missing row for ${sub.id}: an earlier checkout.session.completed never arrived`,
   );
+  return userId;
+}
+
+/**
+ * What was bought, read off the subscription itself.
+ *
+ * The cycle comes from the price rather than from our metadata: a plan
+ * changed in the Stripe dashboard moves the price and leaves the metadata
+ * behind, and a revenue number that disagrees with the invoice is worse
+ * than no number.
+ */
+function saleOf(
+  sub: Stripe.Subscription,
+  amountCents: number,
+  trial: boolean,
+): FunnelEvents["purchase"] {
+  const interval = sub.items?.data[0]?.price?.recurring?.interval;
+  return {
+    plan: sub.metadata?.plan === "unlimited" ? "unlimited" : "pro",
+    cycle: interval === "year" ? "yearly" : "monthly",
+    amount: amountCents / 100,
+    trial,
+  };
+}
+
+/**
+ * A sale, recorded in both places that need it.
+ *
+ * `purchase` is emitted here and never from a browser. The tab that paid
+ * can be closed by the redirect, locked by a phone or killed by a bank's
+ * 3-D Secure app, so a sale counted on the client is always low and never
+ * by a knowable amount. The row in `events` is the same fact kept for Ads
+ * attribution, which reads from our own database rather than PostHog.
+ */
+async function reportPurchase(
+  userId: string,
+  props: FunnelEvents["purchase"],
+): Promise<void> {
+  await getDb().insert(events).values({ userId, name: "purchase", props });
+  await trackServer(userId, "purchase", props);
 }
 
 async function customerEmail(customer: string): Promise<string | null> {
@@ -222,6 +266,19 @@ export async function POST(request: NextRequest) {
 
         if (session.mode === "payment") {
           await addTopupWords(userId, TOPUP.words);
+          // A top-up is a single payment and has no invoice event of its
+          // own, so this is where it is counted. A subscription is not
+          // counted here: it is counted by invoice.paid or by
+          // setup_intent.succeeded, which is the only pair of moments
+          // that exists in both the hosted and the embedded flow. Counting
+          // it in both places would double every sale made through a
+          // hosted session.
+          await reportPurchase(userId, {
+            plan: "topup",
+            cycle: null,
+            amount: (session.amount_total ?? 0) / 100,
+            trial: false,
+          });
         } else if (session.subscription) {
           const sub = await getStripe().subscriptions.retrieve(
             session.subscription as string,
@@ -230,17 +287,6 @@ export async function POST(request: NextRequest) {
           // whichever applies; both fire for a hosted session too.
           await upsertSubscription(userId, sub);
         }
-
-        // Mirrored for the Google Ads conversion (gclid wiring, sprint 4).
-        await db.insert(events).values({
-          userId,
-          name: "purchase",
-          props: {
-            amountTotal: session.amount_total,
-            currency: session.currency,
-            mode: session.mode,
-          },
-        });
         break;
       }
 
@@ -259,7 +305,14 @@ export async function POST(request: NextRequest) {
         });
         const sub = subscription.data[0];
         if (!sub) break;
-        await applySubscription(sub);
+        const trialUserId = await applySubscription(sub);
+
+        // A trial charges nothing today and is still the sale: it is the
+        // moment a card exists and a date is set. `amount` is 0, `trial`
+        // is true, and the conversion three days later is the renewal.
+        if (trialUserId) {
+          await reportPurchase(trialUserId, saleOf(sub, 0, true));
+        }
 
         const trialEmail = await customerEmail(
           typeof customer === "string" ? customer : customer.id,
@@ -278,14 +331,30 @@ export async function POST(request: NextRequest) {
 
       // 3. Plan or status change: recompute entitlements.
       case "customer.subscription.updated": {
-        await applySubscription(event.data.object);
+        const sub = event.data.object;
+        const userId = await applySubscription(sub);
+
+        // Cancelling is the one change worth its own event, and it is
+        // reported from here rather than from the button: most of them
+        // happen in the Stripe portal, where there is no button of ours
+        // to fire. The flag turning on is the moment they left; the
+        // subscription itself runs to the end of the paid period.
+        const wasCancelling = (
+          event.data.previous_attributes as
+            { cancel_at_period_end?: boolean } | undefined
+        )?.cancel_at_period_end;
+        if (userId && sub.cancel_at_period_end && wasCancelling === false) {
+          await trackServer(userId, "cancel_done", {
+            plan: sub.metadata?.plan === "unlimited" ? "unlimited" : "pro",
+          });
+        }
         break;
       }
 
       // 4. Cancelled: back to free. The date feeds the win-back campaign.
       case "customer.subscription.deleted": {
         const sub = event.data.object;
-        await db
+        const gone = await db
           .update(subscriptions)
           .set({
             plan: "free",
@@ -294,7 +363,17 @@ export async function POST(request: NextRequest) {
             canceledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+          .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+          .returning({ userId: subscriptions.userId });
+
+        // Only when it ended outright. A subscription already flagged to
+        // stop at period end was counted the day they asked, and counting
+        // it again here would make every cancellation look like two.
+        if (gone[0] && !sub.cancel_at_period_end) {
+          await trackServer(gone[0].userId, "cancel_done", {
+            plan: sub.metadata?.plan === "unlimited" ? "unlimited" : "pro",
+          });
+        }
         break;
       }
 
@@ -309,10 +388,17 @@ export async function POST(request: NextRequest) {
             ? subscriptionId
             : subscriptionId.id,
         );
-        await applySubscription(paidSub);
+        const paidUserId = await applySubscription(paidSub);
 
         // A renewal is not a sale, and a customer who gets "welcome" every
         // month stops reading the ones that matter.
+        if (invoice.billing_reason === "subscription_create" && paidUserId) {
+          await reportPurchase(
+            paidUserId,
+            saleOf(paidSub, invoice.amount_paid ?? 0, false),
+          );
+        }
+
         if (
           invoice.billing_reason === "subscription_create" &&
           invoice.customer

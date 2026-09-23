@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { usePostHog } from "posthog-js/react";
 
 import {
   PaymentPanel,
@@ -10,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { track } from "@/lib/analytics/events";
 import {
   PRICES,
   formatUsd,
@@ -261,6 +263,18 @@ export function CheckoutPageView({
   const [interval, setInterval] = useState<BillingInterval>(initialInterval);
   const [paid, setPaid] = useState<Paid | null>(null);
   const target = { tier, interval };
+  const posthog = usePostHog();
+
+  // The page only renders behind a session, so `logged_in` is a constant
+  // here -- it is carried anyway so the event has the same shape wherever
+  // it is emitted from.
+  useEffect(() => {
+    track(posthog, "checkout_view", {
+      plan: tier,
+      cycle: initialInterval,
+      logged_in: true,
+    });
+  }, [posthog, tier, initialInterval]);
 
   if (paid) {
     return (

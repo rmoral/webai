@@ -4,7 +4,6 @@ import * as Sentry from "@sentry/nextjs";
 import { and, eq, gte, sql } from "drizzle-orm";
 
 import type { Subscriber } from "@/lib/billing/entitlements";
-import type { Plan } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
 import { subscriptions } from "@/lib/db/schema";
 
@@ -52,14 +51,25 @@ export async function checkBurstLimit(
   return { allowed: success, retryAt: reset };
 }
 
-export interface QuotaResult {
-  allowed: boolean;
+export interface QuotaGrant {
+  /**
+   * Words actually reserved, which is exactly what the model is allowed to
+   * see. Zero means the allowance is spent and nothing may be generated.
+   *
+   * It can be less than what was asked for, and that is the point: with 200
+   * words left and 923 pasted, the reader gets the first 200 rewritten and
+   * pays for 200. The old all-or-nothing rule answered the same request by
+   * generating the whole thing for free and then hiding it behind a wall.
+   */
+  granted: number;
+  /** Words spent against the allowance, after this reservation. */
+  used: number | null;
   /** Words left in the plan allowance. `null` when the plan is unmetered. */
   remaining: number | null;
   /**
-   * The allowance the two figures above are measured against. `null` when
-   * the plan is unmetered. Wall B shows "280 / 500 words today", and
-   * deriving the denominator in the UI would mean hardcoding a limit there.
+   * The allowance the figures above are measured against. `null` when the
+   * plan is unmetered. Wall B shows "280 / 500 words today", and deriving
+   * the denominator in the UI would mean hardcoding a limit there.
    */
   limit: number | null;
   /** Words taken from the top-up balance, if any. */
@@ -76,43 +86,90 @@ function dailyKey(subject: string): string {
   return `quota:words:day:${subject}:${new Date().toISOString().slice(0, 10)}`;
 }
 
+/**
+ * Takes what it can from `key` and gives back the rest.
+ *
+ * The counter is incremented first and the overshoot returned, which is
+ * what makes the reservation atomic under concurrent requests: two clients
+ * racing for the last 50 words cannot both be told they have them.
+ *
+ * Only the overshoot is given back, never the whole request, so the
+ * counter saturates exactly at the limit. It used to return the full
+ * amount on refusal, which is how "600 / 500" ended up on the account
+ * page: the counter and the allowance disagreed about what had happened.
+ */
 async function consume(
   client: Redis,
   key: string,
   limit: number,
   words: number,
   ttlSeconds: number,
-): Promise<{ used: number; allowed: boolean }> {
+): Promise<{ used: number; granted: number }> {
   const used = await client.incrby(key, words);
   if (used === words) await client.expire(key, ttlSeconds);
-  if (used > limit) {
-    await client.decrby(key, words);
-    return { used: used - words, allowed: false };
-  }
-  return { used, allowed: true };
+  if (used <= limit) return { used, granted: words };
+
+  // Never hand back more than this request took: another request may have
+  // overshot first, and it corrects its own share.
+  const overshoot = Math.min(used - limit, words);
+  const after = await client.decrby(key, overshoot);
+  return { used: after, granted: words - overshoot };
 }
 
 /**
- * Reserves `words` against the subscriber's allowance. Free tiers spend the
- * daily limit; paid tiers spend the billing-period limit and then any
- * top-up balance. A soft cap (Ilimitado) alerts instead of blocking.
+ * Reserves up to `words` against the subscriber's allowance, and answers
+ * with how many it actually got.
+ *
+ * Free tiers spend the daily limit; paid tiers spend the billing-period
+ * limit and then any top-up balance. A soft cap (Ilimitado) alerts instead
+ * of blocking.
+ *
+ * `allowPartial` is what separates the two kinds of tool. A rewrite can
+ * usefully do the first 200 words of a 923-word paste -- that is a real
+ * result the reader keeps, paid for with the words they had. A detector
+ * cannot: a score measured over part of a text is a wrong score about the
+ * whole one, so it asks for all or nothing.
  */
-export async function consumeWords(
+export async function reserveWords(
   subject: string,
   subscriber: Subscriber,
   words: number,
-): Promise<QuotaResult> {
+  allowPartial = true,
+): Promise<QuotaGrant> {
+  const grant = await reserve(subject, subscriber, words);
+  if (allowPartial || grant.granted === 0 || grant.granted === words) {
+    return grant;
+  }
+  // All or nothing, and nothing: give the partial reservation back rather
+  // than charging for a result that will not be produced.
+  await release(subject, subscriber, grant.granted);
+  return {
+    ...grant,
+    granted: 0,
+    used: Math.max(0, (grant.used ?? 0) - grant.granted),
+    remaining:
+      grant.remaining === null ? null : grant.remaining + grant.granted,
+  };
+}
+
+async function reserve(
+  subject: string,
+  subscriber: Subscriber,
+  words: number,
+): Promise<QuotaGrant> {
   const { limits } = subscriber.plan;
   const client = getRedis();
 
   if (limits.wordsPerDay !== null) {
+    // Dev without Redis: limits are off, so everything is granted.
     if (!client)
       return {
-        allowed: true,
+        granted: words,
+        used: 0,
         remaining: limits.wordsPerDay,
         limit: limits.wordsPerDay,
       };
-    const { used, allowed } = await consume(
+    const { used, granted } = await consume(
       client,
       dailyKey(subject),
       limits.wordsPerDay,
@@ -120,72 +177,68 @@ export async function consumeWords(
       25 * 60 * 60,
     );
     return {
-      allowed,
+      granted,
+      used,
       remaining: Math.max(0, limits.wordsPerDay - used),
       limit: limits.wordsPerDay,
     };
   }
 
   if (limits.wordsPerMonth === null)
-    return { allowed: true, remaining: null, limit: null };
+    return { granted: words, used: null, remaining: null, limit: null };
   if (!client)
     return {
-      allowed: true,
+      granted: words,
+      used: 0,
       remaining: limits.wordsPerMonth,
       limit: limits.wordsPerMonth,
     };
 
-  const { used, allowed } = await consume(
+  const limit = limits.wordsPerMonth;
+  const { used, granted } = await consume(
     client,
     monthlyKey(subject, subscriber.periodStart),
-    limits.wordsPerMonth,
+    limit,
     words,
     40 * 24 * 60 * 60,
   );
-  const remaining = Math.max(0, limits.wordsPerMonth - used);
-
-  const limit = limits.wordsPerMonth;
-  if (allowed) return { allowed: true, remaining, limit };
+  const remaining = Math.max(0, limit - used);
+  if (granted === words) return { granted, used, remaining, limit };
 
   // Ilimitado is sold as unlimited: warn the owner, keep serving.
   if (limits.softCap) {
     Sentry.captureMessage("quota.soft_cap_exceeded", {
       level: "warning",
-      extra: { subject, words, limit: limits.wordsPerMonth },
+      extra: { subject, words, limit },
     });
-    return { allowed: true, remaining: 0, limit };
+    return { granted: words, used, remaining: 0, limit };
   }
 
-  const fromTopup = await consumeTopupWords(subject, words);
-  if (fromTopup)
-    return { allowed: true, remaining: 0, limit, fromTopup: words };
+  // Purchased words cover what the plan could not. They are all-or-nothing
+  // on the shortfall: a balance that cannot cover it is left untouched
+  // rather than half spent.
+  const shortfall = words - granted;
+  if (await consumeTopupWords(subject, shortfall)) {
+    return { granted: words, used, remaining, limit, fromTopup: shortfall };
+  }
 
-  return { allowed: false, remaining, limit };
+  return { granted, used, remaining, limit };
 }
 
-/**
- * Claims the one over-quota preview a subject gets per day.
- *
- * Wall B works by showing people the result they cannot read yet, which
- * means the model runs for a request the allowance already refused. Without
- * a cap that turns the daily limit into a suggestion: spend it, then keep
- * asking and keep being served. The claim is atomic (`SET NX`), so a
- * client that fires ten requests at once still gets one generation.
- *
- * Returns false when the preview is already spent, and the caller falls
- * back to the plain refusal.
- */
-export async function claimOverQuotaPreview(subject: string): Promise<boolean> {
+/** Gives words back to the allowance they were taken from. */
+async function release(
+  subject: string,
+  subscriber: Subscriber,
+  words: number,
+): Promise<void> {
   const client = getRedis();
-  // Dev without Redis: quotas are off there, so this is never reached with
-  // a refusal behind it.
-  if (!client) return true;
-  const day = new Date().toISOString().slice(0, 10);
-  const claimed = await client.set(`paywall:preview:${subject}:${day}`, 1, {
-    nx: true,
-    ex: 25 * 60 * 60,
-  });
-  return claimed === "OK";
+  if (!client || words <= 0) return;
+  const { limits } = subscriber.plan;
+  const key =
+    limits.wordsPerDay !== null
+      ? dailyKey(subject)
+      : monthlyKey(subject, subscriber.periodStart);
+  await client.decrby(key, words);
 }
 
 /**
@@ -253,25 +306,4 @@ export async function peekWords(
     Sentry.captureException(error);
     return { used: 0, limit };
   }
-}
-
-/** Kept for callers that only know the plan (anonymous requests). */
-export async function consumeDailyWords(
-  subject: string,
-  plan: Plan,
-  words: number,
-): Promise<QuotaResult> {
-  return consumeWords(
-    subject,
-    {
-      plan,
-      topupWords: 0,
-      periodStart: null,
-      periodEnd: null,
-      interval: null,
-      subscriptionId: null,
-      trialEnd: null,
-    },
-    words,
-  );
 }

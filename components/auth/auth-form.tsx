@@ -5,10 +5,12 @@ import { useFormatter, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
+import { track } from "@/lib/analytics/events";
 import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/billing/plans";
 import { createClient } from "@/lib/auth/client";
 import { Link } from "@/lib/i18n/navigation";
+import { safeNext } from "@/lib/security/validation";
 
 // Sign up and sign in: two routes, one form.
 //
@@ -36,17 +38,25 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
     "idle",
   );
 
-  // Where they came from, so they land back on their own text rather than
-  // on a dashboard. The callback only honours a path, never a URL.
-  const next = useSearchParams().get("next") ?? "/app";
+  // Where they came from, so they land back on their own text -- or on the
+  // plan they had already chosen -- rather than on a dashboard. Validated
+  // here as well as in the callback: this one goes into an href.
+  const requested = useSearchParams().get("next");
+  const next = safeNext(requested);
   const signup = mode === "signup";
+  // The crossing link keeps the intention. Without it, somebody who came
+  // here to buy and realised they already have an account arrives at the
+  // other form with the plan dropped -- which is the whole leak, moved one
+  // screen along.
+  const crossQuery = requested ? { next } : undefined;
 
   const redirectTo = () =>
     `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
   async function withGoogle() {
-    posthog?.capture(signup ? "signup_started" : "signin_started", {
+    track(posthog, signup ? "signup_start" : "signin_start", {
       method: "google",
+      next,
     });
     await createClient().auth.signInWithOAuth({
       provider: "google",
@@ -57,8 +67,9 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
   async function withEmail(event: React.FormEvent) {
     event.preventDefault();
     setStatus("sending");
-    posthog?.capture(signup ? "signup_started" : "signin_started", {
-      method: "email",
+    track(posthog, signup ? "signup_start" : "signin_start", {
+      method: "magic_link",
+      next,
     });
     const { error } = await createClient().auth.signInWithOtp({
       email,
@@ -141,7 +152,7 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
 
       <p className="mt-6 text-sm">
         <Link
-          href={signup ? "/login" : "/signup"}
+          href={{ pathname: signup ? "/login" : "/signup", query: crossQuery }}
           className="text-brand underline"
         >
           {signup ? t("crossToSignin") : t("crossToSignup")}

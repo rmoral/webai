@@ -42,8 +42,11 @@ test("names both figures and both paid ceilings, without interrupting", async ({
   await expect(page.getByText("Ilimitado, a 8000")).toBeVisible();
 
   // Amber is a ceiling, not an error, so nothing is blocked: the button
-  // still runs and no modal has taken over the page.
-  await expect(page.getByRole("button", { name: "Humanizador" })).toBeEnabled();
+  // still runs and no modal has taken over the page. The wait is the
+  // anti-bot check, which the button now waits for (C3), not the ceiling.
+  await expect(page.getByRole("button", { name: "Humanizador" })).toBeEnabled({
+    timeout: 15_000,
+  });
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
@@ -65,70 +68,89 @@ test("says the same thing in English", async ({ page }) => {
     page.getByText(`We process the first ${CEILING} words`),
   ).toBeVisible();
   await expect(page.getByText(`of the ${PASTED} you pasted`)).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "AI humanizer" }),
-  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: "AI humanizer" })).toBeEnabled({
+    timeout: 15_000,
+  });
 });
 
-// Wall B — the daily allowance is spent and the result exists anyway.
+// Wall B — the allowance covered only part of what was asked for.
 //
 // Reaching it for real needs Redis, a spent quota and an API key, so the
-// refusal is served here instead. What is under test is the browser half:
-// the result is the user's own text, the beginning of it is legible, the
-// rest is withheld from sight and from screen readers, and dismissing it
-// means dismissing it.
+// server's half is served here instead: a normal answer, short, with the
+// headers that say how many words were paid for. What is under test is the
+// browser half -- that the reader keeps the result they paid for, that the
+// blur hides nothing because there is nothing to hide, and that closing
+// the wall closes the wall and not the work.
 
-const VISIBLE = "Esta es la parte que sí puede leer quien ha llegado al tope.";
-const WITHHELD = "Y esta es la que queda detrás de la oferta, sin excepción.";
+const DONE =
+  "Esta es la parte que sí se ha procesado, con las palabras que quedaban.";
+/** Forty words pasted, of which the stubbed answer pays for twelve. */
+const OVER_QUOTA_PASTE = "palabra ".repeat(40).trim();
 
-async function refuseWithResult(page: Page) {
+/** The server answers with the 12 words it could afford of the 40 asked for. */
+async function partialAnswer(page: Page) {
   await page.route("**/api/ai/humanize", (route) =>
     route.fulfill({
-      status: 429,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: "quota_exceeded",
-        message: "Has agotado tus palabras de hoy.",
-        partialResult: `${VISIBLE} ${WITHHELD}`,
-        visibleChars: VISIBLE.length,
-        usedToday: 300,
-        limitToday: 300,
-      }),
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "12",
+        "x-words-limit": "300",
+        "x-words-used": "300",
+        "x-words-remaining": "0",
+      },
+      body: DONE,
     }),
   );
 }
 
 async function hitTheWall(page: Page) {
   await page.goto("/humanizador-de-texto-ia");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", OVER_QUOTA_PASTE);
   await page.getByRole("button", { name: "Humanizador" }).click();
   return page.getByRole("dialog");
 }
 
-test("shows the reader their own result, half of it withheld", async ({
-  page,
-}) => {
-  await refuseWithResult(page);
+test("shows what was done and counts what was not", async ({ page }) => {
+  await partialAnswer(page);
   const dialog = await hitTheWall(page);
 
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("300 / 300 palabras de hoy")).toBeVisible();
-  // The good news first, then the limit.
-  await expect(dialog.getByText("Tu texto está humanizado")).toBeVisible();
-  await expect(dialog.getByText(VISIBLE)).toBeVisible();
+  await expect(
+    dialog.getByText("Hemos procesado las palabras que te quedaban"),
+  ).toBeVisible();
+  await expect(dialog.getByText(DONE)).toBeVisible();
+  // 40 pasted, 12 paid for.
+  await expect(
+    dialog.getByText("Faltan 28 palabras de tu texto."),
+  ).toBeVisible();
+});
 
-  // The withheld half is blurred, which is a picture. Without aria-hidden a
-  // screen reader reads the answer straight out and the wall is not there.
-  await expect(dialog.getByText(WITHHELD)).toHaveAttribute(
-    "aria-hidden",
-    "true",
-  );
+test("the blur hides filler, because there is nothing real to hide", async ({
+  page,
+}) => {
+  // The withheld half used to be the real result: generated for a request
+  // that had just been refused, sent to the browser and covered with a CSS
+  // filter, so it read straight out of the inspector. Now the server never
+  // writes those words, and what is blurred is shapes.
+  await partialAnswer(page);
+  const dialog = await hitTheWall(page);
+
+  const blurred = dialog.locator("[aria-hidden='true'].blur-\\[4\\.5px\\]");
+  await expect(blurred).toHaveAttribute("aria-hidden", "true");
+
+  // Nothing in the dialog beyond what was actually processed comes from
+  // the server: the whole body carries the answer once and no more.
+  const html = await dialog.innerHTML();
+  const occurrences = html.split(DONE).length - 1;
+  expect(occurrences).toBe(1);
 });
 
 test("states the date and the amount before asking for a card", async ({
   page,
 }) => {
-  await refuseWithResult(page);
+  await partialAnswer(page);
   const dialog = await hitTheWall(page);
 
   // The disclosure is part of the wall, at reading size and in the flow.
@@ -142,7 +164,7 @@ test("states the date and the amount before asking for a card", async ({
 test("offers an anonymous reader the free account, not only the card", async ({
   page,
 }) => {
-  await refuseWithResult(page);
+  await partialAnswer(page);
   const dialog = await hitTheWall(page);
 
   await expect(
@@ -153,10 +175,62 @@ test("offers an anonymous reader the free account, not only the card", async ({
   ).toBeVisible();
 });
 
-test("closes on Escape and does not come back in the same session", async ({
+test("closing it keeps the result, and keeps offering the way out", async ({
   page,
 }) => {
-  await refuseWithResult(page);
+  // The one thing this wall must not do. Escape was the only way to close
+  // it, and closing it deleted the words the reader had just waited for.
+  await partialAnswer(page);
+  const dialog = await hitTheWall(page);
+  await expect(dialog).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Cerrar" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  // The work survives, in the panel where it was.
+  await expect(page.getByText(DONE)).toBeVisible();
+  // And the offer survives too, in the flow rather than over it.
+  await expect(page.getByText(/Faltan 28 palabras de tu texto/)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Crear cuenta gratis/ }).first(),
+  ).toBeVisible();
+});
+
+test("the exhausted banner offers an account, not only a price", async ({
+  page,
+}) => {
+  // The second attempt used to end in a red banner whose only link was to
+  // pricing -- offered to a reader whose next step costs nothing. Both
+  // inline notices now carry the same way out, chosen by who is reading.
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      headers: { "x-words-processed": "0" },
+      body: JSON.stringify({
+        error: "quota_exceeded",
+        message: "Has agotado tus palabras de hoy.",
+        used: 300,
+        limit: 300,
+      }),
+    }),
+  );
+
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await page.getByRole("button", { name: "Humanizador" }).click();
+
+  // Nothing was generated, so there is no wall to show -- only the notice.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Has agotado tu límite.")).toBeVisible();
+  const account = page.getByRole("link", { name: /Crear cuenta gratis/ });
+  await expect(account.first()).toBeVisible();
+});
+
+test("closes on Escape, on a click outside, and stays closed", async ({
+  page,
+}) => {
+  await partialAnswer(page);
   const dialog = await hitTheWall(page);
   await expect(dialog).toBeVisible();
 
@@ -164,9 +238,11 @@ test("closes on Escape and does not come back in the same session", async ({
   await expect(dialog).toHaveCount(0);
 
   // Dismissed once is dismissed for the session: a wall that reappears
-  // after the reader closed it stops being an offer.
+  // after the reader closed it stops being an offer. The second run still
+  // says what happened, in line.
   await page.getByRole("button", { name: "Humanizador" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(/Faltan 28 palabras de tu texto/)).toBeVisible();
 });
 
 // Wall C — a paid tool opened by somebody who cannot run it.

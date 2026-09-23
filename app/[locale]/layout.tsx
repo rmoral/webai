@@ -7,7 +7,12 @@ import { notFound } from "next/navigation";
 import "../globals.css";
 
 import { AnalyticsProvider } from "@/components/analytics-provider";
-import { HTML_LANG, routing, type Locale } from "@/lib/i18n/routing";
+import {
+  HTML_LANG,
+  SITE_ORIGIN,
+  routing,
+  type Locale,
+} from "@/lib/i18n/routing";
 
 // The root layout lives here rather than at app/layout.tsx because the
 // language is a route segment: <html lang> cannot be decided above it.
@@ -26,9 +31,11 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "site" });
 
   return {
-    metadataBase: process.env.NEXT_PUBLIC_APP_URL
-      ? new URL(process.env.NEXT_PUBLIC_APP_URL)
-      : undefined,
+    // Always set: every page's canonical and hreflang are relative paths
+    // (see alternatesFor), and without a base Next resolves them against
+    // the deployment host -- so the canonicals named a *.vercel.app URL
+    // while the sitemap named the real site.
+    metadataBase: new URL(SITE_ORIGIN),
     title: { default: t("title"), template: `%s · Verbalyx` },
     description: t("description"),
     // No `alternates` here on purpose: metadata is inherited, so a canonical

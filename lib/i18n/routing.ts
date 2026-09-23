@@ -96,6 +96,27 @@ export const routing = defineRouting({
 
 export type Locale = (typeof routing.locales)[number];
 
+/**
+ * The origin every absolute URL of the site is built from: the canonical
+ * tags, the hreflang pairs, the sitemap and robots.txt.
+ *
+ * One constant, because the alternative is what was here: the sitemap and
+ * robots each carried their own default while the canonical tags had none
+ * at all, so with NEXT_PUBLIC_APP_URL unset Next resolved them against the
+ * deployment's own *.vercel.app host. Google then read a sitemap pointing
+ * at one site and canonicals pointing at another.
+ *
+ * www is the host that serves; the apex redirects to it. Getting that
+ * wrong is not cosmetic -- a canonical naming a host that 301s away is a
+ * canonical Google has to overrule.
+ *
+ * It lives here rather than next to the metadata helpers because those
+ * import the navigation helpers, which drag `next/navigation` into
+ * anything that reads them outside a request -- an email, a cron, a test.
+ */
+export const SITE_ORIGIN =
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://www.verbalyx.ai";
+
 export const LOCALE_LABELS: Record<Locale, string> = {
   es: "Español",
   en: "English",

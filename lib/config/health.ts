@@ -58,6 +58,13 @@ export function configHealth(): ConfigCheck[] {
       critical: true,
     },
     {
+      name: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+      value: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+      breaks:
+        "El campo de tarjeta no se pinta: la página de pago carga y no se puede pagar.",
+      critical: true,
+    },
+    {
       name: "STRIPE_WEBHOOK_SECRET",
       value: process.env.STRIPE_WEBHOOK_SECRET,
       breaks: "Se cobra, pero el plan del usuario nunca se activa.",
@@ -121,6 +128,17 @@ export function configHealth(): ConfigCheck[] {
       name: "SENTRY_DSN",
       value: process.env.SENTRY_DSN,
       breaks: "Los errores del servidor no se registran en ningún sitio.",
+      critical: false,
+    },
+    {
+      // Sentry reads two different variables and the panel only named one,
+      // so a deployment with SENTRY_DSN set looked fully instrumented
+      // while every error in a browser -- a card field that fails to
+      // mount, a wall that throws -- went nowhere and said nothing.
+      name: "NEXT_PUBLIC_SENTRY_DSN",
+      value: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      breaks:
+        "Los errores del navegador no se registran: el pago puede romperse en el cliente sin dejar rastro.",
       critical: false,
     },
     {
@@ -311,4 +329,59 @@ export function describeDatabaseFailure(error: unknown): DatabaseFailure {
 // text is rendered on a page, so do not depend on that.
 function redactCredentials(message: string): string {
   return message.replace(/\/\/[^/@\s]*@/g, "//…@");
+}
+
+/** Test or live, as Stripe writes it into the key itself. */
+export type StripeMode = "live" | "test" | "unknown";
+
+export interface StripeModeReport {
+  secret: StripeMode;
+  publishable: StripeMode;
+  /** Whether this deployment is the one customers actually reach. */
+  production: boolean;
+  /** Null when the keys are coherent with where they are running. */
+  problem: string | null;
+}
+
+/**
+ * Which Stripe account the deployment is really talking to.
+ *
+ * This exists because the failure it catches is invisible from the inside
+ * and total from the outside: with test keys in production the checkout
+ * renders, the card is accepted, the confirmation appears -- and no money
+ * has moved. The only tells are Stripe's own sandbox furniture, a black
+ * developer pill and an authorisation line naming a sandbox account, which
+ * nobody on our side is looking at. Every visit that converts is lost, and
+ * the graphs say the funnel is working.
+ *
+ * Only the key prefixes are read. The value itself is never returned,
+ * logged or rendered: `sk_test_` and `sk_live_` are the whole signal.
+ */
+export function stripeMode(): StripeModeReport {
+  const modeOf = (key: string | undefined): StripeMode => {
+    const value = key?.trim() ?? "";
+    // The prefix sits after the kind: sk_live_…, pk_test_…, and the
+    // restricted keys rk_live_… / rk_test_….
+    if (/^[a-z]{2}_live_/.test(value)) return "live";
+    if (/^[a-z]{2}_test_/.test(value)) return "test";
+    return "unknown";
+  };
+
+  const secret = modeOf(process.env.STRIPE_SECRET_KEY);
+  const publishable = modeOf(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  // On Vercel every deployment builds with NODE_ENV=production, previews
+  // included, so it cannot tell them apart on its own.
+  const production =
+    (process.env.VERCEL_ENV ?? process.env.NODE_ENV) === "production";
+
+  const problem =
+    secret !== publishable && secret !== "unknown" && publishable !== "unknown"
+      ? "La clave secreta y la publicable no son del mismo modo. Stripe rechaza la confirmación del pago porque el intent y el cliente viven en cuentas distintas. Copia las dos del mismo modo en Stripe → Developers → API keys."
+      : production && (secret === "test" || publishable === "test")
+        ? "Producción con claves de prueba: el checkout funciona y nadie paga de verdad. Cambia STRIPE_SECRET_KEY y NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY por las de modo live, crea los precios en la cuenta live (pnpm stripe:sync) y apunta el webhook de esa cuenta a /api/stripe/webhook con su propio STRIPE_WEBHOOK_SECRET."
+        : secret === "unknown" || publishable === "unknown"
+          ? "No se reconoce el formato de alguna clave de Stripe. Deben empezar por sk_live_/sk_test_ y pk_live_/pk_test_."
+          : null;
+
+  return { secret, publishable, production, problem };
 }

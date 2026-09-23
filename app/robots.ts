@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 
+import { SITE_ORIGIN } from "@/lib/i18n/routing";
+
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://verbalyx.ai";
+  const base = SITE_ORIGIN;
 
   return {
     rules: {

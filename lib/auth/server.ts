@@ -3,6 +3,7 @@ import { getLocale } from "next-intl/server";
 import { cookies } from "next/headers";
 
 import { redirect } from "@/lib/i18n/navigation";
+import { safeNext } from "@/lib/security/validation";
 
 // For Server Components, Server Actions and Route Handlers.
 export async function createClient() {
@@ -40,16 +41,34 @@ export async function getSession() {
 }
 
 /**
- * The session, or a redirect to the login page in the language being
- * browsed. The middleware already gates /app and /admin, so reaching the
- * redirect here means something upstream changed -- it is defence in depth,
- * and it is what lets every page under the app shell treat the user as
- * non-null without repeating the check.
+ * The session, or a redirect to the door in the language being browsed.
+ * The middleware already gates /app and /admin, so reaching the redirect
+ * here means something upstream changed -- it is defence in depth, and it
+ * is what lets every page under the app shell treat the user as non-null
+ * without repeating the check.
+ *
+ * `next` and `signup` are what keep an intention alive across the door.
+ * Someone who has just chosen a plan is not coming back to anything: they
+ * need "create your account", carrying the plan, and they need to land on
+ * the payment page afterwards rather than on a dashboard. Somewhere with a
+ * session that expired is the opposite case, and gets the default.
  */
-export async function requireSession() {
+export async function requireSession(options?: {
+  /** Where to send them once they are in. Internal paths only. */
+  next?: string;
+  /** Send them to sign up rather than sign in. */
+  signup?: boolean;
+}) {
   const user = await getSession();
   if (!user) {
-    redirect({ href: "/login", locale: await getLocale() });
+    const next = safeNext(options?.next, "");
+    redirect({
+      href: {
+        pathname: options?.signup ? "/signup" : "/login",
+        query: next ? { next } : undefined,
+      },
+      locale: await getLocale(),
+    });
     // redirect() throws. This line only exists so the return type is
     // non-null: next-intl's redirect is not declared as returning never.
     throw new Error("unreachable");

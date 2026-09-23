@@ -12,6 +12,7 @@ import {
 import { usePostHog } from "posthog-js/react";
 
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics/events";
 import { paymentDisclosure } from "@/lib/billing/disclosure";
 import {
   CURRENCY,
@@ -23,7 +24,7 @@ import {
   type PaidTier,
 } from "@/lib/billing/plans";
 import { pathFor, type Locale } from "@/lib/i18n/routing";
-import { useRouter } from "@/lib/i18n/navigation";
+import { getPathname, useRouter } from "@/lib/i18n/navigation";
 
 // Payment, inside the site.
 //
@@ -161,7 +162,10 @@ function PaymentForm({
     if (!stripe || !elements) return;
     setBusy(true);
     setError(null);
-    posthog?.capture("payment_submitted", { ...target });
+    track(posthog, "payment_submitted", {
+      plan: target.tier,
+      cycle: target.interval,
+    });
 
     // Stripe validates the fields before anything is created, so a typo in
     // the card number does not cost a subscription object.
@@ -184,9 +188,22 @@ function PaymentForm({
     });
 
     if (res.status === 401) {
-      // They have to have an account to be billed. The editor keeps their
-      // text, so coming back lands them where they were.
-      router.push({ pathname: "/login", query: { next: "/pricing" } });
+      // They have to have an account to be billed. They come back to this
+      // card field with this plan, not to a pricing page they have already
+      // read -- and the `next` is the localised path, since /checkout is an
+      // internal route name that resolves to /pago in Spanish.
+      router.push({
+        pathname: "/signup",
+        query: {
+          next: getPathname({
+            href: {
+              pathname: "/checkout",
+              query: { plan: target.tier, cycle: target.interval },
+            },
+            locale,
+          }),
+        },
+      });
       return;
     }
 
@@ -222,8 +239,12 @@ function PaymentForm({
       return;
     }
 
-    posthog?.capture("payment_succeeded", {
-      ...target,
+    // The sale itself is reported by the webhook (`purchase`): a browser
+    // that closes on the redirect would otherwise take the sale with it.
+    // This one measures the form, not the money.
+    track(posthog, "payment_succeeded", {
+      plan: target.tier,
+      cycle: target.interval,
       trial: trialDays !== null,
     });
     onPaid(data.amountTodayCents, data.nextChargeAt);
