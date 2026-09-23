@@ -565,6 +565,7 @@
     "today": "Hoy",
     "month": "Este mes",
     "requests": "Peticiones",
+    "resets": "Las palabras de hoy se reinician a las 00:00, hora de {timezone}.",
     "deleteTitle": "Eliminar mi cuenta y datos",
     "deleteBody": "Borra tu cuenta, tu suscripción y todos tus datos de forma permanente. No se puede deshacer.",
     "deleteCta": "Eliminar mi cuenta",

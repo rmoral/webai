@@ -565,6 +565,7 @@
     "today": "Today",
     "month": "This month",
     "requests": "Requests",
+    "resets": "Today's words reset at 00:00, {timezone} time.",
     "deleteTitle": "Delete my account and data",
     "deleteBody": "Permanently deletes your account, your subscription and all your data. This cannot be undone.",
     "deleteCta": "Delete my account",

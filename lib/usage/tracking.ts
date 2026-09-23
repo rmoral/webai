@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import type { ToolId } from "@/lib/ai/tools";
 import { getDb } from "@/lib/db/client";
 import { usageDaily } from "@/lib/db/schema";
+import { quotaDay } from "@/lib/usage/quotas";
 
 // Fire-and-forget accounting per CLAUDE.md: every AI request lands in
 // usage_daily. Must never break a stream, hence the broad catch.
@@ -24,7 +25,9 @@ export async function recordUsage(entry: {
       .values({
         subjectKey: entry.subjectKey,
         userId: entry.userId,
-        date: new Date().toISOString().slice(0, 10),
+        // The same day the allowance counts, so the account page and the
+        // quota bar cannot disagree about what "today" means.
+        date: quotaDay(),
         tool: entry.tool,
         wordsIn: entry.wordsIn,
         wordsOut: entry.wordsOut,

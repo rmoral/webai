@@ -6,6 +6,7 @@ import Script from "next/script";
 import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
 
+import { useAllowance } from "@/components/billing/allowance";
 import {
   QuotaPaywall,
   ToolPaywall,
@@ -102,6 +103,12 @@ export function ToolEditor({
   const [toolWallDismissed, setToolWallDismissed] = useState(true);
   // Whether they have reached for the tool yet. See wall C below.
   const [wantedTool, setWantedTool] = useState(false);
+  // The allowance, shared with the header. `report` is what makes every
+  // counter move at the same moment; outside the signed-in shell it is a
+  // no-op and the editor keeps its own copy.
+  // `report` is taken by the detector's own state, so the updater keeps
+  // its full name here.
+  const { allowance, report: reportAllowance } = useAllowance();
   const [remaining, setRemaining] = useState<number | null>(null);
   // Whether the failed request can simply be tried again, which is true of
   // an anti-bot refusal and of nothing else.
@@ -206,6 +213,10 @@ export function ToolEditor({
     return () => clearTimeout(timer);
   }, [needsToken, hasToken, waived]);
 
+  // Whichever is fresher: the shared figure, or the last response this
+  // editor saw. They are the same number from the same source.
+  const left = remaining ?? allowance?.remaining ?? null;
+
   const words = countWords(input);
   // Wall A. The ceiling is the plan's, never a number written here.
   const ceiling = PLANS[plan].limits.maxWordsPerRequest;
@@ -217,6 +228,31 @@ export function ToolEditor({
   // sees the paywall before writing, not as a 403 after pressing the
   // button. The server enforces it either way.
   const included = PLANS[plan].limits.tools.includes(tool);
+
+  // What is left, for a page that has no server render to read it from.
+  //
+  // Asked for when the reader starts writing rather than on load: the tool
+  // landings are the SEO asset, and a request per visit to tell a crawler
+  // how many words it has left is paid on every visit and read on almost
+  // none. By the time there are words in the box the number matters, and
+  // it is there before the button is pressed.
+  const askedAllowance = useRef(false);
+  useEffect(() => {
+    if (askedAllowance.current || words === 0) return;
+    if (remaining !== null || allowance) return;
+    askedAllowance.current = true;
+    fetch("/api/usage", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || typeof data.remaining !== "number") return;
+        setRemaining(data.remaining);
+        reportAllowance(data);
+      })
+      .catch(() => {
+        // A number we could not read is a number we do not show.
+      });
+  }, [words, remaining, allowance, reportAllowance]);
+
   // Waiting on the anti-bot check, and not yet waived.
   const verifying = needsToken && !hasToken && !waived;
 
@@ -283,7 +319,7 @@ export function ToolEditor({
       tool,
       logged_in: plan !== "anonymous",
       words_in: words,
-      quota_left: remaining,
+      quota_left: left,
     });
     setOutput("");
     setParts(null);
@@ -340,6 +376,12 @@ export function ToolEditor({
         if (res.status === 429 && data?.error === "quota_exceeded") {
           if (typeof data.used === "number" && typeof data.limit === "number") {
             setRemaining(Math.max(0, data.limit - data.used));
+            reportAllowance({
+              used: data.used,
+              limit: data.limit,
+              remaining: Math.max(0, data.limit - data.used),
+              metered: allowance?.metered ?? true,
+            });
           }
           track(posthog, "wall_shown", {
             variant: "inline",
@@ -364,8 +406,20 @@ export function ToolEditor({
       const processed = header("x-words-processed");
       const limitToday = header("x-words-limit");
       const usedToday = header("x-words-used");
-      const left = header("x-words-remaining");
-      if (left !== null) setRemaining(left);
+      const stillLeft = header("x-words-remaining");
+      if (stillLeft !== null) {
+        setRemaining(stillLeft);
+        // The header bar and the account page read the same figure, and
+        // they read it now rather than on the next navigation.
+        if (limitToday !== null) {
+          reportAllowance({
+            used: usedToday ?? 0,
+            limit: limitToday,
+            remaining: stillLeft,
+            metered: allowance?.metered ?? true,
+          });
+        }
+      }
 
       // What the allowance could not cover. `wanted` is what the request
       // asked for after wall A's cut, so this counts only the words denied
@@ -493,7 +547,7 @@ export function ToolEditor({
               className="text-muted-foreground border-t px-5 py-2 text-xs"
             >
               {t("words", { words })}
-              {remaining !== null && t("remaining", { words: remaining })}
+              {left !== null && t("remaining", { words: left })}
             </p>
           </div>
 

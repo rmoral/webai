@@ -2,6 +2,7 @@ import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
 import { PRICES, type PaidTier } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
+import { quotaDay } from "@/lib/usage/quotas";
 import { subscriptions, usageDaily, users } from "@/lib/db/schema";
 
 // Read models for the account area and the admin backoffice.
@@ -9,11 +10,11 @@ import { subscriptions, usageDaily, users } from "@/lib/db/schema";
 const ACTIVE_STATUSES = ["trialing", "active", "past_due"] as const;
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return quotaDay();
 }
 
 function monthStart(): string {
-  return `${new Date().toISOString().slice(0, 8)}01`;
+  return `${quotaDay().slice(0, 8)}01`;
 }
 
 export interface UserUsage {
