@@ -530,6 +530,7 @@ describe("auditStripe", () => {
   function fakeStripe(options: {
     prices?: { lookup_key: string; livemode: boolean }[];
     endpoints?: (typeof ENDPOINT)[];
+    tax?: { status: string; head_office?: { address?: { country?: string } } };
   }) {
     return {
       prices: {
@@ -539,10 +540,19 @@ describe("auditStripe", () => {
             PRICE_KEYS.map((lookup_key) => ({ lookup_key, livemode: true })),
         }),
       },
+      tax: {
+        settings: {
+          retrieve: async () =>
+            options.tax ?? {
+              status: "active",
+              head_office: { address: { country: "US" } },
+            },
+        },
+      },
       webhookEndpoints: {
         list: async () => ({ data: options.endpoints ?? [ENDPOINT] }),
       },
-      // The audit only reads these two.
+      // The audit only reads these three.
     } as unknown as Parameters<typeof auditStripe>[0];
   }
 
@@ -579,6 +589,29 @@ describe("auditStripe", () => {
     // the prices were not.
     expect(audit.problem).toBeNull();
     expect(audit.prices.every((p) => p.live === false)).toBe(true);
+  });
+
+  it("catches a mode where Stripe Tax cannot price anything", async () => {
+    // Every subscription carries automatic_tax, so an inactive setting
+    // refuses them one by one -- and the setting is per mode, so a
+    // configured sandbox says nothing about live.
+    const audit = await auditStripe(fakeStripe({ tax: { status: "pending" } }));
+    expect(audit.problem).toMatch(/Stripe Tax no está activo/);
+    expect(audit.problem).toMatch(/sin dirección de origen|no tiene dirección/);
+    expect(audit.tax).toEqual({ active: false, headOffice: false });
+  });
+
+  it("survives an account whose tax settings cannot be read", async () => {
+    const stripe = fakeStripe({});
+    (
+      stripe as unknown as { tax: { settings: { retrieve: () => unknown } } }
+    ).tax.settings.retrieve = async () => {
+      throw new Error("permission denied");
+    };
+    const audit = await auditStripe(stripe);
+    expect(audit.tax).toBeNull();
+    // A reading we could not take is not a problem we can name.
+    expect(audit.problem).toBeNull();
   });
 
   it("catches an account with no webhook that would activate a plan", async () => {

@@ -196,6 +196,22 @@ export default async function AdminPage() {
                 )}
               </li>
             ))}
+            {account.tax && (
+              <li className="flex items-center gap-2">
+                <span
+                  className={
+                    account.tax.active
+                      ? "bg-success size-1.5 shrink-0 rounded-full"
+                      : "bg-danger size-1.5 shrink-0 rounded-full"
+                  }
+                />
+                <span className="font-mono text-xs">stripe tax</span>
+                <span className="text-muted-foreground text-xs">
+                  {account.tax.active ? "activo" : "inactivo"}
+                  {account.tax.headOffice ? "" : " · sin dirección de origen"}
+                </span>
+              </li>
+            )}
             {account.webhooks.map((hook) => (
               <li key={hook.url} className="flex items-center gap-2">
                 <span

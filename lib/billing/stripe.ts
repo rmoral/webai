@@ -113,9 +113,19 @@ export interface WebhookAudit {
   covers: boolean;
 }
 
+/** Whether Stripe Tax can price a subscription in this mode. */
+export interface TaxAudit {
+  /** Stripe's own word for "ready to calculate". */
+  active: boolean;
+  /** Whether a head office address is set, which is what it is waiting on. */
+  headOffice: boolean;
+}
+
 export interface StripeAudit {
   prices: PriceAudit[];
   webhooks: WebhookAudit[];
+  /** Null when Stripe Tax could not be read at all. */
+  tax: TaxAudit | null;
   /** Null when the account can take a payment today. */
   problem: string | null;
 }
@@ -175,6 +185,17 @@ export async function auditStripe(
     };
   });
 
+  // Per mode, like the prices: a sandbox with an address configured says
+  // nothing about live, and every subscription here carries
+  // automatic_tax, so an inactive setting refuses all of them.
+  const tax = await stripe.tax.settings
+    .retrieve()
+    .then((settings) => ({
+      active: settings.status === "active",
+      headOffice: Boolean(settings.head_office?.address?.country),
+    }))
+    .catch(() => null);
+
   const { data: endpoints } = await stripe.webhookEndpoints.list({ limit: 20 });
   const webhooks: WebhookAudit[] = endpoints.map((endpoint) => ({
     url: endpoint.url,
@@ -191,9 +212,11 @@ export async function auditStripe(
   const problem =
     missing.length > 0
       ? `Faltan ${missing.length} de ${prices.length} precios en esta cuenta de Stripe: ${missing.map((p) => p.lookupKey).join(", ")}. Los precios se crean por modo, así que los del sandbox no existen en live. Lánzalos desde GitHub → Actions → «Sync Stripe products» con el secret STRIPE_SECRET_KEY en modo live.`
-      : usable.length === 0
-        ? "Esta cuenta no tiene ningún webhook activo que cubra invoice.paid, setup_intent.succeeded y los cambios de suscripción. Se cobrará y el plan del usuario nunca se activará. Crea el endpoint en Stripe → Developers → Webhooks, en el mismo modo que las claves, y copia su whsec_ a STRIPE_WEBHOOK_SECRET."
-        : null;
+      : tax && !tax.active
+        ? `Stripe Tax no está activo en esta cuenta${tax.headOffice ? "" : " y no tiene dirección de origen"}. Todas las suscripciones se crean con automatic_tax, así que Stripe las rechazará una por una. Lánzalo desde GitHub → Actions → «Set Stripe tax origin» con el secret STRIPE_SECRET_KEY en el mismo modo que las claves.`
+        : usable.length === 0
+          ? "Esta cuenta no tiene ningún webhook activo que cubra invoice.paid, setup_intent.succeeded y los cambios de suscripción. Se cobrará y el plan del usuario nunca se activará. Crea el endpoint en Stripe → Developers → Webhooks, en el mismo modo que las claves, y copia su whsec_ a STRIPE_WEBHOOK_SECRET."
+          : null;
 
-  return { prices, webhooks, problem };
+  return { prices, webhooks, tax, problem };
 }
