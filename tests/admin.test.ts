@@ -316,6 +316,14 @@ describe("stripeMode", () => {
     expect(mode("whsec_abc", "pk_live_abc").problem).toMatch(/formato/);
   });
 
+  it("checks both Sentry variables, not just the server one", () => {
+    // A deployment with SENTRY_DSN set looked instrumented while every
+    // browser error went nowhere, because the client reads its own.
+    const names = configHealth().map((c) => c.name);
+    expect(names).toContain("SENTRY_DSN");
+    expect(names).toContain("NEXT_PUBLIC_SENTRY_DSN");
+  });
+
   it("checks the publishable key, without which no card field renders", () => {
     // It was missing from the panel entirely, so the one variable whose
     // absence stops every payment was the one nobody was told about.

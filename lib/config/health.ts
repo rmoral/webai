@@ -131,6 +131,17 @@ export function configHealth(): ConfigCheck[] {
       critical: false,
     },
     {
+      // Sentry reads two different variables and the panel only named one,
+      // so a deployment with SENTRY_DSN set looked fully instrumented
+      // while every error in a browser -- a card field that fails to
+      // mount, a wall that throws -- went nowhere and said nothing.
+      name: "NEXT_PUBLIC_SENTRY_DSN",
+      value: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      breaks:
+        "Los errores del navegador no se registran: el pago puede romperse en el cliente sin dejar rastro.",
+      critical: false,
+    },
+    {
       name: "NEXT_PUBLIC_POSTHOG_KEY",
       value: process.env.NEXT_PUBLIC_POSTHOG_KEY,
       breaks: "No hay analítica de producto ni embudo de conversión.",
