@@ -8,6 +8,8 @@ import {
   TOPUP,
   TRIAL_REMINDER,
   formatUsd,
+  sharedYearlyDiscount,
+  yearlyDiscount,
 } from "@/lib/billing/plans";
 import { SITE_ORIGIN } from "@/lib/i18n/routing";
 import en from "@/messages/en.json";
@@ -299,5 +301,43 @@ describe("canonical origin", () => {
       expect(source, file).not.toMatch(/https:\/\/(www\.)?verbalyx\.ai/);
       expect(source, file).toContain("SITE_ORIGIN");
     }
+  });
+});
+
+describe("the yearly discount", () => {
+  it("never claims more than the prices give", () => {
+    // The toggle promised "dos meses gratis" while the prices gave away
+    // six: $89.88 against $14.99 a month is half of $179.88. A line that
+    // undersells the offer by two thirds is not a detail, it is the whole
+    // argument for the annual plan -- and one that oversold it would be a
+    // chargeback waiting to happen.
+    //
+    // Both figures are rounded on purpose: the yearly price is twelve
+    // times the monthly-equivalent ($7.49), not six times the monthly
+    // one, so "six months" is true to within a rounding and not to the
+    // cent. What must hold is that the rounding stays small, whatever the
+    // prices become.
+    for (const tier of ["pro", "unlimited"] as const) {
+      const { percent, freeMonths } = yearlyDiscount(tier);
+      const { monthly, yearly } = PRICES[tier];
+      const full = monthly.amount * 12;
+
+      const exactPercent = ((full - yearly.amount) / full) * 100;
+      expect(Math.abs(percent - exactPercent)).toBeLessThan(1);
+
+      const exactFreeMonths = 12 - yearly.amount / monthly.amount;
+      expect(Math.abs(freeMonths - exactFreeMonths)).toBeLessThan(0.25);
+    }
+  });
+
+  it("is only claimed on the toggle when both plans share it", () => {
+    // One line above two cards cannot state a number that is true of only
+    // one of them.
+    const shared = sharedYearlyDiscount();
+    const [pro, unlimited] = [
+      yearlyDiscount("pro"),
+      yearlyDiscount("unlimited"),
+    ];
+    expect(shared).toEqual(pro.percent === unlimited.percent ? pro : null);
   });
 });

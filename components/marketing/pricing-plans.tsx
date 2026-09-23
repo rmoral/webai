@@ -15,6 +15,7 @@ import {
   PRICES,
   TRIAL,
   formatUsd,
+  sharedYearlyDiscount,
   trialDaysFor,
   yearlySaving,
   type BillingInterval,
@@ -44,6 +45,11 @@ export function PricingPlans() {
   // has to offer -- behind a click.
   const [interval, setInterval] = useState<BillingInterval>("monthly");
   const posthog = usePostHog();
+  // undefined until the browser has answered. The free column's call to
+  // action depends on it, and showing "create a free account" to somebody
+  // who has one -- and then correcting it -- is worse than waiting a
+  // moment for the truth.
+  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
 
   // `pricing_view` is the middle of the funnel: everything upstream is
   // measured by how many people reach it, and everything downstream by how
@@ -65,6 +71,7 @@ export function PricingPlans() {
         .auth.getSession()
         .then(({ data }) => {
           if (!active) return;
+          setSignedIn(Boolean(data.session));
           track(posthog, "pricing_view", {
             cycle: interval,
             logged_in: Boolean(data.session),
@@ -72,6 +79,7 @@ export function PricingPlans() {
         })
         .catch(() => {});
     } catch {
+      setSignedIn(false);
       track(posthog, "pricing_view", { cycle: interval, logged_in: false });
     }
     return () => {
@@ -83,6 +91,9 @@ export function PricingPlans() {
   }, [posthog]);
 
   const yearly = interval === "yearly";
+  // Read from the prices, never typed into the copy: the line used to
+  // promise two months while the prices gave away six.
+  const discount = sharedYearlyDiscount();
   const n = (value: number) => format.number(value);
 
   return (
@@ -105,7 +116,12 @@ export function PricingPlans() {
         ))}
         {yearly && (
           <span className="text-muted-foreground text-sm">
-            {t("twoMonthsFree")}
+            {discount
+              ? t("yearlySave", {
+                  percent: discount.percent,
+                  months: discount.freeMonths,
+                })
+              : t("yearlySaveGeneric")}
           </span>
         )}
       </div>
@@ -121,9 +137,25 @@ export function PricingPlans() {
             t("freeTools"),
           ]}
           cta={
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/signup">{t("signup")}</Link>
-            </Button>
+            // Never propose something already done. With a session this
+            // column went on selling "create a free account" to somebody
+            // reading it from their own account.
+            signedIn ? (
+              <Button variant="outline" className="w-full" disabled>
+                {t("currentPlan")}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                asChild
+                // Holds the row while the session resolves, so the card
+                // does not change its mind in front of the reader.
+                aria-busy={signedIn === undefined}
+              >
+                <Link href="/signup">{t("signup")}</Link>
+              </Button>
+            )
           }
         />
 

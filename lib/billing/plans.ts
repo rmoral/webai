@@ -240,3 +240,42 @@ export function formatUsd(amount: number, locale: Locale = "es"): string {
 export function yearlySaving(tier: PaidTier): number {
   return PRICES[tier].monthly.amount * 12 - PRICES[tier].yearly.amount;
 }
+
+/**
+ * The yearly discount, as a percentage and as months not paid for.
+ *
+ * Both figures are derived rather than written down, because the written
+ * one was wrong and wrong in the expensive direction: the toggle promised
+ * "dos meses gratis" while the prices gave away six. A yearly plan at
+ * $89.88 against $14.99 a month is half of $179.88 -- 50 %, six months --
+ * and a line of copy that undersells the offer by two thirds is not a
+ * detail, it is the argument for buying the annual plan.
+ */
+export function yearlyDiscount(tier: PaidTier): {
+  percent: number;
+  freeMonths: number;
+} {
+  const { monthly, yearly } = PRICES[tier];
+  const full = monthly.amount * 12;
+  return {
+    percent: Math.round(((full - yearly.amount) / full) * 100),
+    // What the yearly price buys, in months of the monthly price.
+    freeMonths: Math.round(12 - yearly.amount / monthly.amount),
+  };
+}
+
+/**
+ * The discount the toggle can claim for the whole page: the one both paid
+ * tiers share, or null when they stop sharing it. A single line above two
+ * cards cannot state a number that is only true of one of them.
+ */
+export function sharedYearlyDiscount(): {
+  percent: number;
+  freeMonths: number;
+} | null {
+  const [pro, unlimited] = [yearlyDiscount("pro"), yearlyDiscount("unlimited")];
+  return pro.percent === unlimited.percent &&
+    pro.freeMonths === unlimited.freeMonths
+    ? pro
+    : null;
+}

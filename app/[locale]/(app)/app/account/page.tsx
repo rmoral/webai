@@ -14,6 +14,7 @@ import { requireSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
 import { Link } from "@/lib/i18n/navigation";
 import { getUserUsage } from "@/lib/usage/summary";
+import { QUOTA_TIMEZONE, peekWords } from "@/lib/usage/quotas";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");
@@ -30,6 +31,15 @@ export default async function AccountPage() {
     getUserUsage(user.id).catch(() => null),
   ]);
   const plan = subscriber?.plan ?? null;
+
+  // "Hoy" is the allowance, read from where the allowance lives -- not a
+  // sum of usage_daily, which counts words processed and so answered "600"
+  // under a limit of 500 while the header said something else again.
+  // usage_daily still answers the two historical figures, which is what it
+  // is for.
+  const allowance = subscriber
+    ? await peekWords(`user:${user.id}`, subscriber).catch(() => null)
+    : null;
   const isPaid = plan !== null && plan.id !== "free" && plan.id !== "anonymous";
 
   return (
@@ -99,7 +109,9 @@ export default async function AccountPage() {
               <div>
                 <dt className="text-muted-foreground">{t("account.today")}</dt>
                 <dd className="text-lg font-medium">
-                  {format.number(usage?.wordsToday ?? 0)}
+                  {allowance && allowance.limit !== null
+                    ? `${format.number(allowance.used)} / ${format.number(allowance.limit)}`
+                    : format.number(usage?.wordsToday ?? 0)}
                 </dd>
               </div>
               <div>
@@ -117,6 +129,13 @@ export default async function AccountPage() {
                 </dd>
               </div>
             </dl>
+            {allowance?.metered && allowance.limit !== null && (
+              // Nobody could have known when the day ends: it was UTC by
+              // accident, and nothing said so anywhere.
+              <p className="text-muted-foreground mt-4 text-xs leading-normal">
+                {t("account.resets", { timezone: QUOTA_TIMEZONE })}
+              </p>
+            )}
           </CardContent>
         </Card>
 

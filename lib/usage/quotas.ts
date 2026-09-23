@@ -51,6 +51,16 @@ export async function checkBurstLimit(
   return { allowed: success, retryAt: reset };
 }
 
+/** What is left, and what it is measured against. */
+export interface Allowance {
+  used: number;
+  /** `null` on an unmetered plan, where a bar would mean nothing. */
+  limit: number | null;
+  remaining: number | null;
+  /** Whether the allowance is a daily one. Monthly otherwise. */
+  metered: boolean;
+}
+
 export interface QuotaGrant {
   /**
    * Words actually reserved, which is exactly what the model is allowed to
@@ -76,6 +86,34 @@ export interface QuotaGrant {
   fromTopup?: number;
 }
 
+/**
+ * The clock the daily allowance runs on.
+ *
+ * It used to be UTC, by accident rather than by decision: every key was
+ * built from `toISOString()`. Nobody was told, so "500 words a day" meant
+ * a day that ended at 01:00 or 02:00 local time for the market this is
+ * sold to -- and the account page could not say when the count resets,
+ * because nothing in the code knew.
+ *
+ * One constant, read by the Redis key and by the row written to
+ * usage_daily, so the two halves of "how much have I used today" cannot
+ * answer differently. Changing it moves the boundary once and nothing
+ * else; the keys are per day and expire on their own.
+ */
+export const QUOTA_TIMEZONE = "Europe/Madrid";
+
+/** The calendar day, as the allowance counts it. */
+export function quotaDay(date: Date = new Date()): string {
+  // en-CA renders YYYY-MM-DD, which is what the keys and the date column
+  // already use.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: QUOTA_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 /** Keys the monthly quota to the billing period, so renewal resets it. */
 function monthlyKey(subject: string, periodStart: Date | null): string {
   const anchor = (periodStart ?? new Date()).toISOString().slice(0, 10);
@@ -83,7 +121,7 @@ function monthlyKey(subject: string, periodStart: Date | null): string {
 }
 
 function dailyKey(subject: string): string {
-  return `quota:words:day:${subject}:${new Date().toISOString().slice(0, 10)}`;
+  return `quota:words:day:${subject}:${quotaDay()}`;
 }
 
 /**
@@ -283,27 +321,40 @@ export async function addTopupWords(
 }
 
 /**
- * Read-only view of the allowance, for rendering the quota bar. Never
- * consumes. Unlike the consuming path this fails soft: a missing Redis must
- * degrade to "no bar", not to a blank page.
+ * The allowance as every surface reads it: the header bar, the editor, the
+ * wall and the account page.
+ *
+ * One read model, because there were three. The header counted from a
+ * server render that never refreshed, the wall counted from the last
+ * response, and the account page summed usage_daily in Postgres -- which
+ * is a different number entirely, since it counts words processed rather
+ * than allowance spent. The three disagreed in public: "0 / 500" in the
+ * header until a reload, "300 / 500 agotado" in the wall and "Hoy: 600"
+ * in the account, all at the same moment.
+ *
+ * Never consumes. Unlike the reserving path this fails soft: a missing
+ * Redis must degrade to "no bar", not to a blank page.
  */
 export async function peekWords(
   subject: string,
   subscriber: Subscriber,
-): Promise<{ used: number; limit: number | null }> {
+): Promise<Allowance> {
   const { limits } = subscriber.plan;
   const limit = limits.wordsPerDay ?? limits.wordsPerMonth;
-  if (limit === null) return { used: 0, limit: null };
+  const metered = limits.wordsPerDay !== null;
+  if (limit === null) {
+    return { used: 0, limit: null, remaining: null, metered };
+  }
   try {
     const client = getRedis();
-    if (!client) return { used: 0, limit };
-    const key =
-      limits.wordsPerDay !== null
-        ? dailyKey(subject)
-        : monthlyKey(subject, subscriber.periodStart);
-    return { used: Number((await client.get<number>(key)) ?? 0), limit };
+    if (!client) return { used: 0, limit, remaining: limit, metered };
+    const key = metered
+      ? dailyKey(subject)
+      : monthlyKey(subject, subscriber.periodStart);
+    const used = Math.min(limit, Number((await client.get<number>(key)) ?? 0));
+    return { used, limit, remaining: Math.max(0, limit - used), metered };
   } catch (error) {
     Sentry.captureException(error);
-    return { used: 0, limit };
+    return { used: 0, limit, remaining: limit, metered };
   }
 }

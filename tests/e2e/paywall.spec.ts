@@ -345,3 +345,85 @@ test("answers the locked breakdown in place, with no charge behind it", async ({
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+
+// C6 — one allowance, one number.
+//
+// There were three counters and they disagreed in public: the header read
+// a server render that never refreshed, the wall read the last response,
+// and the account page summed a different table. What this holds is that
+// the editor's figure comes from the response and moves without a reload.
+
+test("the words left come from the response, and move without a reload", async ({
+  page,
+}) => {
+  await page.route("**/api/usage", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        used: 0,
+        limit: 300,
+        remaining: 300,
+        metered: true,
+        timezone: "Europe/Madrid",
+      }),
+    }),
+  );
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "4",
+        "x-words-limit": "300",
+        "x-words-used": "4",
+        "x-words-remaining": "296",
+      },
+      body: "Un resultado corriente.",
+    }),
+  );
+
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", "cuatro palabras de prueba");
+
+  // Known before the button is pressed, not after the words are spent.
+  await expect(page.getByTestId("word-count")).toContainText("te quedan 300");
+
+  await page
+    .getByRole("button", { name: "Humanizador" })
+    .click({ timeout: 20_000 });
+  await expect(page.getByText("Un resultado corriente.")).toBeVisible();
+
+  // The response said 296, and the page says 296 -- no navigation between.
+  await expect(page.getByTestId("word-count")).toContainText("te quedan 296");
+});
+
+test("the locked tool button keeps answering after the wall is closed", async ({
+  page,
+}) => {
+  // C11. The modal shows once per tool per session; after that the button
+  // whose only job was to open it did nothing at all -- a dead control on
+  // the one screen where the reader is asking to buy.
+  await page.goto("/parafrasear-texto");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+
+  const modal = page.getByRole("dialog");
+  await expect(modal).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(modal).toHaveCount(0);
+
+  // Pressed again, it answers with the compact form instead of nothing.
+  await page.getByRole("button", { name: "Requiere un plan de pago" }).click();
+  const popover = page.getByRole("dialog");
+  await expect(popover).toBeVisible();
+  await expect(
+    popover.getByText("El parafraseador está en los planes de pago"),
+  ).toBeVisible();
+
+  // And it is still an offer, with a way out of it.
+  await expect(
+    popover.getByRole("button", { name: /Probar Ilimitado 3 días gratis/ }),
+  ).toBeVisible();
+  await popover.getByRole("button", { name: "Cerrar" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});

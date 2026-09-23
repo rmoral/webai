@@ -308,3 +308,46 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
     "/pago?plan=unlimited&cycle=monthly",
   );
 });
+
+test("sign-up keeps the chosen plan in view, and its promises true", async ({
+  page,
+}) => {
+  // C10. The title promised "historial de sesión" while the history is a
+  // paid feature: the first thing the product said to a new account was
+  // something the product then refused to do.
+  await page.goto(
+    "/registro?next=%2Fpago%3Fplan%3Dunlimited%26cycle%3Dmonthly",
+  );
+
+  await expect(page.getByRole("heading", { level: 1 })).not.toContainText(
+    "historial",
+  );
+
+  // The plan survives the trip and says so, in view for the whole alta.
+  const aside = page.getByRole("complementary");
+  await expect(aside.getByText("Plan elegido")).toBeVisible();
+  await expect(aside.getByText("Ilimitado")).toBeVisible();
+  await expect(aside.getByText(/29,99\s*US\$ al mes/)).toBeVisible();
+  await expect(aside.getByText("3 días gratis")).toBeVisible();
+  // Changing your mind must not mean starting over.
+  await expect(
+    aside.getByRole("link", { name: "Cambiar de plan" }),
+  ).toBeVisible();
+
+  // The documents are linked, not merely named: an acceptance of something
+  // the reader cannot open is not an acceptance.
+  const terms = page.getByRole("link", { name: "términos del servicio" });
+  await expect(terms).toHaveAttribute("href", /\/legal\/terminos/);
+  await expect(terms).toHaveAttribute("target", "_blank");
+  await expect(
+    page.getByRole("link", { name: "política de privacidad" }),
+  ).toHaveAttribute("href", /\/legal\/privacidad/);
+});
+
+test("no plan in the query, no aside", async ({ page }) => {
+  // The panel answers a decision already made. Without one it would be a
+  // column of nothing beside the form.
+  await page.goto("/registro");
+  await expect(page.getByRole("complementary")).toHaveCount(0);
+  await expect(page.getByText("Plan elegido")).toHaveCount(0);
+});
