@@ -570,3 +570,50 @@ test("nothing is dimmed when nothing will be processed", async ({ page }) => {
     "no te quedan palabras hoy",
   );
 });
+
+test("the paid tools say so in the tab strip, before the wall does", async ({
+  page,
+}) => {
+  // C11. Wall C opened on the first attempt to use one of these, with
+  // nothing beforehand to suggest it was coming: the reader picked a tool,
+  // wrote, pressed, and only then found out it was not theirs.
+  await page.goto("/humanizador-de-texto-ia");
+  const tabs = page.getByRole("tablist");
+
+  const paraphrase = tabs.getByRole("tab", { name: /Parafraseador/ });
+  await expect(paraphrase).toContainText("Pro");
+  await expect(tabs.getByRole("tab", { name: /Corrector/ })).toContainText(
+    "Pro",
+  );
+
+  // And nothing on the two that are free: a mark on every tab is a mark on
+  // none of them.
+  await expect(
+    tabs.getByRole("tab", { name: /Humanizador/ }),
+  ).not.toContainText("Pro");
+  await expect(tabs.getByRole("tab", { name: /Detector/ })).not.toContainText(
+    "Pro",
+  );
+
+  // Still a link. The wall is a better argument with the tool in front of
+  // the reader than with a dead tab.
+  await expect(paraphrase).toHaveAttribute("href", /parafrasear/);
+});
+
+test("a locked tool never spends a request to be told no", async ({ page }) => {
+  // C11's other half: no button is left live if it leads to a 403 we can
+  // already predict. The run button on a tool outside the plan opens the
+  // wall instead of asking the server a question whose answer we know.
+  const asked: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/ai/")) asked.push(request.url());
+  });
+
+  await page.goto("/parafrasear-texto");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Requiere un plan de pago" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  expect(asked).toEqual([]);
+});
