@@ -165,10 +165,16 @@ export const CURRENCY = "USD";
  * a client-side refusal, so nothing reaches our logs and the customer
  * just sees the payment not go through.
  *
- * Adding a method means adding it here and enabling it in the Stripe
- * dashboard; the Element will not show one the subscription cannot take.
+ * These are API payment method types, and a type named here that is not
+ * activated in the Stripe account makes the subscription call fail: the
+ * dashboard comes first, then this list.
+ *
+ * Apple Pay and Google Pay are deliberately absent. They are not types of
+ * their own -- they are wallets that hand over a card, so they ride on
+ * `card` and are turned on by verifying the domain in Stripe, not here.
+ * Naming one here is rejected by the API.
  */
-export const PAYMENT_METHOD_TYPES = ["card"] as const;
+export const PAYMENT_METHOD_TYPES = ["card", "link", "paypal"] as const;
 
 /** The trial runs on Ilimitado so the user sees the ceiling of the product. */
 export const TRIAL = {
