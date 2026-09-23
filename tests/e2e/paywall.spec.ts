@@ -196,6 +196,37 @@ test("closing it keeps the result, and keeps offering the way out", async ({
   ).toBeVisible();
 });
 
+test("the exhausted banner offers an account, not only a price", async ({
+  page,
+}) => {
+  // The second attempt used to end in a red banner whose only link was to
+  // pricing -- offered to a reader whose next step costs nothing. Both
+  // inline notices now carry the same way out, chosen by who is reading.
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: "application/json",
+      headers: { "x-words-processed": "0" },
+      body: JSON.stringify({
+        error: "quota_exceeded",
+        message: "Has agotado tus palabras de hoy.",
+        used: 300,
+        limit: 300,
+      }),
+    }),
+  );
+
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await page.getByRole("button", { name: "Humanizador" }).click();
+
+  // Nothing was generated, so there is no wall to show -- only the notice.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Has agotado tu límite.")).toBeVisible();
+  const account = page.getByRole("link", { name: /Crear cuenta gratis/ });
+  await expect(account.first()).toBeVisible();
+});
+
 test("closes on Escape, on a click outside, and stays closed", async ({
   page,
 }) => {

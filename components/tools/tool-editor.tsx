@@ -248,6 +248,30 @@ export function ToolEditor({
     });
   }
 
+  /**
+   * The one exit, wherever the limit is met.
+   *
+   * Both inline notices offer it and both offer the same one: an account
+   * to somebody who has none -- which is free, and doubles their words --
+   * and the plans to somebody who already signed up. The second attempt
+   * used to end in a red banner whose only link was to pricing, offered
+   * to a reader whose next step cost nothing.
+   */
+  const wayOut =
+    plan === "anonymous" ? (
+      <Button size="sm" asChild>
+        <Link href={{ pathname: "/signup", query: { next: here } }}>
+          {wall("createAccount", {
+            words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+          })}
+        </Link>
+      </Button>
+    ) : (
+      <Button size="sm" asChild>
+        <Link href="/pricing">{t("seePlans")}</Link>
+      </Button>
+    );
+
   async function run() {
     setStatus("loading");
     setError(null);
@@ -555,15 +579,7 @@ export function ToolEditor({
       )}
 
       {upsell && (
-        <UpsellBanner
-          tone="quota"
-          title={t("quotaTitle")}
-          action={
-            <Button size="sm" asChild>
-              <Link href="/pricing">{t("seePlans")}</Link>
-            </Button>
-          }
-        >
+        <UpsellBanner tone="quota" title={t("quotaTitle")} action={wayOut}>
           {t("quotaBody", { days: TRIAL.days })}
         </UpsellBanner>
       )}
@@ -572,24 +588,7 @@ export function ToolEditor({
           the reader pressed Escape -- the only way out there was -- and
           the words they had just waited for went with the modal. */}
       {quotaNotice && (
-        <UpsellBanner
-          tone="quota"
-          action={
-            plan === "anonymous" ? (
-              <Button size="sm" asChild>
-                <Link href={{ pathname: "/signup", query: { next: here } }}>
-                  {wall("createAccount", {
-                    words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-                  })}
-                </Link>
-              </Button>
-            ) : (
-              <Button size="sm" asChild>
-                <Link href="/pricing">{t("seePlans")}</Link>
-              </Button>
-            )
-          }
-        >
+        <UpsellBanner tone="quota" action={wayOut}>
           {wall("quotaInline", {
             words: format.number(quotaNotice.withheldWords),
           })}
