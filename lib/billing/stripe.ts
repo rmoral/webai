@@ -95,3 +95,105 @@ export function describeCheckoutRejection(error: unknown): CheckoutRejection {
 
   return { code: "checkout_failed", fix: null };
 }
+
+/** One lookup key, and whether the connected account can sell it. */
+export interface PriceAudit {
+  lookupKey: string;
+  found: boolean;
+  /** Whether the price lives in the live account. Null when not found. */
+  live: boolean | null;
+}
+
+/** One endpoint Stripe will call, as the account has it configured. */
+export interface WebhookAudit {
+  url: string;
+  enabled: boolean;
+  live: boolean;
+  /** Whether it subscribes to the events the app is built around. */
+  covers: boolean;
+}
+
+export interface StripeAudit {
+  prices: PriceAudit[];
+  webhooks: WebhookAudit[];
+  /** Null when the account can take a payment today. */
+  problem: string | null;
+}
+
+/**
+ * The events the webhook has to deliver for a sale to become a plan.
+ *
+ * Missing any of these is the failure that costs the most and shows the
+ * least: the customer pays, Stripe is happy, and the account stays free.
+ */
+const REQUIRED_EVENTS = [
+  "invoice.paid",
+  "setup_intent.succeeded",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+] as const;
+
+/**
+ * What the connected Stripe account is actually able to do, as opposed to
+ * which variables are set.
+ *
+ * Switching to live is not one change, it is four, and three of them are
+ * silent. The keys are the visible one. The prices are per mode, so an
+ * account with live keys and no live prices answers every checkout with
+ * `price_not_configured` -- the code is looking for a lookup_key that
+ * exists only in the sandbox. The tax origin is per mode too. And the
+ * webhook is per endpoint, so a live account with the sandbox's endpoint
+ * takes the money and never tells us, which leaves a paying customer on
+ * the free plan with nothing to find them by.
+ *
+ * None of that is visible from the browser, and all of it is one API call
+ * away. Read-only: it creates nothing and changes nothing.
+ */
+export async function auditStripe(
+  stripe: Stripe = getStripe(),
+): Promise<StripeAudit> {
+  const keys = [
+    lookupKeyFor("pro", "monthly"),
+    lookupKeyFor("pro", "yearly"),
+    lookupKeyFor("unlimited", "monthly"),
+    lookupKeyFor("unlimited", "yearly"),
+    lookupKeyFor("topup"),
+  ];
+
+  const { data: found } = await stripe.prices.list({
+    lookup_keys: keys,
+    active: true,
+    limit: keys.length,
+  });
+
+  const prices: PriceAudit[] = keys.map((lookupKey) => {
+    const price = found.find((p) => p.lookup_key === lookupKey);
+    return {
+      lookupKey,
+      found: Boolean(price),
+      live: price ? price.livemode : null,
+    };
+  });
+
+  const { data: endpoints } = await stripe.webhookEndpoints.list({ limit: 20 });
+  const webhooks: WebhookAudit[] = endpoints.map((endpoint) => ({
+    url: endpoint.url,
+    enabled: endpoint.status === "enabled",
+    live: endpoint.livemode,
+    covers:
+      endpoint.enabled_events.includes("*") ||
+      REQUIRED_EVENTS.every((event) => endpoint.enabled_events.includes(event)),
+  }));
+
+  const missing = prices.filter((price) => !price.found);
+  const usable = webhooks.filter((hook) => hook.enabled && hook.covers);
+
+  const problem =
+    missing.length > 0
+      ? `Faltan ${missing.length} de ${prices.length} precios en esta cuenta de Stripe: ${missing.map((p) => p.lookupKey).join(", ")}. Los precios se crean por modo, así que los del sandbox no existen en live. Lánzalos desde GitHub → Actions → «Sync Stripe products» con el secret STRIPE_SECRET_KEY en modo live.`
+      : usable.length === 0
+        ? "Esta cuenta no tiene ningún webhook activo que cubra invoice.paid, setup_intent.succeeded y los cambios de suscripción. Se cobrará y el plan del usuario nunca se activará. Crea el endpoint en Stripe → Developers → Webhooks, en el mismo modo que las claves, y copia su whsec_ a STRIPE_WEBHOOK_SECRET."
+        : null;
+
+  return { prices, webhooks, problem };
+}

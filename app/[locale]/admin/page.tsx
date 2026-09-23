@@ -12,6 +12,7 @@ import {
   describeDatabaseFailure,
   stripeMode,
 } from "@/lib/config/health";
+import { auditStripe, type StripeAudit } from "@/lib/billing/stripe";
 import { getAdminTotals, listUsers } from "@/lib/usage/summary";
 
 export const metadata: Metadata = {
@@ -56,6 +57,10 @@ export default async function AdminPage() {
   const config = configHealth();
   const missing = config.filter((c) => !c.present);
   const stripe = stripeMode();
+  // Read-only, and it must never take the panel down: the panel exists to
+  // diagnose a broken deployment, and Stripe being unreachable is one of
+  // the things it has to be able to report.
+  const account: StripeAudit | null = await auditStripe().catch(() => null);
 
   const stats = totals
     ? [
@@ -149,6 +154,67 @@ export default async function AdminPage() {
           </p>
           <p className="mt-2">{stripe.problem}</p>
         </div>
+      )}
+
+      {/* What the account can actually do, as opposed to which variables
+          are set. Going live is four changes and three of them are silent:
+          prices and the tax origin are per mode, and the webhook is per
+          endpoint. */}
+      {account?.problem && (
+        <div className="border-danger-line bg-danger-soft text-danger-ink mt-8 rounded-xl border px-6 py-4 text-sm">
+          <p>
+            <b className="font-semibold">
+              La cuenta de Stripe no puede cobrar.
+            </b>
+          </p>
+          <p className="mt-2">{account.problem}</p>
+        </div>
+      )}
+
+      {account && (
+        <details className="mt-4">
+          <summary className="text-muted-foreground cursor-pointer text-xs">
+            Ver la cuenta de Stripe:{" "}
+            {account.prices.filter((p) => p.found).length}/
+            {account.prices.length} precios · {account.webhooks.length} webhooks
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {account.prices.map((price) => (
+              <li key={price.lookupKey} className="flex items-center gap-2">
+                <span
+                  className={
+                    price.found
+                      ? "bg-success size-1.5 shrink-0 rounded-full"
+                      : "bg-danger size-1.5 shrink-0 rounded-full"
+                  }
+                />
+                <span className="font-mono text-xs">{price.lookupKey}</span>
+                {price.found && (
+                  <span className="text-muted-foreground text-xs">
+                    {price.live ? "live" : "test"}
+                  </span>
+                )}
+              </li>
+            ))}
+            {account.webhooks.map((hook) => (
+              <li key={hook.url} className="flex items-center gap-2">
+                <span
+                  className={
+                    hook.enabled && hook.covers
+                      ? "bg-success size-1.5 shrink-0 rounded-full"
+                      : "bg-warning-fill size-1.5 shrink-0 rounded-full"
+                  }
+                />
+                <span className="font-mono text-xs break-all">{hook.url}</span>
+                <span className="text-muted-foreground text-xs">
+                  {hook.live ? "live" : "test"}
+                  {hook.enabled ? "" : " · desactivado"}
+                  {hook.covers ? "" : " · le faltan eventos"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       {!totals && (
