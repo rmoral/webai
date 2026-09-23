@@ -16,21 +16,30 @@ import {
   type WithheldResult,
 } from "@/components/billing/paywall";
 import { UpsellBanner } from "@/components/billing/upsell-banner";
-import { EditorInput, OverflowNotice } from "@/components/tools/overflow";
+import {
+  EditorInput,
+  LimitNotice,
+  RunCost,
+  limitKind,
+  type LimitKind,
+} from "@/components/tools/overflow";
 import { DetectorResultView } from "@/components/tools/detector-result";
 import {
   DiffMarks,
   HighlightLegend,
   diffParts,
 } from "@/components/tools/highlight";
+import { CheckoutButton } from "@/components/marketing/checkout-button";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { track } from "@/lib/analytics/events";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
-import { PLANS, TRIAL, type PlanId } from "@/lib/billing/plans";
+import { PLANS, type PlanId } from "@/lib/billing/plans";
 import { Link, usePathname } from "@/lib/i18n/navigation";
+import { cn } from "@/lib/utils";
 import { countWords } from "@/lib/security/validation";
+import { minutesUntilQuotaReset } from "@/lib/usage/day";
 
 declare global {
   interface Window {
@@ -57,14 +66,26 @@ const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 export function ToolEditor({
   tool,
   plan = "anonymous",
+  initialRemaining = null,
+  periodEnd = null,
 }: {
   tool: ToolId;
   plan?: PlanId;
+  /**
+   * Words left when the page was rendered. `/app` reads it from the same
+   * `peekWords` the header does; the landings are static and have none,
+   * so they ask /api/usage once the reader starts writing.
+   */
+  initialRemaining?: number | null;
+  /** When a paid plan's period renews. ISO, formatted here. */
+  periodEnd?: string | null;
 }) {
   const t = useTranslations("editor");
   const names = useTranslations("tools");
   const modeLabel = useTranslations("modes");
   const wall = useTranslations("paywall");
+  const time = useTranslations("app");
+  const pricing = useTranslations("pricing");
   const format = useFormatter();
   // Where to come back to after creating an account: this page, with the
   // text still in the box.
@@ -90,7 +111,6 @@ export function ToolEditor({
   } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [upsell, setUpsell] = useState(false);
   // Wall B. Set when the allowance covered only part of what was asked
   // for: the reader has a real result and some words that were not done.
   const [withheld, setWithheld] = useState<WithheldResult | null>(null);
@@ -112,7 +132,7 @@ export function ToolEditor({
   // `report` is taken by the detector's own state, so the updater keeps
   // its full name here.
   const { allowance, report: reportAllowance } = useAllowance();
-  const [remaining, setRemaining] = useState<number | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(initialRemaining);
   // Whether the failed request can simply be tried again, which is true of
   // an anti-bot refusal and of nothing else.
   const [retryable, setRetryable] = useState(false);
@@ -185,7 +205,6 @@ export function ToolEditor({
     setError(null);
     setWithheld(null);
     setQuotaNotice(null);
-    setUpsell(false);
     setStatus("idle");
   }, [tool]);
 
@@ -222,12 +241,89 @@ export function ToolEditor({
   const left = remaining ?? allowance?.remaining ?? null;
 
   const words = countWords(input);
-  // Wall A. The ceiling is the plan's, never a number written here.
+  // The ceiling is the plan's, never a number written here.
   const ceiling = PLANS[plan].limits.maxWordsPerRequest;
-  const overflowed = words > ceiling;
   // The detector measures the text instead of rewriting it, so it answers
   // with JSON rather than a stream and renders its own result view.
   const measures = tool === "detect";
+
+  // What this run would actually process: the smaller of what was pasted,
+  // what the plan takes in one request, and what is left of the
+  // allowance. Everything the reader is told comes from this one figure,
+  // which is why the strip could not say "the first 300" with nothing
+  // left -- it no longer computes 300 in that case.
+  const processable = Math.min(words, ceiling, left ?? Infinity);
+  const overflowed = words > ceiling;
+  // Which limit is binding, if any. One strip, never two.
+  const kind = limitKind({
+    words,
+    ceiling,
+    remaining: left,
+    detector: measures,
+  });
+  // A daily allowance for the free tiers, a monthly one for the paid.
+  const monthly = PLANS[plan].limits.wordsPerDay === null;
+  // Nothing will run: the strip says why and the button says so too.
+  const blocked =
+    kind === "exhausted" || kind === "detector" || kind === "detectorTooLong";
+  // Dimming marks the cut, so it only exists when something is cut and
+  // something else is kept.
+  const dimmed = !blocked && processable > 0 && words > processable;
+
+  // How long until the allowance refills, in the timezone the quota
+  // actually rolls over in (lib/usage/day.ts). Computed at render rather
+  // than on a timer: CLAUDE.md rules out polling, and a number that is a
+  // minute stale is a number nobody can tell is stale. Only computed when
+  // a strip is on screen, which is almost never.
+  const resetMinutes = kind ? minutesUntilQuotaReset() : 0;
+  const resetsIn =
+    resetMinutes === 0
+      ? ""
+      : resetMinutes >= 60
+        ? time("time.hours", { n: Math.ceil(resetMinutes / 60) })
+        : time("time.minutes", { n: resetMinutes });
+  const renewsOn = periodEnd
+    ? format.dateTime(new Date(periodEnd), {
+        day: "numeric",
+        month: "long",
+      })
+    : undefined;
+
+  // The strip counts itself once per kind and session. It is derived from
+  // the word count, so it re-renders on every keystroke; an event per
+  // keystroke would drown the funnel it is meant to measure.
+  const seenKinds = useRef(new Set<LimitKind>());
+  useEffect(() => {
+    if (!kind || seenKinds.current.has(kind)) return;
+    seenKinds.current.add(kind);
+    track(posthog, "wall_shown", {
+      variant: "inline",
+      reason: kind === "overflow" ? "overflow" : "quota",
+      plan,
+      tool,
+    });
+  }, [kind, plan, tool, posthog]);
+
+  // The per-request ceiling is the one limit a free account does not
+  // move: anonymous and free both stop at the same number of words per
+  // run. Offering "create a free account" there would be offering
+  // something that does not fix what the reader just ran into.
+  const seePlans = (
+    <Button size="sm" asChild>
+      <Link href="/pricing">{t("seePlans")}</Link>
+    </Button>
+  );
+
+  // Pro with the month spent is the one strip that does not lead to the
+  // pricing page: the plan is already paid for, what is missing is words.
+  const topUp = (
+    <CheckoutButton
+      plan="topup"
+      interval="monthly"
+      variant="outline"
+      label={pricing("topupCta")}
+    />
+  );
   // Whether the plan may use this tool at all. Checked here so a visitor
   // sees the paywall before writing, not as a 403 after pressing the
   // button. The server enforces it either way.
@@ -330,7 +426,6 @@ export function ToolEditor({
     setReport(null);
     setWithheld(null);
     setQuotaNotice(null);
-    setUpsell(false);
     // Frozen so the diff compares against what was actually sent, even if
     // the user keeps typing while the answer streams in.
     const sent = input;
@@ -387,13 +482,6 @@ export function ToolEditor({
               metered: allowance?.metered ?? true,
             });
           }
-          track(posthog, "wall_shown", {
-            variant: "inline",
-            reason: "quota",
-            plan,
-            tool,
-          });
-          setUpsell(true);
         }
         setError(data?.message ?? t("genericError"));
         setStatus("idle");
@@ -539,8 +627,8 @@ export function ToolEditor({
               onReach={included ? undefined : () => setWantedTool(true)}
               placeholder={t("placeholder")}
               label={t("inputLabel")}
-              ceiling={ceiling}
-              overflowed={overflowed}
+              processable={processable}
+              dimmed={dimmed}
               className="min-h-44 md:min-h-64"
             />
             <p
@@ -550,8 +638,15 @@ export function ToolEditor({
               data-testid="word-count"
               className="text-muted-foreground border-t px-5 py-2 text-xs"
             >
-              {t("words", { words })}
-              {left !== null && t("remaining", { words: left })}
+              <span
+                className={cn(
+                  (words > processable || blocked) && "text-danger-ink",
+                )}
+              >
+                {t("words", { words })}
+              </span>
+              {dimmed &&
+                wall("maxThisRequest", { words: format.number(processable) })}
             </p>
           </div>
 
@@ -590,7 +685,25 @@ export function ToolEditor({
           </div>
         </div>
 
-        {overflowed && <OverflowNotice ceiling={ceiling} submitted={words} />}
+        {kind && (
+          <LimitNotice
+            kind={kind}
+            plan={plan}
+            words={words}
+            ceiling={ceiling}
+            remaining={left}
+            resetsIn={resetsIn}
+            renewsOn={renewsOn}
+            monthly={monthly}
+            action={
+              kind === "overflow"
+                ? seePlans
+                : kind === "exhausted" && monthly
+                  ? topUp
+                  : wayOut
+            }
+          />
+        )}
 
         <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
           <Button
@@ -607,18 +720,33 @@ export function ToolEditor({
                   }
             }
             disabled={
-              included && (status === "loading" || words === 0 || verifying)
+              included &&
+              (status === "loading" || words === 0 || verifying || blocked)
             }
             size="lg"
+            // The label legitimately changes -- the tool, "Verificando…",
+            // "Sin palabras hoy" -- so the tests need something that does
+            // not.
+            data-testid="run"
           >
             {!included
               ? t("paywallCta")
               : status === "loading"
                 ? t("processing")
-                : verifying
-                  ? t("verifying")
-                  : names(`${tool}.name`)}
+                : kind === "exhausted"
+                  ? wall(monthly ? "noWordsMonth" : "noWordsDay")
+                  : verifying
+                    ? t("verifying")
+                    : names(`${tool}.name`)}
           </Button>
+          {/* What the next run costs, before the click rather than after. */}
+          <RunCost
+            words={words}
+            ceiling={ceiling}
+            remaining={left}
+            monthly={monthly}
+            detector={measures}
+          />
           {status === "done" && !measures && (
             <Button
               variant="outline"
@@ -654,12 +782,6 @@ export function ToolEditor({
             </Button>
           )}
         </p>
-      )}
-
-      {upsell && (
-        <UpsellBanner tone="quota" title={t("quotaTitle")} action={wayOut}>
-          {t("quotaBody", { days: TRIAL.days })}
-        </UpsellBanner>
       )}
 
       {/* Closing wall B keeps the result. It used to take it with it:

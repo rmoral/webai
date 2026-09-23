@@ -163,14 +163,31 @@ async function handle(
   const plan = subscriber.plan;
 
   const submitted = countWords(text);
+  const ceiling = plan.limits.maxWordsPerRequest;
   const entitlement = checkEntitlement(plan, tool, submitted);
 
-  // An over-long paste is no longer refused. It is the commonest way a
-  // visitor meets the ceiling, and a 413 sends them away holding nothing;
-  // wall A processes the first `maxWordsPerRequest` words and says so, in
-  // the editor, before the button is pressed. CLAUDE.md asks for input
-  // outside the limit to be truncated before the API call -- this is that
-  // truncation, and the cut is the only thing the model ever sees.
+  // An over-long paste is no longer refused, for a rewrite. It is the
+  // commonest way a visitor meets the ceiling, and a 413 sends them away
+  // holding nothing; wall A processes the first `maxWordsPerRequest` words
+  // and says so, in the editor, before the button is pressed. CLAUDE.md
+  // asks for input outside the limit to be truncated before the API call
+  // -- this is that truncation, and the cut is the only thing the model
+  // ever sees.
+  //
+  // The detector is the exception, and it is refused. It measures a text
+  // rather than rewriting one, so scoring the first 300 words of a
+  // 900-word paste answers a question nobody asked: the reader is told
+  // something about their text that was never read. Cutting silently is
+  // what this used to do. The editor disables the button and says so
+  // first; this is the same rule, enforced.
+  if (tool === "detect" && entitlement.reason === "request_too_long") {
+    return error(
+      413,
+      "request_too_long",
+      t("request_too_long", { words: ceiling }),
+    );
+  }
+
   if (!entitlement.allowed && entitlement.reason !== "request_too_long") {
     const messages: Record<string, string> = {
       unknown_tool: t("unknown_tool"),
@@ -183,7 +200,6 @@ async function handle(
     );
   }
 
-  const ceiling = plan.limits.maxWordsPerRequest;
   // Wall A: an over-long paste is not refused, it is cut. This is the cut
   // CLAUDE.md asks for, and the only thing the model can ever see.
   const wanted = Math.min(submitted, ceiling);

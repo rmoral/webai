@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import type { ToolId } from "@/lib/ai/tools";
 import { getDb } from "@/lib/db/client";
 import { usageDaily } from "@/lib/db/schema";
-import { quotaDay } from "@/lib/usage/quotas";
+import { quotaDay } from "@/lib/usage/day";
 
 // Fire-and-forget accounting per CLAUDE.md: every AI request lands in
 // usage_daily. Must never break a stream, hence the broad catch.

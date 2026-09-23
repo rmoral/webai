@@ -120,7 +120,7 @@ test("the home page offers the tool, and the upsell waits until it is earned", a
   await box.fill(
     Array.from({ length: 400 }, (_, i) => `palabra${i}`).join(" "),
   );
-  await expect(page.getByText(/Procesamos las primeras/)).toBeVisible();
+  await expect(page.getByText(/Procesaremos las primeras/)).toBeVisible();
   await page.getByRole("link", { name: "Ver planes" }).first().click();
   await page.waitForURL(/\/precios/);
   await expect(page.getByRole("heading", { name: "Precios" })).toBeVisible();

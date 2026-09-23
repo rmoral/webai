@@ -6,6 +6,7 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import type { Subscriber } from "@/lib/billing/entitlements";
 import { getDb } from "@/lib/db/client";
 import { subscriptions } from "@/lib/db/schema";
+import { quotaDay } from "@/lib/usage/day";
 
 // Quota and anti-abuse layer. Subjects are `user:<id>` or `ip:<hashIp(ip)>`.
 // Fails closed in production if Redis is not configured; in dev without
@@ -84,34 +85,6 @@ export interface QuotaGrant {
   limit: number | null;
   /** Words taken from the top-up balance, if any. */
   fromTopup?: number;
-}
-
-/**
- * The clock the daily allowance runs on.
- *
- * It used to be UTC, by accident rather than by decision: every key was
- * built from `toISOString()`. Nobody was told, so "500 words a day" meant
- * a day that ended at 01:00 or 02:00 local time for the market this is
- * sold to -- and the account page could not say when the count resets,
- * because nothing in the code knew.
- *
- * One constant, read by the Redis key and by the row written to
- * usage_daily, so the two halves of "how much have I used today" cannot
- * answer differently. Changing it moves the boundary once and nothing
- * else; the keys are per day and expire on their own.
- */
-export const QUOTA_TIMEZONE = "Europe/Madrid";
-
-/** The calendar day, as the allowance counts it. */
-export function quotaDay(date: Date = new Date()): string {
-  // en-CA renders YYYY-MM-DD, which is what the keys and the date column
-  // already use.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: QUOTA_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
 }
 
 /** Keys the monthly quota to the billing period, so renewal resets it. */
