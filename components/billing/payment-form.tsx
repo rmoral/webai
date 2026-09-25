@@ -246,6 +246,10 @@ function PaymentForm({
       plan: target.tier,
       cycle: target.interval,
       trial: trialDays !== null,
+      // What was taken today, which on a trial is nothing. Weighting a
+      // trial start above zero is a decision for the Ads account, not a
+      // number to invent here.
+      value: data.amountTodayCents / 100,
     });
     onPaid(data.amountTodayCents, data.nextChargeAt);
   }

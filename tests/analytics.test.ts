@@ -138,3 +138,95 @@ describe("the funnel events", () => {
     ]);
   });
 });
+
+describe("what reaches Google", () => {
+  /** Stands in for the tag, which only exists in a browser. */
+  function withGtag(run: () => void): [string, Record<string, unknown>][] {
+    const seen: [string, Record<string, unknown>][] = [];
+    const gtag = (kind: string, name: string, props: Record<string, unknown>) =>
+      kind === "event" && seen.push([name, props]);
+    Object.defineProperty(globalThis, "window", {
+      value: { gtag },
+      configurable: true,
+      writable: true,
+    });
+    try {
+      run();
+    } finally {
+      Reflect.deleteProperty(globalThis, "window");
+    }
+    return seen;
+  }
+
+  it("sends the events advertising is optimised on", () => {
+    const seen = withGtag(() => {
+      track(undefined, "signup_done", { method: "google", next: "/app" });
+      track(undefined, "checkout_view", {
+        plan: "pro",
+        cycle: "yearly",
+        logged_in: true,
+      });
+    });
+    expect(seen.map(([name]) => name)).toEqual([
+      "signup_done",
+      "checkout_view",
+    ]);
+  });
+
+  it("leaves the rest of the funnel to PostHog", () => {
+    // GA4 is here to measure advertising. A property carrying every run of
+    // every tool measures the product badly and the advertising no better.
+    const seen = withGtag(() => {
+      track(undefined, "tool_run", {
+        tool: "humanize",
+        logged_in: false,
+        words_in: 120,
+        quota_left: 380,
+      });
+      track(undefined, "wall_shown", {
+        variant: "inline",
+        reason: "quota",
+        plan: "free",
+      });
+    });
+    expect(seen).toEqual([]);
+  });
+
+  it("puts a currency beside the amount, because Ads will not bid without one", () => {
+    const seen = withGtag(() =>
+      track(undefined, "payment_succeeded", {
+        plan: "unlimited",
+        cycle: "monthly",
+        trial: false,
+        value: 29.99,
+      }),
+    );
+    expect(seen[0][1]).toMatchObject({ value: 29.99, currency: "USD" });
+  });
+
+  it("sends nothing at all when the tag never loaded", () => {
+    // No measurement id, or a visitor Consent Mode is holding: `gtag` is
+    // simply not there, and a funnel that throws over it takes the page.
+    Object.defineProperty(globalThis, "window", {
+      value: {},
+      configurable: true,
+      writable: true,
+    });
+    expect(() =>
+      track(undefined, "signup_done", { method: "google", next: "/app" }),
+    ).not.toThrow();
+    Reflect.deleteProperty(globalThis, "window");
+  });
+
+  it("keeps `purchase` out: the webhook has no browser to attach it to", () => {
+    const seen = withGtag(() =>
+      track(undefined, "purchase", {
+        plan: "pro",
+        cycle: "yearly",
+        amount: 89.88,
+        trial: false,
+      }),
+    );
+    expect(seen).toEqual([]);
+  });
+});
