@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { HeaderAuth } from "@/components/marketing/header-auth";
+import { ConsentSettings } from "@/components/consent";
 import { AnonymousOnly } from "@/components/marketing/viewer";
 import { ViewerProvider } from "@/components/marketing/viewer-provider";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
@@ -126,7 +127,10 @@ export default async function MarketingLayout({
               {t("footer.rights", { year: new Date().getFullYear() })}
             </span>
             <span>{t("footer.market")}</span>
-            <span className="sm:ml-auto">{t("footer.privacyNote")}</span>
+            <span>{t("footer.privacyNote")}</span>
+            {/* The cookie policy promises the choice can be changed at any
+                time. This is the any time. */}
+            <ConsentSettings className="hover:text-foreground underline sm:ml-auto" />
           </div>
         </div>
       </footer>

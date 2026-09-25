@@ -4,9 +4,12 @@ import { GeistMono } from "geist/font/mono";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import "../globals.css";
 
 import { AnalyticsProvider } from "@/components/analytics-provider";
+import { ConsentProvider } from "@/components/consent";
+import { CONSENT_BOOTSTRAP } from "@/lib/analytics/consent";
 import {
   HTML_LANG,
   SITE_ORIGIN,
@@ -17,6 +20,13 @@ import {
 // The root layout lives here rather than at app/layout.tsx because the
 // language is a route segment: <html lang> cannot be decided above it.
 // Everything outside this tree is a route handler, which needs no layout.
+
+/**
+ * Absent in a preview or a branch deploy, and that is deliberate: a
+ * measurement id set everywhere turns every preview click into traffic on
+ * the property the ad spend is judged by.
+ */
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -64,8 +74,31 @@ export default async function LocaleLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
+        {/* Before anything Google loads, and before hydration: Consent
+            Mode's contract is that the defaults are declared first. Set
+            afterwards, the first hit of every visit goes out under
+            whatever Google assumes. */}
+        <Script id="consent-default" strategy="beforeInteractive">
+          {CONSENT_BOOTSTRAP}
+        </Script>
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            {/* `send_page_view: false`: the views are sent from
+                GooglePageviews, which also sees client-side navigation.
+                Left on, the landing page would be counted twice. */}
+            <Script id="ga-config" strategy="afterInteractive">
+              {`gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});`}
+            </Script>
+          </>
+        )}
         <NextIntlClientProvider>
-          <AnalyticsProvider>{children}</AnalyticsProvider>
+          <ConsentProvider>
+            <AnalyticsProvider>{children}</AnalyticsProvider>
+          </ConsentProvider>
         </NextIntlClientProvider>
       </body>
     </html>

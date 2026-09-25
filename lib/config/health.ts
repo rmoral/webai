@@ -147,6 +147,16 @@ export function configHealth(): ConfigCheck[] {
       breaks: "No hay analítica de producto ni embudo de conversión.",
       critical: false,
     },
+    {
+      // Deliberately absent outside production: a measurement id set
+      // everywhere turns every click on a preview into traffic on the
+      // property the ad spend is judged by.
+      name: "NEXT_PUBLIC_GA_ID",
+      value: process.env.NEXT_PUBLIC_GA_ID,
+      breaks:
+        "Google Analytics no carga: la campaña de anuncios no puede medir conversiones ni hacer remarketing.",
+      critical: false,
+    },
   ];
 
   return checks.map(({ value, ...rest }) => ({
