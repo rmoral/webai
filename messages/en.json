@@ -11,6 +11,19 @@
     "language": "Language",
     "soon": "Coming soon"
   },
+  "consent": {
+    "title": "Cookies",
+    "body": "We use strictly necessary cookies to make the service work. Analytics and advertising ones only if you let us, and refusing changes nothing about what you can do here.",
+    "policy": "Cookie policy",
+    "accept": "Accept",
+    "reject": "Reject",
+    "choose": "Choose",
+    "save": "Save",
+    "close": "Close",
+    "analytics": "Analytics",
+    "ads": "Advertising",
+    "settings": "Cookies"
+  },
   "footer": {
     "tools": "Tools",
     "product": "Product",

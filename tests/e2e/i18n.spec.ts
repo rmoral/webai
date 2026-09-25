@@ -1,4 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+
+import { expect, test } from "./fixtures";
 
 // The routing is the part of this that is invisible until it is wrong: a
 // missing hreflang pair or a switcher that drops people on the home page

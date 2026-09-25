@@ -11,6 +11,19 @@
     "language": "Idioma",
     "soon": "Muy pronto"
   },
+  "consent": {
+    "title": "Cookies",
+    "body": "Usamos cookies técnicas para que el servicio funcione. Las de analítica y las de publicidad solo si nos dejas, y rechazarlas no cambia nada de lo que puedes hacer aquí.",
+    "policy": "Política de cookies",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "choose": "Elegir",
+    "save": "Guardar",
+    "close": "Cerrar",
+    "analytics": "Analítica",
+    "ads": "Publicidad",
+    "settings": "Cookies"
+  },
   "footer": {
     "tools": "Herramientas",
     "product": "Producto",
