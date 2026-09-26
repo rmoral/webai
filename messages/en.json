@@ -35,7 +35,18 @@
     "legalNotice": "Legal notice",
     "terms": "Terms",
     "privacy": "Privacy",
-    "cookies": "Cookies"
+    "cookies": "Cookies",
+    "blog": "Blog"
+  },
+  "blog": {
+    "metaTitle": "Blog",
+    "metaDescription": "Guides on writing with AI: what detectors actually measure, how to humanise a text, and where the plagiarism line really is.",
+    "title": "Blog",
+    "intro": "What we have learned building these tools, without promises nobody can keep.",
+    "back": "← Back to the blog",
+    "ctaTitle": "Try it on your own text",
+    "ctaBody": "No account to start, no card. Your text is not stored: we only count the words.",
+    "ctaLink": "Open the {tool}"
   },
   "tools": {
     "humanize": {

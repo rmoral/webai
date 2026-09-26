@@ -35,7 +35,18 @@
     "legalNotice": "Información legal",
     "terms": "Términos",
     "privacy": "Privacidad",
-    "cookies": "Cookies"
+    "cookies": "Cookies",
+    "blog": "Blog"
+  },
+  "blog": {
+    "metaTitle": "Blog",
+    "metaDescription": "Guías sobre escritura con IA: qué detectan los detectores, cómo humanizar un texto y dónde está la línea del plagio.",
+    "title": "Blog",
+    "intro": "Lo que hemos aprendido construyendo estas herramientas, explicado sin promesas que nadie puede cumplir.",
+    "back": "← Volver al blog",
+    "ctaTitle": "Pruébalo con tu texto",
+    "ctaBody": "Sin registro para empezar y sin tarjeta. Tu texto no se guarda: solo contamos las palabras.",
+    "ctaLink": "Abrir el {tool}"
   },
   "tools": {
     "humanize": {
