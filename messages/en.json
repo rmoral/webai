@@ -868,7 +868,7 @@
       "sections": [
         {
           "heading": "Cookies we use",
-          "body": "Strictly necessary technical cookies: the authentication session (Supabase) and interface preferences. Without them the service cannot work. Analytics (PostHog): runs in cookieless mode until you consent through the banner; if you consent, analytics cookies are used. Advertising (Google): only with your consent, through Consent Mode v2."
+          "body": "Strictly necessary technical cookies: the authentication session (Supabase) and interface preferences. Without them the service cannot work. Analytics (PostHog): runs in cookieless mode until you consent through the banner; if you consent, analytics cookies are used. Advertising (Google): only with your consent, through Consent Mode v2. If you consent to advertising, we also store in your browser the identifier of the ad you clicked (the gclid, gbraid, wbraid and utm parameters) for up to 90 days, so we know which campaign brought you here. It holds neither your name nor your email, it is not used to profile you, and it is deleted as soon as you withdraw your consent."
         },
         {
           "heading": "Managing your consent",

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     await request.json().catch(() => null),
   );
   if (!parsed.success) return error(400, "invalid_request");
-  const { plan, cycle, locale } = parsed.data;
+  const { plan, cycle, locale, attribution } = parsed.data;
 
   const user = await getSession();
   // The client sends them to sign up, keeping what they were doing.
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
       tier: plan,
       interval: cycle,
       locale,
+      attribution,
     });
 
     // Written before the card is confirmed, and deliberately not awaited on

@@ -12,6 +12,7 @@ import {
 import { usePostHog } from "posthog-js/react";
 
 import { Button } from "@/components/ui/button";
+import { readAttribution } from "@/lib/analytics/attribution";
 import { track } from "@/lib/analytics/events";
 import { paymentDisclosure } from "@/lib/billing/disclosure";
 import {
@@ -169,6 +170,8 @@ function PaymentForm({
 
     // Stripe validates the fields before anything is created, so a typo in
     // the card number does not cost a subscription object.
+    const attribution = readAttribution();
+
     const submitted = await elements.submit();
     if (submitted.error) {
       setError(submitted.error.message ?? t("declined"));
@@ -184,6 +187,12 @@ function PaymentForm({
         cycle: target.interval,
         locale,
         consent: true,
+        // Which ad paid for this customer, if they let us keep it. Sent
+        // from here rather than read on the server because the record is
+        // in their browser: the click happened days before this request,
+        // possibly on the landing page of a campaign this session never
+        // saw. Absent is normal and never blocks the payment.
+        ...(attribution ? { attribution } : {}),
       }),
     });
 

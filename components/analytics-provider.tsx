@@ -6,6 +6,10 @@ import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 
 import { useConsent } from "@/components/consent";
+import {
+  captureAttribution,
+  clearAttribution,
+} from "@/lib/analytics/attribution";
 import { track } from "@/lib/analytics/events";
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
@@ -34,6 +38,35 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       persistence: consent?.analytics ? "localStorage+cookie" : "memory",
     });
   }, [consent?.analytics]);
+
+  // Which ad paid for this visit.
+  //
+  // The query string is read from `window.location` rather than through
+  // `useSearchParams`, which would opt every page under this layout out of
+  // static rendering -- and these are the pages the ads point at.
+  //
+  // It is kept in a ref because the answer usually arrives after the
+  // landing: the visitor reads the banner, accepts, and by then a client
+  // navigation may have dropped the parameters from the URL. The ref is
+  // memory for this page only, so remembering it there is not storage
+  // anyone has to consent to; writing it down is, and that is what waits
+  // for `ads`.
+  const landed = useRef<string>("");
+  useEffect(() => {
+    if (!landed.current) landed.current = window.location.search;
+  }, []);
+
+  useEffect(() => {
+    // Not asked yet: nothing has been stored, so there is nothing to keep
+    // and nothing to delete.
+    if (!consent) return;
+    if (consent.ads) {
+      captureAttribution(window.location.search || landed.current, true);
+    } else {
+      // Refused, or withdrawn in the footer. What was kept goes.
+      clearAttribution();
+    }
+  }, [consent]);
 
   // `signup_done`, wherever the new account lands.
   //
