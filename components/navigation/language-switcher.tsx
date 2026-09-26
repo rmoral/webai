@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
+import { BLOG_LOCALES } from "@/content/blog/locales";
 import { getPathname, usePathname } from "@/lib/i18n/navigation";
 import { docForSlug, LEGAL_SLUGS } from "@/lib/i18n/legal";
 import { LOCALE_LABELS, routing, type Locale } from "@/lib/i18n/routing";
@@ -43,13 +44,21 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   // TypeScript cannot pair a pathname union with the params that pathname
   // takes, so the pair is asserted here. What keeps it honest is that the
   // pathname and the params both come from the route being rendered.
-  const hrefFor = (locale: Locale) =>
-    getPathname({
+  const hrefFor = (locale: Locale) => {
+    // The blog is the one section that does not exist in both languages: an
+    // article exists in the language it was written in. Offering /en/blog
+    // where there are no English articles offers a 404 from every page of
+    // the blog, so the switch lands on that language's home instead.
+    if (pathname.startsWith("/blog") && !BLOG_LOCALES.includes(locale)) {
+      return getPathname({ href: "/", locale });
+    }
+    return getPathname({
       href: { pathname, params: paramsFor(locale) } as Parameters<
         typeof getPathname
       >[0]["href"],
       locale,
     });
+  };
 
   return (
     <nav

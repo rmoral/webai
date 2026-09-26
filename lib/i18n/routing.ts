@@ -46,6 +46,14 @@ export const routing = defineRouting({
       en: "/pricing",
     },
 
+    // The same word in both languages, and the articles themselves decide
+    // which languages the blog exists in: see content/blog/index.ts. There
+    // are no English articles yet, so /en/blog answers 404 rather than
+    // showing an empty index, and the sitemap and the footer read the same
+    // list.
+    "/blog": "/blog",
+    "/blog/[slug]": "/blog/[slug]",
+
     // The second door to payment, for people arriving from pricing. The
     // other door is the paywall, which pays in a modal over the editor and
     // never comes here. Kept out of the sitemap and disallowed in robots:
