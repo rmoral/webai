@@ -1,4 +1,9 @@
-import type { BillingInterval, PaidTier, PlanId } from "@/lib/billing/plans";
+import {
+  CURRENCY,
+  type BillingInterval,
+  type PaidTier,
+  type PlanId,
+} from "@/lib/billing/plans";
 
 // The funnel, as one list.
 //
@@ -83,7 +88,20 @@ export interface FunnelEvents {
   checkout_start: { plan: PaidTier | "topup"; cycle: BillingInterval };
 
   payment_submitted: { plan: PaidTier; cycle: BillingInterval };
-  payment_succeeded: { plan: PaidTier; cycle: BillingInterval; trial: boolean };
+  payment_succeeded: {
+    plan: PaidTier;
+    cycle: BillingInterval;
+    trial: boolean;
+    /**
+     * What was actually taken today, in dollars, and 0 on a trial.
+     *
+     * It is here for Google Ads to bid on, not for accounting: a figure a
+     * browser sends is a figure a browser can be made to send. Stripe
+     * remains the only source of what was charged, and `purchase` -- the
+     * webhook's event -- remains the only revenue number.
+     */
+    value: number;
+  };
 
   /**
    * Money moved, or a trial that will charge was opened. Webhook only.
@@ -126,4 +144,47 @@ export function track<K extends FunnelEvent>(
   // an interface has no index signature, so it never satisfies the SDK's
   // open-ended bag. Everything above this line is checked.
   client?.capture(event, props as Record<string, unknown>);
+  toGoogle(event, props);
+}
+
+/**
+ * The events Google Analytics is sent, and no others.
+ *
+ * A list rather than "everything", for two reasons. GA4 is here to measure
+ * advertising, and a property carrying every run of every tool measures
+ * the product badly and the advertising no better -- that is what PostHog
+ * is for. And a declared list is a boundary: a future event cannot reach
+ * Google by being added to the taxonomy, only by being named here.
+ *
+ * `purchase` is deliberately absent. It is emitted by the Stripe webhook,
+ * where there is no browser and so no `client_id` to attach it to; putting
+ * it in GA4 would mean the Measurement Protocol. `payment_succeeded` fires
+ * in the browser at the same moment, which is the one Ads can attribute.
+ */
+export const GOOGLE_EVENTS = [
+  "signup_start",
+  "signup_done",
+  "pricing_view",
+  "checkout_view",
+  "checkout_start",
+  "payment_succeeded",
+] as const satisfies readonly FunnelEvent[];
+
+export type GoogleEvent = (typeof GOOGLE_EVENTS)[number];
+
+function toGoogle<K extends FunnelEvent>(
+  event: K,
+  props: FunnelEvents[K],
+): void {
+  // Absent on the server, and absent in a browser where the tag never
+  // loaded -- no measurement id, or a visitor Consent Mode is holding.
+  // The tag itself decides what it may store; this only hands it the
+  // event.
+  if (typeof window === "undefined") return;
+  if (!(GOOGLE_EVENTS as readonly string[]).includes(event)) return;
+
+  const payload: Record<string, unknown> = { ...props };
+  // Ads will not bid on a value with no currency beside it.
+  if (typeof payload.value === "number") payload.currency = CURRENCY;
+  window.gtag?.("event", event, payload);
 }
