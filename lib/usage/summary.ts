@@ -3,7 +3,7 @@ import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { PRICES, type PaidTier } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
 import { quotaDay } from "@/lib/usage/day";
-import { subscriptions, usageDaily, users } from "@/lib/db/schema";
+import { events, subscriptions, usageDaily, users } from "@/lib/db/schema";
 
 // Read models for the account area and the admin backoffice.
 
@@ -182,4 +182,64 @@ export async function getWordsProcessed(): Promise<{
   } catch {
     return null;
   }
+}
+
+/** One line of the campaign table: a source, a campaign and what it sold. */
+export interface CampaignRow {
+  /** `utm_source`, or null for a visit that carried no campaign at all. */
+  source: string | null;
+  campaign: string | null;
+  purchases: number;
+  /** Dollars, summed from the same field the purchase row carries. */
+  revenue: number;
+  /**
+   * How many of those sales carry a Google click id.
+   *
+   * Lower than `purchases` is normal and not a bug: a customer who refused
+   * advertising cookies is counted here as a sale with no click. The gap is
+   * the part of the spend Google can only model, so it is worth seeing.
+   */
+  withClickId: number;
+}
+
+/**
+ * What each campaign actually sold, from our own rows.
+ *
+ * Read from `events` rather than from PostHog or from Ads: this is the
+ * table the schema keeps for attribution, it is written by the Stripe
+ * webhook, and it therefore counts the sales Stripe confirmed rather than
+ * the ones a browser stayed open long enough to report.
+ *
+ * Amounts are what was charged that day, so a trial appears as a sale of
+ * zero -- which is what it was -- and the renewal appears later at its
+ * price. Reading it any other way would credit a campaign with money that
+ * has not moved.
+ */
+export async function listCampaigns(days = 30): Promise<CampaignRow[]> {
+  const since = new Date(Date.now() - days * 86_400_000);
+  const source = sql<string | null>`${events.props}->>'utm_source'`;
+  const campaign = sql<string | null>`${events.props}->>'utm_campaign'`;
+
+  const rows = await getDb()
+    .select({
+      source,
+      campaign,
+      purchases: sql<number>`count(*)::int`,
+      revenue: sql<number>`coalesce(sum((${events.props}->>'amount')::float8), 0)::float8`,
+      // gbraid and wbraid are what Google sends when it cannot set a
+      // cookie, and they identify a click just as well, so all three count.
+      withClickId: sql<number>`count(coalesce(${events.props}->>'gclid', ${events.props}->>'gbraid', ${events.props}->>'wbraid'))::int`,
+    })
+    .from(events)
+    .where(and(eq(events.name, "purchase"), gte(events.createdAt, since)))
+    .groupBy(source, campaign)
+    .orderBy(desc(sql`count(*)`));
+
+  return rows.map((row) => ({
+    source: row.source,
+    campaign: row.campaign,
+    purchases: row.purchases,
+    revenue: row.revenue,
+    withClickId: row.withClickId,
+  }));
 }
