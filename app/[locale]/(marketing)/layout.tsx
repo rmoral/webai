@@ -7,6 +7,7 @@ import { AnonymousOnly } from "@/components/marketing/viewer";
 import { ViewerProvider } from "@/components/marketing/viewer-provider";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
 import { TOOLS } from "@/lib/ai/tools";
+import { postsFor } from "@/content/blog";
 import { Link } from "@/lib/i18n/navigation";
 import { LEGAL_DOCS, LEGAL_SLUGS } from "@/lib/i18n/legal";
 
@@ -33,6 +34,12 @@ export default async function MarketingLayout({
       title: t("footer.product"),
       links: [
         { href: "/pricing" as const, label: t("nav.pricing") },
+        // Only where there is something to read. The blog exists per
+        // language (see content/blog/index.ts), and a footer link to an
+        // empty index is a link to a 404 on every page of the site.
+        ...(postsFor(locale).length
+          ? [{ href: "/blog" as const, label: t("footer.blog") }]
+          : []),
         // Offered to whoever has not taken it. The header stopped telling
         // customers to sign up long ago; the footer never did.
         {
