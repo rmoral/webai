@@ -13,7 +13,7 @@ import {
   stripeMode,
 } from "@/lib/config/health";
 import { auditStripe, type StripeAudit } from "@/lib/billing/stripe";
-import { getAdminTotals, listUsers } from "@/lib/usage/summary";
+import { getAdminTotals, listCampaigns, listUsers } from "@/lib/usage/summary";
 
 export const metadata: Metadata = {
   title: "Backoffice",
@@ -43,7 +43,7 @@ export default async function AdminPage() {
   // and a missing DATABASE_URL is one of the things it has to report. If
   // these queries could take the page down, the diagnosis would be
   // unreachable exactly when it is needed.
-  const [metrics, rows] = await Promise.all([
+  const [metrics, rows, campaigns] = await Promise.all([
     // The driver's complaint is the only account of why the read failed,
     // and there is no terminal here to read it in. Keep it, unwrapped.
     getAdminTotals().then(
@@ -51,6 +51,7 @@ export default async function AdminPage() {
       (e: unknown) => ({ value: null, failure: describeDatabaseFailure(e) }),
     ),
     listUsers().catch(() => []),
+    listCampaigns().catch(() => []),
   ]);
   const totals = metrics.value;
   const db = databaseTarget();
@@ -279,6 +280,60 @@ export default async function AdminPage() {
           </Card>
         ))}
       </div>
+
+      {/* Where the paying customers came from.
+          Read from our own `events` rows, so it counts the sales Stripe
+          confirmed rather than the ones a browser stayed open to report --
+          and it is the only place the campaign survives a three-day trial.
+          Sin clic is not a gap in the code: it is the share of the spend
+          Google is only allowed to model, because the customer refused
+          advertising cookies. */}
+      {campaigns.length > 0 && (
+        <>
+          <h2 className="mt-12 text-lg font-semibold">
+            Campañas (últimos 30 días)
+          </h2>
+          <div className="mt-4 overflow-x-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Origen</th>
+                  <th className="px-3 py-2 font-medium">Campaña</th>
+                  <th className="px-3 py-2 text-right font-medium">Ventas</th>
+                  <th className="px-3 py-2 text-right font-medium">Cobrado</th>
+                  <th className="px-3 py-2 text-right font-medium">Con clic</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((row) => (
+                  <tr
+                    key={`${row.source ?? ""}/${row.campaign ?? ""}`}
+                    className="border-t"
+                  >
+                    <td className="px-3 py-2">
+                      {row.source ?? (
+                        <span className="text-muted-foreground">
+                          Directo u orgánico
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">{row.campaign ?? "—"}</td>
+                    <td className="px-3 py-2 text-right">
+                      {row.purchases.toLocaleString("es-ES")}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatUsd(row.revenue)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {row.withClickId.toLocaleString("es-ES")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h2 className="mt-12 text-lg font-semibold">
         Usuarios ({rows.length.toLocaleString("es-ES")})

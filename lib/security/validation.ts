@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
+import {
+  ATTRIBUTION_FIELDS,
+  ATTRIBUTION_MAX_LENGTH,
+  type AttributionField,
+} from "@/lib/analytics/attribution";
 import { routing } from "@/lib/i18n/routing";
 
 // Hard server-side bound on input size, independent of plan limits
@@ -31,6 +36,25 @@ export const aiToolRequestSchema = z
 export type AiToolRequest = z.infer<typeof aiToolRequestSchema>;
 
 /**
+ * Where the customer came from, as their browser recorded it.
+ *
+ * Built from ATTRIBUTION_FIELDS so the list of parameters exists once: a
+ * field added there is accepted here without being remembered separately.
+ *
+ * Closed and capped, because it arrives from a URL anyone can write and
+ * ends up in Stripe metadata, which refuses a value over 500 characters
+ * and would fail the subscription rather than the field.
+ */
+export const attributionSchema = z.strictObject(
+  Object.fromEntries(
+    ATTRIBUTION_FIELDS.map((field) => [
+      field,
+      z.string().trim().min(1).max(ATTRIBUTION_MAX_LENGTH).optional(),
+    ]),
+  ) as Record<AttributionField, z.ZodOptional<z.ZodString>>,
+);
+
+/**
  * The body of POST /api/billing/subscribe.
  *
  * It carries no price and no trial flag. What the customer owes is read
@@ -49,6 +73,12 @@ export const subscribeRequestSchema = z.object({
    * answers a chargeback.
    */
   consent: z.literal(true),
+  /**
+   * Absent for every customer who refused advertising cookies, and for
+   * everyone who arrived without a campaign. Never required: a sale must
+   * not depend on being able to attribute it.
+   */
+  attribution: attributionSchema.optional(),
 });
 
 export type SubscribeRequest = z.infer<typeof subscribeRequestSchema>;

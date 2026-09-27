@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 
+import type { Attribution } from "@/lib/analytics/attribution";
 import { ACTIVE_STATUSES } from "@/lib/billing/entitlements";
 import {
   PAYMENT_METHOD_TYPES,
@@ -157,6 +158,8 @@ export function subscriptionParams(args: {
   tier: PaidTier;
   interval: BillingInterval;
   locale: Locale;
+  /** Which ad paid for this, when the customer let us keep it. */
+  attribution?: Attribution | null;
 }): Stripe.SubscriptionCreateParams {
   const trialDays = trialDaysFor(args.tier, args.interval);
 
@@ -190,6 +193,11 @@ export function subscriptionParams(args: {
       plan: args.tier,
       cycle: args.interval,
       locale: args.locale,
+      // The campaign, carried here because Stripe is the only place it
+      // survives a three-day trial: the browser that clicked the ad is
+      // long gone by the time the webhook reports the charge, and the
+      // webhook has no storage of its own to read.
+      ...(args.attribution ?? {}),
     },
   };
 }
@@ -215,6 +223,7 @@ export async function createSubscription(args: {
   tier: PaidTier;
   interval: BillingInterval;
   locale: Locale;
+  attribution?: Attribution | null;
 }): Promise<SubscribeResult> {
   const { tier, interval } = args;
   const trialDays = trialDaysFor(tier, interval);
@@ -230,6 +239,7 @@ export async function createSubscription(args: {
       tier,
       interval,
       locale: args.locale,
+      attribution: args.attribution,
     }),
   );
 

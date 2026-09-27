@@ -868,7 +868,7 @@
       "sections": [
         {
           "heading": "Cookies que usamos",
-          "body": "Cookies técnicas imprescindibles: sesión de autenticación (Supabase) y preferencias de la interfaz. Sin ellas el servicio no puede funcionar. Analítica (PostHog): funciona en modo sin cookies hasta que das tu consentimiento a través del banner; si consientes, se usan cookies de analítica. Publicidad (Google): solo con tu consentimiento, mediante Consent Mode v2."
+          "body": "Cookies técnicas imprescindibles: sesión de autenticación (Supabase) y preferencias de la interfaz. Sin ellas el servicio no puede funcionar. Analítica (PostHog): funciona en modo sin cookies hasta que das tu consentimiento a través del banner; si consientes, se usan cookies de analítica. Publicidad (Google): solo con tu consentimiento, mediante Consent Mode v2. Si consientes la publicidad, también guardamos en tu navegador el identificador del anuncio en el que hiciste clic (parámetros gclid, gbraid, wbraid y utm) durante un máximo de 90 días, para saber qué campaña te trajo hasta aquí. No contiene tu nombre ni tu correo, no se usa para perfilarte y se borra en cuanto retiras el consentimiento."
         },
         {
           "heading": "Cómo gestionar el consentimiento",

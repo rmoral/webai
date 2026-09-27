@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import { pickAttribution, type Attribution } from "@/lib/analytics/attribution";
 import type { FunnelEvents } from "@/lib/analytics/events";
 import { trackServer } from "@/lib/analytics/server";
 import {
@@ -171,8 +172,23 @@ function saleOf(
 async function reportPurchase(
   userId: string,
   props: FunnelEvents["purchase"],
+  /**
+   * The campaign that paid for it, read back out of Stripe's metadata.
+   *
+   * It goes into the row and deliberately not into the PostHog event. The
+   * taxonomy in lib/analytics/events.ts admits no property that identifies
+   * a person, and a click id is Google's handle for one; this is our own
+   * table, which is where the schema comment says Ads attribution lives.
+   */
+  attribution?: Attribution | null,
 ): Promise<void> {
-  await getDb().insert(events).values({ userId, name: "purchase", props });
+  await getDb()
+    .insert(events)
+    .values({
+      userId,
+      name: "purchase",
+      props: { ...props, ...(attribution ?? {}) },
+    });
   await trackServer(userId, "purchase", props);
 }
 
@@ -357,7 +373,11 @@ export async function POST(request: NextRequest) {
         // moment a card exists and a date is set. `amount` is 0, `trial`
         // is true, and the conversion three days later is the renewal.
         if (trialUserId) {
-          await reportPurchase(trialUserId, saleOf(sub, 0, true));
+          await reportPurchase(
+            trialUserId,
+            saleOf(sub, 0, true),
+            pickAttribution(sub.metadata),
+          );
         }
 
         const trialEmail = await customerEmail(
@@ -446,6 +466,7 @@ export async function POST(request: NextRequest) {
           await reportPurchase(
             paidUserId,
             saleOf(paidSub, invoice.amount_paid ?? 0, false),
+            pickAttribution(paidSub.metadata),
           );
         }
 
