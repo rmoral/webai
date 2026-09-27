@@ -440,6 +440,12 @@
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
     "seePlans": "Ver planes"
   },
+  "tour": {
+    "step1": "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",
+    "step2": "Elige el registro antes de darle: académico conserva la terminología, informal se permite más.",
+    "step3": "Compara el resultado con tu original. Si no te convence, cambia el registro y vuelve a darle.",
+    "dismiss": "Cerrar las pistas"
+  },
   "invite": {
     "lead": "Con una cuenta gratis tienes {free} palabras al día",
     "leadTail": ", no {anon}.",

@@ -25,6 +25,7 @@ import {
   type LimitKind,
 } from "@/components/tools/overflow";
 import { DetectorResultView } from "@/components/tools/detector-result";
+import { Hint, tourStep, useTour } from "@/components/tools/tour";
 import {
   DiffMarks,
   HighlightLegend,
@@ -97,6 +98,10 @@ export function ToolEditor({
   const locale = useLocale();
 
   const modes = TOOLS[tool].modes;
+
+  // The three first-visit hints. Derived from the editor's own state, and
+  // given no setter for anything -- see components/tools/tour.tsx.
+  const tour = useTour();
   // What the user picked, which may belong to a tool they have since left.
   // resolveMode is what decides the mode actually in force.
   const [picked, setPicked] = useState<string>();
@@ -600,6 +605,13 @@ export function ToolEditor({
     }
   }
 
+  const hint = tourStep({
+    dismissed: tour.dismissed,
+    hasModes: modes.length > 0,
+    hasText: words > 0,
+    hasResult: status === "done",
+  });
+
   return (
     <div className="flex flex-col gap-4">
       {needsToken && (
@@ -640,8 +652,11 @@ export function ToolEditor({
           </div>
         )}
 
+        {hint === 2 && <Hint step={2} onDismiss={tour.dismiss} />}
+
         <div className="grid md:grid-cols-2 md:divide-x">
           <div className="flex flex-col">
+            {hint === 1 && <Hint step={1} onDismiss={tour.dismiss} />}
             <EditorInput
               value={input}
               onChange={setInput}
@@ -672,6 +687,7 @@ export function ToolEditor({
           </div>
 
           <div className="flex min-h-44 flex-col border-t md:min-h-64 md:border-t-0">
+            {hint === 3 && <Hint step={3} onDismiss={tour.dismiss} />}
             {measures && report ? (
               <DetectorResultView
                 result={report.analysis}

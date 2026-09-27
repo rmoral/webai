@@ -440,6 +440,12 @@
     "connectionError": "Connection error. Try again.",
     "seePlans": "See plans"
   },
+  "tour": {
+    "step1": "Paste the text you want to work on. The counter below tells you how much fits.",
+    "step2": "Pick the register before you run it: academic keeps the terminology, informal allows more.",
+    "step3": "Compare the result with your original. If it is not right, change the register and run it again.",
+    "dismiss": "Close the hints"
+  },
   "invite": {
     "lead": "A free account gives you {free} words a day",
     "leadTail": ", not {anon}.",
