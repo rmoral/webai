@@ -50,6 +50,27 @@ export const users = pgTable("users", {
    * winner and one no-op.
    */
   welcomeSentAt: timestamp("welcome_sent_at", { withTimezone: true }),
+  /**
+   * When the two onboarding emails went out, each its own lock.
+   *
+   * Same claim as the welcome above: the cron reads the column to decide,
+   * and writes it only once the send returned, so a failure is retried by
+   * the next run and a success is never repeated.
+   */
+  onboardingDay2SentAt: timestamp("onboarding_day2_sent_at", {
+    withTimezone: true,
+  }),
+  onboardingDay5SentAt: timestamp("onboarding_day5_sent_at", {
+    withTimezone: true,
+  }),
+  /**
+   * When they asked to stop receiving the onboarding emails.
+   *
+   * Only those. A billing notice is not on this switch: nobody may opt out
+   * of being told they are about to be charged, which is why the templates
+   * that say so are transactional and this column never reaches them.
+   */
+  marketingOptOutAt: timestamp("marketing_opt_out_at", { withTimezone: true }),
 });
 
 export const subscriptions = pgTable("subscriptions", {

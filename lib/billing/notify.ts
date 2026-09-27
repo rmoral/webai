@@ -6,7 +6,7 @@ import type { DataRow } from "@/emails/layout";
 import { SubscriptionConfirmationEmail } from "@/emails/subscription-confirmation";
 import { TrialReminderEmail } from "@/emails/trial-reminder";
 import { WelcomeEmail, welcomeWords } from "@/emails/welcome";
-import { emailTranslator, planTranslator } from "@/emails/translator";
+import { emailTranslator, numberIn, planTranslator } from "@/emails/translator";
 import { PLANS, PRICES, formatUsd } from "@/lib/billing/plans";
 import { sendEmail } from "@/lib/email";
 import type { Locale } from "@/lib/i18n/routing";
@@ -36,12 +36,6 @@ export function longDate(locale: Locale, date: Date): string {
     month: "long",
     year: "numeric",
   });
-}
-
-/** Numbers as the reader's language writes them, outside a request. */
-function numberIn(locale: Locale): (value: number) => string {
-  const format = createFormatter({ locale, timeZone: "UTC" });
-  return (value) => format.number(value);
 }
 
 /** "Pro · anual", from the metadata the checkout wrote. */

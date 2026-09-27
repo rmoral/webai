@@ -76,6 +76,11 @@ export const routing = defineRouting({
     // LEGAL_SLUGS in lib/i18n/legal.ts rather than through four folders.
     "/legal/[slug]": "/legal/[slug]",
 
+    // Reached from a link in an email, by somebody who may not be signed
+    // in and may be reading a message from months ago. Short on purpose:
+    // it is printed in the footer of every onboarding email.
+    "/email/unsubscribe": { es: "/baja-emails", en: "/unsubscribe" },
+
     "/login": "/login",
     // Two routes, one form. Somebody arriving from "create a free account"
     // and landing on a page headed "sign in" has no way to tell they are in

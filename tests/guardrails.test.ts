@@ -12,6 +12,7 @@ import {
   yearlyDiscount,
 } from "@/lib/billing/plans";
 import { SITE_ORIGIN } from "@/lib/i18n/routing";
+import { ONBOARDING } from "@/lib/onboarding/due";
 import en from "@/messages/en.json";
 import es from "@/messages/es.json";
 
@@ -226,6 +227,38 @@ describe("the reminder schedule and its window agree", () => {
     // while reading like a 24-hour warning; that is the shape this catches.
     expect(TRIAL_REMINDER.windowHours).toBeLessThanOrEqual(
       2 * intervalHours(reminder!.schedule),
+    );
+  });
+});
+
+describe("the onboarding schedule and its window agree", () => {
+  const crons = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8"))
+    .crons as { path: string; schedule: string }[];
+  const onboarding = crons.find((c) => c.path.includes("onboarding"));
+
+  it("never lets a signup slip between two runs", () => {
+    // Narrower than the gap between runs and an account passes through the
+    // window unseen, which is an onboarding email that is never sent at all.
+    expect(onboarding).toBeDefined();
+    const [minute, hour] = onboarding!.schedule.split(" ");
+    expect(minute).toMatch(/^\d+$/);
+    expect(hour).toBe("*");
+    expect(ONBOARDING.windowHours).toBeGreaterThanOrEqual(1);
+  });
+
+  it("never lets it arrive a day late", () => {
+    // The first matching run sends and the column stops the rest, so the far
+    // edge of the window is when the email lands. Twice the gap is the most
+    // that can still read as "day 2".
+    expect(ONBOARDING.windowHours).toBeLessThanOrEqual(4);
+  });
+
+  it("does not run in the same minute as the reminder", () => {
+    // Two crons on a cold start contend for the same database connection,
+    // and the one that loses is the one that sends mail.
+    const reminderCron = crons.find((c) => c.path.includes("trial-reminder"));
+    expect(onboarding!.schedule.split(" ")[0]).not.toBe(
+      reminderCron!.schedule.split(" ")[0],
     );
   });
 });

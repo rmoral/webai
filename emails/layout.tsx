@@ -388,12 +388,22 @@ export function EmailFooter({
   company,
   privacyHref,
   privacyLabel,
+  optOut,
 }: {
   /** Why this particular email arrived. Different for each one. */
   notice: string;
   company: string;
   privacyHref: string;
   privacyLabel: string;
+  /**
+   * Present on the onboarding emails and absent from every other one.
+   *
+   * A message that helps somebody use what they signed up for may carry an
+   * opt-out; a notice that money is about to move may not, and the day this
+   * becomes optional on a billing email is the day somebody unsubscribes
+   * from being told they are being charged.
+   */
+  optOut?: { href: string; label: string };
 }) {
   const line = {
     fontSize: "13px",
@@ -405,6 +415,14 @@ export function EmailFooter({
     <Section style={{ padding: "20px 4px 0" }}>
       <Text className="vx-mut" style={{ ...line, margin: "0 0 6px" }}>
         {notice}
+        {optOut && (
+          <>
+            {" "}
+            <Link className="vx-link" href={optOut.href} style={quiet}>
+              {optOut.label}
+            </Link>
+          </>
+        )}
       </Text>
       <Text className="vx-mut" style={{ ...line, margin: 0 }}>
         {company} ·{" "}

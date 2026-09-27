@@ -12,10 +12,13 @@ export function Footer({
   locale,
   appUrl,
   notice,
+  optOutHref,
 }: {
   locale: Locale;
   appUrl: string;
   notice: string;
+  /** Only the onboarding emails pass one. See EmailFooter. */
+  optOutHref?: string;
 }) {
   const t = emailTranslator(locale);
   const privacy = `${appUrl}${pathFor("/legal/[slug]", locale).replace(
@@ -29,6 +32,9 @@ export function Footer({
       company={t("footerCompany")}
       privacyHref={privacy}
       privacyLabel={t("footerPrivacy")}
+      optOut={
+        optOutHref ? { href: optOutHref, label: t("footerOptOut") } : undefined
+      }
     />
   );
 }

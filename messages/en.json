@@ -858,7 +858,7 @@
         },
         {
           "heading": "If you live in the EU, the EEA or the UK",
-          "body": "The GDPR applies to you. Our legal bases are: performance of the contract (account, providing the service, plan limits and billing), legitimate interest (security and abuse prevention) and your consent (cookie analytics and marketing communications). You have the rights of access, rectification, erasure, objection, restriction and portability, and to withdraw consent at any time. Transfers of data to the United States rely on the European Commission's standard contractual clauses signed with our providers. You may lodge a complaint with your country's supervisory authority — in Spain, the Agencia Española de Protección de Datos (aepd.es). To exercise any of these rights: {legalEmail}."
+          "body": "The GDPR applies to you. Our legal bases are: performance of the contract (account, providing the service, plan limits and billing), legitimate interest (security, abuse prevention, and the two help emails we send in the first days to anyone who creates an account, about the service they signed up for and each carrying an unsubscribe link) and your consent (cookie analytics and advertising). You have the rights of access, rectification, erasure, objection, restriction and portability, and to withdraw consent at any time. Transfers of data to the United States rely on the European Commission's standard contractual clauses signed with our providers. You may lodge a complaint with your country's supervisory authority — in Spain, the Agencia Española de Protección de Datos (aepd.es). To exercise any of these rights: {legalEmail}."
         },
         {
           "heading": "If you live in California",
@@ -978,7 +978,24 @@
     "cancelledAccount": "See my account",
     "cancelledBack": "If you cancelled by mistake, you can subscribe again whenever you want from the pricing page.",
     "cancelledTrialCheck": "If you see a Verbalyx charge on your statement that you were not expecting, reply to this email and we will look into it.",
-    "rowLastCharge": "Last charge"
+    "rowLastCharge": "Last charge",
+    "footerOptOut": "Unsubscribe from these emails.",
+    "footerOnboarding": "You are getting this because you created a Verbalyx account.",
+    "day2Preview": "One thing you can try in a minute",
+    "day2Heading": "Shall we run a text through?",
+    "day2Body": "You created your account a couple of days ago. If you have not tried the {tool} yet, it is a good place to start: paste the text, pick the register, and see the result beside the original.",
+    "day2Tip": "A trick that works on any generated text: cut a fifth of it. There is almost always 20 % to spare without losing a single idea, and what goes is exactly what sounded like a machine.",
+    "day2Cta": "Open the {tool}",
+    "day2Guide": "If you want the whole method, we wrote it up here:",
+    "day2GuideLink": "how to humanise an AI text",
+    "day5Preview": "You are at {words} words",
+    "day5Heading": "You are at {words} words processed",
+    "day5Body": "Your free account gives you {freeWords} words a day, and they reset every morning. For many people that is enough and nothing else is needed.",
+    "day5Pro": "If you run short, Pro is {amount} a month: no daily limit —up to {month} words a month—, texts of up to {request} words at once, all four tools and the document history.",
+    "day5Cta": "See the plans",
+    "day5NoRush": "No rush: the free account does not expire and will not ask you for a card.",
+    "day2Subject": "One thing you can try in a minute",
+    "day5Subject": "You are at {words} words on Verbalyx"
   },
   "detectorSignals": {
     "raya_espaciada": {
@@ -1069,5 +1086,25 @@
       "label": "Paragraph regularity",
       "explanation": "The paragraphs run to {shape} sentences: a variation of {value}. Generated writing produces paragraphs of three or four sentences with almost metrical regularity."
     }
+  },
+  "unsubscribe": {
+    "ask": {
+      "title": "Stop sending you the help emails?",
+      "body": "These are the two messages we send in your first days so you get the most out of the tool. If you stop them you will still get the essentials: payment confirmations, the warning before a charge, and account recovery. Those are not marketing and cannot be turned off.",
+      "confirm": "Yes, unsubscribe me"
+    },
+    "done": {
+      "title": "Done, we will not write again",
+      "body": "You are unsubscribed from the help emails. Billing notices still arrive, because they are what keeps a charge from surprising you."
+    },
+    "invalid": {
+      "title": "This link is not valid",
+      "body": "It may be incomplete, or part of it may have been lost when it was copied. If you want to stop our emails, write to hola@verbalyx.ai and we will do it for you."
+    },
+    "error": {
+      "title": "We could not save it",
+      "body": "Something failed on our side, not yours. Try again in a minute, or write to hola@verbalyx.ai and we will do it for you."
+    },
+    "home": "Go to Verbalyx"
   }
 }
