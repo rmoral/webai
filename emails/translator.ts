@@ -1,4 +1,4 @@
-import { createTranslator } from "next-intl";
+import { createFormatter, createTranslator } from "next-intl";
 
 import { HTML_LANG, type Locale } from "@/lib/i18n/routing";
 import en from "@/messages/en.json";
@@ -34,6 +34,32 @@ export function planTranslator(locale: Locale) {
     locale,
     messages: MESSAGES[locale],
     namespace: "plans",
+  });
+}
+
+/**
+ * Numbers as the reader's language writes them, outside a request.
+ *
+ * Here rather than in one of the senders because both of them need it: a
+ * word count is "1.234" in an email to Spain and "1,234" in one to the US,
+ * and the two must not be formatted by two different pieces of code.
+ */
+export function numberIn(locale: Locale): (value: number) => string {
+  const format = createFormatter({ locale, timeZone: "UTC" });
+  return (value) => format.number(value);
+}
+
+/**
+ * Tool names, for the onboarding emails that suggest one.
+ *
+ * Same catalogue again: a tool called "Humanizador" on the page cannot be
+ * something else in the inbox.
+ */
+export function toolTranslator(locale: Locale) {
+  return createTranslator({
+    locale,
+    messages: MESSAGES[locale],
+    namespace: "tools",
   });
 }
 

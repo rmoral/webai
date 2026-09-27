@@ -858,7 +858,7 @@
         },
         {
           "heading": "Si resides en la UE, el EEE o Reino Unido",
-          "body": "Te aplica el RGPD. Las bases legales de nuestro tratamiento son: la ejecución del contrato (cuenta, prestación del servicio, límites de plan y facturación), el interés legítimo (seguridad y prevención del abuso) y tu consentimiento (analítica con cookies y comunicaciones comerciales). Tienes derecho de acceso, rectificación, supresión, oposición, limitación y portabilidad, y a retirar tu consentimiento en cualquier momento. Las transferencias de datos a Estados Unidos se amparan en las cláusulas contractuales tipo de la Comisión Europea suscritas con nuestros proveedores. Puedes presentar una reclamación ante la autoridad de control de tu país —en España, la Agencia Española de Protección de Datos (aepd.es)—. Para ejercer cualquiera de estos derechos: {legalEmail}."
+          "body": "Te aplica el RGPD. Las bases legales de nuestro tratamiento son: la ejecución del contrato (cuenta, prestación del servicio, límites de plan y facturación), el interés legítimo (seguridad, prevención del abuso y los dos correos de ayuda que enviamos los primeros días a quien crea una cuenta, sobre el servicio que ha contratado y con un enlace de baja en cada uno) y tu consentimiento (analítica y publicidad con cookies). Tienes derecho de acceso, rectificación, supresión, oposición, limitación y portabilidad, y a retirar tu consentimiento en cualquier momento. Las transferencias de datos a Estados Unidos se amparan en las cláusulas contractuales tipo de la Comisión Europea suscritas con nuestros proveedores. Puedes presentar una reclamación ante la autoridad de control de tu país —en España, la Agencia Española de Protección de Datos (aepd.es)—. Para ejercer cualquiera de estos derechos: {legalEmail}."
         },
         {
           "heading": "Si resides en California",
@@ -978,7 +978,24 @@
     "cancelledAccount": "Ver mi cuenta",
     "cancelledBack": "Si has cancelado por error, puedes volver a suscribirte cuando quieras desde la página de precios.",
     "cancelledTrialCheck": "Si ves un cargo de Verbalyx en tu extracto que no esperabas, responde a este correo y lo revisamos.",
-    "rowLastCharge": "Último cobro"
+    "rowLastCharge": "Último cobro",
+    "footerOptOut": "Darte de baja de estos correos.",
+    "footerOnboarding": "Te escribimos porque creaste una cuenta en Verbalyx.",
+    "day2Preview": "Una cosa que puedes probar en un minuto",
+    "day2Heading": "¿Le damos una vuelta a un texto?",
+    "day2Body": "Creaste tu cuenta hace un par de días. Si todavía no has probado el {tool}, es un buen sitio por donde empezar: pegas el texto, eliges el registro y ves el resultado al lado del original.",
+    "day2Tip": "Un truco que funciona con cualquier texto generado: córtalo un quinto. Casi siempre sobra un 20 % sin perder ni una idea, y lo que se va es justo lo que sonaba a máquina.",
+    "day2Cta": "Abrir el {tool}",
+    "day2Guide": "Si quieres el método completo, lo hemos escrito aquí:",
+    "day2GuideLink": "cómo humanizar un texto de IA",
+    "day5Preview": "Llevas {words} palabras",
+    "day5Heading": "Llevas {words} palabras procesadas",
+    "day5Body": "Tu cuenta gratuita te da {freeWords} palabras al día y se renuevan cada mañana. Para mucha gente eso es suficiente y no hace falta nada más.",
+    "day5Pro": "Si te quedas corto, Pro cuesta {amount} al mes: sin límite diario —hasta {month} palabras al mes—, textos de hasta {request} palabras de una vez, las cuatro herramientas y el historial de documentos.",
+    "day5Cta": "Ver los planes",
+    "day5NoRush": "Sin prisa: la cuenta gratuita no caduca y no te va a pedir una tarjeta.",
+    "day2Subject": "Una cosa que puedes probar en un minuto",
+    "day5Subject": "Llevas {words} palabras en Verbalyx"
   },
   "detectorSignals": {
     "raya_espaciada": {
@@ -1069,5 +1086,25 @@
       "label": "Regularidad de los párrafos",
       "explanation": "Los párrafos tienen {shape} frases: una variación de {value}. La escritura automática produce párrafos de tres o cuatro frases con una regularidad casi métrica."
     }
+  },
+  "unsubscribe": {
+    "ask": {
+      "title": "¿Dejamos de enviarte los correos de ayuda?",
+      "body": "Son los dos mensajes que te enviamos los primeros días para que le saques partido a la herramienta. Si los cancelas seguirás recibiendo lo imprescindible: confirmaciones de pago, el aviso antes de un cobro y la recuperación de tu cuenta. Eso no es publicidad y no se desactiva.",
+      "confirm": "Sí, darme de baja"
+    },
+    "done": {
+      "title": "Hecho, no volveremos a escribirte",
+      "body": "Te hemos dado de baja de los correos de ayuda. Los avisos de facturación siguen llegando, porque son los que evitan que un cobro te pille por sorpresa."
+    },
+    "invalid": {
+      "title": "Este enlace no es válido",
+      "body": "Puede que esté incompleto o que le falte una parte al copiarlo. Si quieres dejar de recibir nuestros correos, escríbenos a hola@verbalyx.ai y lo hacemos nosotros."
+    },
+    "error": {
+      "title": "No hemos podido guardarlo",
+      "body": "Ha fallado algo por nuestra parte, no por la tuya. Inténtalo otra vez en un minuto o escríbenos a hola@verbalyx.ai y lo hacemos nosotros."
+    },
+    "home": "Ir a Verbalyx"
   }
 }

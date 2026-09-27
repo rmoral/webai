@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/trial-reminder",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/onboarding",
+      "schedule": "20 * * * *"
     }
   ]
 }

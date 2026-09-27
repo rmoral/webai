@@ -25,6 +25,9 @@ export default function robots(): MetadataRoute.Robots {
         "/en/signup",
         "/login",
         "/en/login",
+        // A link from an email, not a page of the site.
+        "/baja-emails",
+        "/en/unsubscribe",
       ],
     },
     sitemap: new URL("/sitemap.xml", base).toString(),
