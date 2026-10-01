@@ -293,6 +293,8 @@ Cada landing: H1 con keyword, herramienta embebida, 600-900 palabras de contenid
 ### Sprint 4 — Semana 4: lanzar y comprar tráfico
 
 - [ ] Google Ads: campaña Search ES, conversiones desde webhook con `gclid`
+  - Hecho (C16): etiqueta `AW-` en todas las páginas y conversiones de registro y compra desde el navegador (`trackConversion` en `lib/analytics/events.ts`).
+  - Deuda: subir la compra desde el webhook de Stripe con la API de Google Ads y el `gclid` de la metadata de la suscripción (faltan developer token, OAuth y customer ID). Hoy se pierde la compra si se cierra la pestaña y no se reporta el cobro real al terminar el trial.
 - [ ] Search Console, sitemap, robots, Open Graph
 - [ ] 10 artículos de blog
 - [ ] Onboarding: tour de 3 pasos, email día 2 y día 5

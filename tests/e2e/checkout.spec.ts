@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-import { typeInto } from "./helpers";
+import { gtagCalls, typeInto } from "./helpers";
 
 // Payment funnel. The steps that need a real Stripe test-mode account are
 // gated on credentials; everything before the hand-off to Stripe runs in CI.
@@ -104,6 +104,39 @@ test("trial checkout with a test card, without leaving the site", async ({
   });
   await expect(page.getByText("Primer cobro")).toBeVisible();
   await expect(page.getByText("Hoy has pagado")).toBeVisible();
+
+  // One Google Ads conversion for the trial: nothing charged, in dollars,
+  // keyed to the subscription so a reload cannot count it again.
+  if (
+    process.env.NEXT_PUBLIC_GOOGLE_ADS_ID &&
+    process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL
+  ) {
+    const conversions = await gtagCalls(page, "event", "conversion");
+    expect(conversions).toHaveLength(1);
+    expect(conversions[0]).toMatchObject({
+      send_to: `${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID}/${process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL}`,
+      value: 0,
+      currency: "USD",
+      transaction_id: expect.stringMatching(/^sub_/),
+    });
+  }
+});
+
+test("Google Ads is configured on every page, the app included", async ({
+  page,
+}) => {
+  const ads = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+  test.skip(
+    !process.env.NEXT_PUBLIC_GA_ID || !ads,
+    "Needs the GA4 and Google Ads ids, which only production sets",
+  );
+
+  for (const path of ["/", "/precios", "/registro", "/pago", "/app"]) {
+    await page.goto(path);
+    await expect
+      .poll(() => gtagCalls(page, "config", ads!), { message: path })
+      .toHaveLength(1);
+  }
 });
 
 test("the home page offers the tool, and the upsell waits until it is earned", async ({

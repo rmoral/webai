@@ -20,3 +20,28 @@ export async function typeInto(page: Page, label: string, text: string) {
   }).toPass({ timeout: 20_000 });
   return box;
 }
+
+/**
+ * The calls the page made to `gtag(kind, target, params)`, read back from
+ * the dataLayer: the params of each call whose first two arguments match.
+ *
+ * The dataLayer is the only record that survives without the network, and
+ * it is what Tag Assistant reads too.
+ */
+export function gtagCalls(
+  page: Page,
+  kind: string,
+  target: string,
+): Promise<Record<string, unknown>[]> {
+  return page.evaluate(
+    ([kind, target]) =>
+      (
+        (window as unknown as { dataLayer?: ArrayLike<unknown>[] }).dataLayer ??
+        []
+      )
+        .map((entry) => Array.from(entry))
+        .filter(([k, t]) => k === kind && t === target)
+        .map(([, , params]) => (params ?? {}) as Record<string, unknown>),
+    [kind, target] as const,
+  );
+}

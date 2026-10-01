@@ -27,6 +27,7 @@ import {
  * the property the ad spend is judged by.
  */
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -89,9 +90,11 @@ export default async function LocaleLayout({
             />
             {/* `send_page_view: false`: the views are sent from
                 GooglePageviews, which also sees client-side navigation.
-                Left on, the landing page would be counted twice. */}
+                Left on, the landing page would be counted twice -- and
+                that event goes to every configured id, Ads included.
+                Ads rides on the same loader: one gtag.js serves both. */}
             <Script id="ga-config" strategy="afterInteractive">
-              {`gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});`}
+              {`gtag('js',new Date());gtag('config','${GA_ID}',{send_page_view:false});${ADS_ID ? `gtag('config','${ADS_ID}',{send_page_view:false});` : ""}`}
             </Script>
           </>
         )}

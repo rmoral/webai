@@ -157,6 +157,28 @@ export function configHealth(): ConfigCheck[] {
         "Google Analytics no carga: la campaña de anuncios no puede medir conversiones ni hacer remarketing.",
       critical: false,
     },
+    {
+      // Rides on the GA4 loader: without NEXT_PUBLIC_GA_ID set as well,
+      // the tag never loads and this id is never configured.
+      name: "NEXT_PUBLIC_GOOGLE_ADS_ID",
+      value: process.env.NEXT_PUBLIC_GOOGLE_ADS_ID,
+      breaks:
+        "Google Ads no recibe nada: ni registros ni compras cuentan como conversión.",
+      critical: false,
+    },
+    {
+      name: "NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL",
+      value: process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL,
+      breaks: "Los registros no se envían a Google Ads como conversión.",
+      critical: false,
+    },
+    {
+      name: "NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL",
+      value: process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL,
+      breaks:
+        "Las compras no se envían a Google Ads: la campaña no puede optimizar por venta.",
+      critical: false,
+    },
   ];
 
   return checks.map(({ value, ...rest }) => ({
