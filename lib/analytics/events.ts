@@ -188,3 +188,54 @@ function toGoogle<K extends FunnelEvent>(
   if (typeof payload.value === "number") payload.currency = CURRENCY;
   window.gtag?.("event", event, payload);
 }
+
+/** The two Google Ads conversions, and what each one carries. */
+export type AdsConversion =
+  | { kind: "signup" }
+  | {
+      kind: "purchase";
+      /** What was actually taken today, in dollars; 0 on a trial. */
+      value: number;
+      /** The Stripe subscription id, which is what makes a reload not count twice. */
+      transactionId: string;
+    };
+
+/**
+ * Reports a Google Ads conversion, beside the funnel event it mirrors:
+ * `signup` beside `signup_done`, `purchase` beside `payment_succeeded`.
+ *
+ * The account id and the labels come from the environment, because the
+ * labels are only known once the conversion actions exist in the Ads
+ * account. Until a label is set its conversion is simply not sent -- a
+ * placeholder label would be a conversion Google files under nothing.
+ *
+ * Nothing the user wrote and nothing that identifies them: the purchase
+ * carries an amount, a currency and Stripe's id for the subscription.
+ *
+ * DEBT: the purchase is reported from the browser, so a tab closed during
+ * 3-D Secure or an ad blocker loses it, and the trial's real charge three
+ * days later is never reported. The durable version uploads it from the
+ * Stripe webhook through the Google Ads API with the `gclid` already kept
+ * in the subscription's metadata; that needs API credentials the project
+ * does not have yet.
+ */
+export function trackConversion(conversion: AdsConversion): void {
+  if (typeof window === "undefined") return;
+  const account = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+  const label =
+    conversion.kind === "signup"
+      ? process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL
+      : process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL;
+  if (!account || !label) return;
+
+  window.gtag?.("event", "conversion", {
+    send_to: `${account}/${label}`,
+    ...(conversion.kind === "purchase"
+      ? {
+          value: conversion.value,
+          currency: CURRENCY,
+          transaction_id: conversion.transactionId,
+        }
+      : {}),
+  });
+}

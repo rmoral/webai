@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { track } from "@/lib/analytics/events";
+import { track, trackConversion } from "@/lib/analytics/events";
 
 // The funnel, held together from outside the type system.
 //
@@ -216,6 +216,71 @@ describe("what reaches Google", () => {
       track(undefined, "signup_done", { method: "google", next: "/app" }),
     ).not.toThrow();
     Reflect.deleteProperty(globalThis, "window");
+  });
+
+  describe("Google Ads conversions", () => {
+    const ENV = [
+      "NEXT_PUBLIC_GOOGLE_ADS_ID",
+      "NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL",
+      "NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL",
+    ] as const;
+    const saved = ENV.map((name) => process.env[name]);
+
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_ID = "AW-18006653631";
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL = "signupLabel";
+      process.env.NEXT_PUBLIC_GOOGLE_ADS_PURCHASE_LABEL = "purchaseLabel";
+    });
+    afterEach(() => {
+      ENV.forEach((name, i) => {
+        if (saved[i] === undefined) delete process.env[name];
+        else process.env[name] = saved[i];
+      });
+    });
+
+    it("sends the signup to its label, and nothing about the person", () => {
+      const seen = withGtag(() => trackConversion({ kind: "signup" }));
+      expect(seen).toEqual([
+        ["conversion", { send_to: "AW-18006653631/signupLabel" }],
+      ]);
+    });
+
+    it("sends the purchase with what was charged, its currency and the subscription", () => {
+      const seen = withGtag(() =>
+        trackConversion({
+          kind: "purchase",
+          value: 179.88,
+          transactionId: "sub_123",
+        }),
+      );
+      expect(seen).toEqual([
+        [
+          "conversion",
+          {
+            send_to: "AW-18006653631/purchaseLabel",
+            value: 179.88,
+            currency: "USD",
+            transaction_id: "sub_123",
+          },
+        ],
+      ]);
+    });
+
+    it("sends nothing while the label is not known yet", () => {
+      // A placeholder label would be a conversion Google files under
+      // nothing, and counts that nobody can find.
+      delete process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_LABEL;
+      const seen = withGtag(() => trackConversion({ kind: "signup" }));
+      expect(seen).toEqual([]);
+    });
+
+    it("sends nothing without the account id", () => {
+      delete process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+      const seen = withGtag(() =>
+        trackConversion({ kind: "purchase", value: 0, transactionId: "sub_1" }),
+      );
+      expect(seen).toEqual([]);
+    });
   });
 
   it("keeps `purchase` out: the webhook has no browser to attach it to", () => {

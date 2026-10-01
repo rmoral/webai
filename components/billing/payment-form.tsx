@@ -13,7 +13,7 @@ import { usePostHog } from "posthog-js/react";
 
 import { Button } from "@/components/ui/button";
 import { readAttribution } from "@/lib/analytics/attribution";
-import { track } from "@/lib/analytics/events";
+import { track, trackConversion } from "@/lib/analytics/events";
 import { paymentDisclosure } from "@/lib/billing/disclosure";
 import {
   CURRENCY,
@@ -259,6 +259,11 @@ function PaymentForm({
       // trial start above zero is a decision for the Ads account, not a
       // number to invent here.
       value: data.amountTodayCents / 100,
+    });
+    trackConversion({
+      kind: "purchase",
+      value: data.amountTodayCents / 100,
+      transactionId: data.subscriptionId,
     });
     onPaid(data.amountTodayCents, data.nextChargeAt);
   }

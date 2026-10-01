@@ -10,7 +10,7 @@ import {
   captureAttribution,
   clearAttribution,
 } from "@/lib/analytics/attribution";
-import { track } from "@/lib/analytics/events";
+import { track, trackConversion } from "@/lib/analytics/events";
 
 export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const { consent } = useConsent();
@@ -84,6 +84,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     const method = url.searchParams.get("signup");
     if (method !== "google" && method !== "magic_link") return;
     track(posthog, "signup_done", { method, next: url.pathname });
+    trackConversion({ kind: "signup" });
     url.searchParams.delete("signup");
     window.history.replaceState(null, "", url.toString());
   }, []);
