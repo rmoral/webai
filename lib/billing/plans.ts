@@ -173,8 +173,14 @@ export const CURRENCY = "USD";
  * their own -- they are wallets that hand over a card, so they ride on
  * `card` and are turned on by verifying the domain in Stripe, not here.
  * Naming one here is rejected by the API.
+ *
+ * PayPal is absent until PayPal recurring payments are enabled in the
+ * Stripe account. Every plan here saves the method for later charges
+ * (`setup_future_usage: off_session`), and without that Stripe refuses
+ * the whole Element -- card included -- with a 400 on elements/sessions,
+ * so the payment form renders empty.
  */
-export const PAYMENT_METHOD_TYPES = ["card", "link", "paypal"] as const;
+export const PAYMENT_METHOD_TYPES = ["card", "link"] as const;
 
 /** The trial runs on Ilimitado so the user sees the ceiling of the product. */
 export const TRIAL = {
