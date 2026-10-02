@@ -304,6 +304,15 @@ describe("the Element and the subscription offer the same payment methods", () =
     }
   });
 
+  it("keeps PayPal out until its recurring payments are enabled", () => {
+    // Every plan saves the method for off-session charges, which PayPal
+    // refuses without recurring payments on the Stripe account. Stripe
+    // then rejects the whole Element and the card field never appears:
+    // "The value provided for setup_future_usage (off_session) is not
+    // supported for paypal." Enable it in Stripe first, then remove this.
+    expect(PAYMENT_METHOD_TYPES as readonly string[]).not.toContain("paypal");
+  });
+
   it("builds the Element from the shared list", () => {
     // Two literals that must match are a bug waiting for whoever edits one
     // of them. The failure is silent on the server: Stripe.js refuses in
