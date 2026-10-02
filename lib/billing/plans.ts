@@ -279,3 +279,28 @@ export function sharedYearlyDiscount(): {
     ? pro
     : null;
 }
+
+// D1 — which state the /app header's balance block shows. Here rather
+// than beside UsageMeter because the server layout computes it, and a
+// function exported from a "use client" module cannot be called on the
+// server: it renders the whole signed-in area as an error page.
+
+/** Which of the five the header is showing. */
+export type MeterKind = "free" | "pro" | "unlimited" | "trial";
+
+/**
+ * Which state an account is in.
+ *
+ * A trial is Unlimited that has not been charged yet, so it reads as
+ * Unlimited everywhere else -- but not here, where the date of the first
+ * charge is the whole reason the block exists. The trial is checked
+ * first for that reason.
+ */
+export function meterKind(subscriber: {
+  plan: { id: string };
+  trialEnd: Date | null;
+}): MeterKind {
+  if (subscriber.trialEnd) return "trial";
+  if (subscriber.plan.id === "unlimited") return "unlimited";
+  return subscriber.plan.id === "pro" ? "pro" : "free";
+}
