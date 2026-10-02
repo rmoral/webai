@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 
+import { ensureUserRecord } from "@/lib/auth/ensure-user";
 import { getSession } from "@/lib/auth/server";
 import {
   SubscribeError,
@@ -51,6 +52,13 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
 
   try {
+    // The subscription row references `users`, and the mirror is only
+    // written on sign-in and in the app shell -- both best effort. An
+    // account whose mirror was never written (the sign-in ran while a
+    // migration was pending) reached this point with nothing to point at,
+    // and every payment failed on the foreign key.
+    await ensureUserRecord(user.id, user.email);
+
     // The IP goes to Stripe so it can work out the tax jurisdiction, and
     // into our own row only as a hash (below).
     const customerId = await ensureCustomer(user.id, user.email ?? null, ip);
@@ -106,7 +114,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (e) {
     if (e instanceof SubscribeError) return error(400, e.code);
-    console.error(`[subscribe] ${e instanceof Error ? e.message : String(e)}`);
+    // Drizzle's "Failed query" carries the database's reason in `cause`;
+    // without it the log names the statement and not what was wrong.
+    const cause =
+      e instanceof Error && e.cause instanceof Error
+        ? ` -- cause: ${e.cause.message}`
+        : "";
+    console.error(
+      `[subscribe] ${e instanceof Error ? e.message : String(e)}${cause}`,
+    );
     Sentry.captureException(e);
     return error(500, "server_error");
   }
