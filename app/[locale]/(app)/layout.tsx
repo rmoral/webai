@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { FeatureLock } from "@/components/billing/paywall";
 import { TrialEndGate } from "@/components/billing/trial-end-gate";
 import { AllowanceProvider } from "@/components/billing/allowance";
-import { UsageMeter, meterKind } from "@/components/billing/usage-meter";
+import { UsageMeter } from "@/components/billing/usage-meter";
 import { ToolTabs } from "@/components/navigation/tool-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { isAdmin } from "@/lib/auth/admin";
 import { ensureUserRecord } from "@/lib/auth/ensure-user";
 import { requireSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
+import { meterKind } from "@/lib/billing/plans";
 import { Link } from "@/lib/i18n/navigation";
 import { peekWords } from "@/lib/usage/quotas";
 

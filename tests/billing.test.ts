@@ -13,6 +13,7 @@ import {
   TOPUP,
   TRIAL,
   formatUsd,
+  meterKind,
   trialDaysFor,
   yearlySaving,
 } from "@/lib/billing/plans";
@@ -25,7 +26,6 @@ import {
 import { subscribeRequestSchema } from "@/lib/security/validation";
 import { subscriptionParams } from "@/lib/billing/subscribe";
 import { auditStripe, describeCheckoutRejection } from "@/lib/billing/stripe";
-import { meterKind } from "@/components/billing/usage-meter";
 
 describe("plan catalogue", () => {
   it("matches the prices of the pricing study", () => {
