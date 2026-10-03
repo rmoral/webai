@@ -741,6 +741,7 @@
     "formDisclosureTrial": "You are not charged today. We keep your card, and on {date}, when the {days}-day trial ends, you will be charged {amount}/month. The subscription renews automatically each month until you cancel — two clicks from your account, during the trial as well.",
     "formDisclosureCharge": "You are charged {amount} today. The subscription renews automatically on {date} for {amount}, and every cycle after that until you cancel. You can cancel in two clicks from your account.",
     "consent": "I understand the subscription renews automatically and that I can cancel it online at any time.",
+    "consentFirst": "Tick the auto-renewal box before paying.",
     "startTrialCta": "Start the trial — {amount} today",
     "payCta": "Pay — {amount} today",
     "processing": "Taking payment…",

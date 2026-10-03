@@ -741,6 +741,7 @@
     "formDisclosureTrial": "Hoy no se te cobra nada. Guardamos tu tarjeta y el {date}, al terminar los {days} días de prueba, se te cobrarán {amount}/mes. La suscripción se renueva automáticamente cada mes hasta que la canceles, en dos clics desde tu cuenta y también durante la prueba.",
     "formDisclosureCharge": "Hoy se te cobran {amount}. La suscripción se renueva automáticamente el {date} por {amount} y se repite cada ciclo hasta que la canceles. Puedes cancelar en dos clics desde tu cuenta.",
     "consent": "Entiendo que la suscripción se renueva automáticamente y que puedo cancelarla online en cualquier momento.",
+    "consentFirst": "Marca la casilla de renovación automática antes de pagar.",
     "startTrialCta": "Empezar la prueba — {amount} hoy",
     "payCta": "Pagar — {amount} hoy",
     "processing": "Procesando el pago…",

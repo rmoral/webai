@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
-import { loadStripe, type Appearance } from "@stripe/stripe-js";
+import {
+  loadStripe,
+  type Appearance,
+  type StripeExpressCheckoutElementClickEvent,
+  type StripeExpressCheckoutElementConfirmEvent,
+} from "@stripe/stripe-js";
 import {
   Elements,
+  ExpressCheckoutElement,
   PaymentElement,
   useElements,
   useStripe,
@@ -159,8 +165,31 @@ function PaymentForm({
   const price = PRICES[target.tier][target.interval].amount;
   const dueToday = trialDays !== null ? 0 : price;
 
-  async function pay() {
-    if (!stripe || !elements) return;
+  /**
+   * The wallet buttons open the bank's own sheet, which is the payment: so
+   * the auto-renewal box has to be ticked before it opens, exactly as it is
+   * before the button below can be pressed.
+   */
+  function openWallet(event: StripeExpressCheckoutElementClickEvent) {
+    if (!consented || busy) {
+      event.reject();
+      setError(t("consentFirst"));
+      return;
+    }
+    setError(null);
+    event.resolve();
+  }
+
+  /**
+   * Both buttons end here. `express` is the wallet sheet when the payment
+   * came from one, and it is told about every failure so it closes instead
+   * of spinning.
+   */
+  async function pay(express?: StripeExpressCheckoutElementConfirmEvent) {
+    if (!stripe || !elements) {
+      express?.paymentFailed();
+      return;
+    }
     setBusy(true);
     setError(null);
     track(posthog, "payment_submitted", {
@@ -174,6 +203,7 @@ function PaymentForm({
 
     const submitted = await elements.submit();
     if (submitted.error) {
+      express?.paymentFailed();
       setError(submitted.error.message ?? t("declined"));
       setBusy(false);
       return;
@@ -197,6 +227,7 @@ function PaymentForm({
     });
 
     if (res.status === 401) {
+      express?.paymentFailed();
       // They have to have an account to be billed. They come back to this
       // card field with this plan, not to a pricing page they have already
       // read -- and the `next` is the localised path, since /checkout is an
@@ -218,6 +249,7 @@ function PaymentForm({
 
     const data = await res.json().catch(() => null);
     if (!res.ok || !data?.clientSecret) {
+      express?.paymentFailed();
       setError(
         data?.error === "already_subscribed" ? t("already") : t("failed"),
       );
@@ -243,6 +275,7 @@ function PaymentForm({
     });
 
     if (result.error) {
+      express?.paymentFailed();
       setError(result.error.message ?? t("declined"));
       setBusy(false);
       return;
@@ -270,12 +303,31 @@ function PaymentForm({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Wallets first, as their own buttons: on a phone they settle the
+          payment in one gesture, and that is where most of the abandonment
+          is. Renders nothing on a browser with neither wallet. Link and
+          the rest stay in the form below, so this row is only the two. */}
+      <ExpressCheckoutElement
+        options={{
+          paymentMethods: {
+            applePay: "auto",
+            googlePay: "auto",
+            link: "never",
+            amazonPay: "never",
+            paypal: "never",
+            klarna: "never",
+          },
+        }}
+        onClick={openWallet}
+        onConfirm={(event) => pay(event)}
+      />
+
       <PaymentElement
         options={{
           layout: "tabs",
-          // Wallets first: on a phone they settle the payment in one
-          // gesture, and that is where most of the abandonment is.
-          wallets: { applePay: "auto", googlePay: "auto" },
+          // Shown above as express buttons; listed here too they would
+          // appear twice.
+          wallets: { applePay: "never", googlePay: "never" },
           fields: {
             billingDetails: {
               address: { country: "auto", postalCode: "auto" },
@@ -312,7 +364,7 @@ function PaymentForm({
       )}
 
       <Button
-        onClick={pay}
+        onClick={() => pay()}
         disabled={!consented || busy || !stripe}
         size="lg"
         className="w-full"
