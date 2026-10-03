@@ -34,6 +34,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description: post.description,
       publishedTime: post.published,
       modifiedTime: post.updated ?? post.published,
+      // Named again because an `openGraph` here replaces the inherited one
+      // whole, image included: without it a shared article has no card.
+      images: [
+        {
+          url: "/opengraph-image.png",
+          width: 1200,
+          height: 630,
+          alt: "Verbalyx",
+        },
+      ],
     },
   };
 }
@@ -66,7 +76,13 @@ export default async function Article({ params }: Params) {
     inLanguage: post.locale,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     author: { "@type": "Organization", name: "Verbalyx" },
-    publisher: { "@type": "Organization", name: "Verbalyx" },
+    publisher: {
+      "@type": "Organization",
+      name: "Verbalyx",
+      // Google shows the publisher's logo beside the article; the favicon's
+      // square PNG is the size it asks for.
+      logo: { "@type": "ImageObject", url: `${SITE_ORIGIN}/apple-icon.png` },
+    },
   };
 
   return (

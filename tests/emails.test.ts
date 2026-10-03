@@ -100,9 +100,17 @@ describe("subscription confirmation", () => {
     expect(buttons(await html("es"))).toBe(1);
   });
 
-  it("carries no images, so a blocked client loses nothing", async () => {
-    expect(await html("es")).not.toContain("<img");
-    expect(await html("en")).not.toContain("<img");
+  it("carries only the brand mark, so a blocked client loses nothing", async () => {
+    // One image, decorative, with the name beside it in text: a client
+    // that refuses to load it still shows who the email is from.
+    for (const locale of ["es", "en"] as const) {
+      const body = await html(locale);
+      const images = body.match(/<img[^>]*>/g) ?? [];
+      expect(images).toHaveLength(1);
+      expect(images[0]).toContain("/apple-icon.png");
+      expect(images[0]).toMatch(/alt=""/);
+      expect(body).toMatch(/Verbaly(<!-- -->)?<span[^>]*>x<\/span>/);
+    }
   });
 
   it("identifies the company and calls itself a billing notice", async () => {

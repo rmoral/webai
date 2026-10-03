@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { BrandMark } from "@/components/brand-mark";
 import { LanguageSwitcher } from "@/components/navigation/language-switcher";
 import { HeaderAuth } from "@/components/marketing/header-auth";
 import { ConsentSettings } from "@/components/consent";
@@ -67,8 +68,14 @@ export default async function MarketingLayout({
       <header className="bg-background/90 sticky top-0 z-20 border-b backdrop-blur">
         <div className="mx-auto max-w-[65rem] px-6">
           <div className="flex h-14 items-center gap-6">
-            <Link href="/" className="text-base font-bold tracking-tight">
-              Verbaly<span className="text-brand">x</span>
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-base font-bold tracking-tight"
+            >
+              <BrandMark />
+              <span>
+                Verbaly<span className="text-brand">x</span>
+              </span>
             </Link>
             <nav className="text-muted-foreground hidden gap-5 text-sm sm:flex">
               <Link href="/pricing" className="hover:text-foreground">

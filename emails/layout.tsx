@@ -3,11 +3,14 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
+
+import { SITE_ORIGIN } from "@/lib/i18n/routing";
 
 import { HTML_LANG, type Locale } from "./translator";
 
@@ -15,7 +18,8 @@ import { HTML_LANG, type Locale } from "./translator";
 //
 // Constraints that are not style choices: system fonts, because a webfont
 // is unreliable in a mail client and Geist will simply not arrive; no
-// images, so nothing breaks when a client blocks them; inline styles on
+// image but the brand mark, and that one beside the wordmark in text, so a
+// client that blocks it still shows the name; inline styles on
 // tables, which is the only layout Outlook renders the same way twice.
 //
 // Dark mode is done twice over, because no client agrees on how to ask
@@ -86,19 +90,35 @@ export function EmailShell({
         style={{ fontFamily: FONT, backgroundColor: "#f4f4f5", color: INK }}
       >
         <Container style={{ padding: "32px 12px", maxWidth: "600px" }}>
-          {/* Outside the card, as a wordmark rather than an image: a
-              logo that a client refuses to load is a broken email. */}
+          {/* Outside the card: the mark, then the wordmark in text. The
+              mark is the favicon's PNG (SVG does not render in Gmail or
+              Outlook) with an empty alt, so a client that blocks images
+              shows the name and nothing broken beside it. */}
           <Text
             className="vx-ink"
             style={{
               margin: "0 0 18px",
               padding: "0 4px",
               fontSize: "20px",
+              lineHeight: "28px",
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: INK,
             }}
           >
+            <Img
+              src={`${SITE_ORIGIN}/apple-icon.png`}
+              alt=""
+              width="28"
+              height="28"
+              style={{
+                display: "inline-block",
+                verticalAlign: "top",
+                marginRight: "8px",
+                borderRadius: "7px",
+                border: 0,
+              }}
+            />
             Verbaly
             <span className="vx-x" style={{ color: BRAND }}>
               x
