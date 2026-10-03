@@ -328,6 +328,23 @@ describe("the Element and the subscription offer the same payment methods", () =
     // One for the trial's setup mode, one for the immediate charge.
     expect(uses?.length).toBe(2);
   });
+
+  it("opens a wallet only after the auto-renewal box is ticked", () => {
+    // The Apple Pay / Google Pay sheet is the payment itself, so the
+    // consent the button below waits for has to gate it too -- the
+    // auto-renewal laws ask for it before the charge, not after.
+    const form = readFileSync(
+      join(ROOT, "components/billing/payment-form.tsx"),
+      "utf8",
+    );
+    expect(form).toMatch(/onClick=\{openWallet\}/);
+    const gate = form.slice(form.indexOf("function openWallet"));
+    expect(gate).toMatch(/if \(!consented[^)]*\) \{\s*event\.reject\(\)/);
+    // Shown once, as express buttons, not again as tabs in the form.
+    expect(form).toContain(
+      'wallets: { applePay: "never", googlePay: "never" }',
+    );
+  });
 });
 
 describe("canonical origin", () => {
