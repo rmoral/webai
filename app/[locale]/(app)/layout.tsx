@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { BrandMark } from "@/components/brand-mark";
 import { FeatureLock } from "@/components/billing/paywall";
 import { TrialEndGate } from "@/components/billing/trial-end-gate";
 import { AllowanceProvider } from "@/components/billing/allowance";
@@ -95,7 +96,11 @@ export default async function AppLayout({
         <header className="border-b">
           <div className="mx-auto max-w-[65rem] px-6">
             <nav className="flex min-h-13 items-center gap-x-4 gap-y-2 py-1 text-sm sm:py-2">
-              <Link href="/app" className="font-semibold tracking-tight">
+              <Link
+                href="/app"
+                className="flex items-center gap-2 font-semibold tracking-tight"
+              >
+                <BrandMark className="size-5" />
                 Verbalyx
               </Link>
 

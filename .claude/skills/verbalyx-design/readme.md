@@ -127,7 +127,7 @@ Rules: no second accent, **no gradients anywhere**, no coloured text on coloured
 
 - `Button` and `Badge` already size any child `svg` (16px and 12px respectively) with `gap-2` — the slot is there, unused.
 - The only image assets in the repo are the favicon set (`app/favicon.ico`, `app/icon.svg`, `app/apple-icon.png`; the .ico copied to `assets/favicon.ico`) and the unmodified Next.js starter SVGs in `public/` (`next.svg`, `vercel.svg`, `file.svg`, `globe.svg`, `window.svg`) — framework boilerplate, not brand assets. They were deliberately not imported.
-- **No logo exists.** No wordmark file, no monogram. The favicon (Oct 2026) is the wordmark's own final "x" in Geist Bold, white on `--brand` in a rounded square -- a crop of the wordmark, not a new symbol; nothing else uses it. Wherever a mark would go, Verbalyx sets the name as text: `font-semibold` 14px in the app header, plain text in the footer. This design system does the same — see `guidelines/brand-wordmark.html`. A logo has not been drawn or approximated here, and should not be.
+- **The brand mark** (Oct 2026) is the wordmark's own final "x" in Geist Bold, white on `--brand` in a rounded square -- a crop of the wordmark, not a new symbol. It is the favicon (`app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`) and it sits **before** the text wordmark, never instead of it: in the site headers (`components/brand-mark.tsx`, 24px; 20px in the app), in every email header (the 180px PNG at 28px, empty `alt`, so a blocked image still leaves the name), in the Open Graph card (`app/opengraph-image.png`: mark + wordmark on white) and as the blog's JSON-LD publisher logo. No other symbol, monogram or lockup exists; do not draw one. Wherever a mark would go, Verbalyx sets the name as text: `font-semibold` 14px in the app header, plain text in the footer. This design system does the same — see `guidelines/brand-wordmark.html`. A logo has not been drawn or approximated here, and should not be.
 - No icon font, no sprite sheet, no unicode-as-icon beyond "→", **no emoji**.
 - If a design genuinely needs icons, use **Lucide** (the declared library) at 16px, 1.5–2px stroke, `currentColor`, from `https://unpkg.com/lucide-static` — and flag it as an addition, since no upstream screen sets a precedent. The Sept 2026 kits deliberately still use **no icons**: tabs, chips and banners carry text, so nothing here depends on a glyph set that hasn't been chosen.
 
@@ -154,7 +154,7 @@ Rules: no second accent, **no gradients anywhere**, no coloured text on coloured
 | `explorations/` | direcciones «Tinta» (elegida) y «Señal»; muro y pago; D1–D6 del funnel (`D1 Cabecera app.html` … `D6 Emails.html`) |
 | `IMPLEMENTACION/FUNNEL/` | guía por ticket C7–C14 para Claude Code |
 | `templates/tool-landing/` | starting template for a new tool landing page |
-| `assets/favicon.ico` | the site favicon: the wordmark's "x", white on brand blue |
+| `assets/favicon.ico` | the brand mark as favicon: the wordmark's "x", white on brand blue |
 | `github.md` | source repo + sync record |
 | `REVISION_SITIO.md` | revisión de verbalyx.ai en vivo (18 sept 2026) y divergencias con este sistema |
 | `HANDOFF.md` | cómo llevar este diseño al repositorio (versión corta) |

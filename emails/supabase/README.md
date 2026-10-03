@@ -14,6 +14,13 @@ que la próxima persona que lo cambie no tenga que buscarlo en un panel.
 4. El cuerpo ya trae `{{ .ConfirmationURL }}`, que es la variable que
    Supabase sustituye. No la cambies de nombre.
 
+## El logo
+
+La cabecera lleva el símbolo de marca como imagen
+(`https://www.verbalyx.ai/apple-icon.png`) delante del nombre en texto. Si
+cambias la plantilla en el repositorio, vuelve a pegarla en el panel: Supabase
+no la lee de aquí.
+
 ## Por qué el remitente importa
 
 Sin SMTP propio, Supabase manda desde `noreply@mail.app.supabase.io`, en

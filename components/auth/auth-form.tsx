@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
 import { track } from "@/lib/analytics/events";
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { planRows } from "@/lib/billing/disclosure";
 import {
@@ -166,8 +167,14 @@ function Form({ mode }: { mode: "signin" | "signup" }) {
   return (
     <div className={plan ? "w-full max-w-3xl" : "w-full max-w-md"}>
       <div className="flex items-center justify-between gap-4">
-        <Link href="/" className="text-base font-bold tracking-tight">
-          Verbaly<span className="text-brand">x</span>
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-base font-bold tracking-tight"
+        >
+          <BrandMark />
+          <span>
+            Verbaly<span className="text-brand">x</span>
+          </span>
         </Link>
 
         {/* Two steps, and this is the first. Somebody who came to buy and

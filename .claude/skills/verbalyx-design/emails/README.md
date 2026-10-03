@@ -20,6 +20,6 @@ Remitente: **Verbalyx <hola@verbalyx.ai>** (ya es el `FROM` de `lib/email.ts`). 
 - **Bloque de datos en el correo de compra:** importe pagado, impuestos incluidos (el desglose de la factura de Stripe), plan, fecha del pago, método, cómo aparece en el extracto, factura, **próximo cobro con fecha e importe** y cómo cancelar.
 - **La cancelación no intenta retener.** No hay oferta ni «¿seguro?». Si algún día hay oferta de retención, va en otro envío.
 - **Modo oscuro:** `color-scheme`, `@media (prefers-color-scheme: dark)` y `[data-ogsc]` para Outlook. Todos los colores críticos van también en línea, así que en Gmail (que invierte a su manera y no lee la media query) el texto sigue siendo legible. La clase `.vx-dark` solo sirve para la vista previa: no hace falta en producción.
-- **Sin imágenes ni webfonts.** El logotipo es texto. Tipografía de sistema.
+- **Sin webfonts, y una sola imagen: el símbolo de marca** (`/apple-icon.png`, 28px, `alt` vacío) delante del nombre en texto, que se sigue leyendo si el cliente bloquea imágenes. Tipografía de sistema.
 - **Móvil:** a 600 px o menos, el titular baja a 22 px, el botón ocupa todo el ancho y las filas clave-valor se apilan.
 - El pie dice por qué llega el correo y qué tipo de aviso es. Los de facturación dicen «aviso de facturación, no publicidad»: eso los deja fuera de la obligación de darse de baja.
