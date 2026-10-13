@@ -356,7 +356,8 @@
     "switchToPro": "Move to Pro",
     "switchNote": "The change happens in My account. Before you confirm you will see the exact amount adjusted on your next invoice.",
     "tryFree": "Try {days} days free",
-    "trialNoteYearly": "Today {zero} · on {date} {amount} ({months} months free). Cancel before then and you pay nothing.",
+    "trialNoteYearly": "Today <b>{zero}</b> · on {date} <b>{amount}</b> ({months} months free). Cancel before then and you pay nothing.",
+    "trialNoteMonthly": "Today <b>{zero}</b> · on {date} <b>{amount}</b>, then every month. Cancel before then and you pay nothing.",
     "topupTitle": "Word top-up",
     "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
     "topupCta": "Buy a top-up",
@@ -367,6 +368,7 @@
     "cycleLabel": "Billing cycle",
     "yearlySaveGeneric": "Paying yearly costs less than paying monthly.",
     "saveHalf": "Save {percent}% ({months} months free)",
+    "trialBand": "<b>Try Unlimited free for {days} days</b> — nothing is charged today; cancel before it ends and you pay nothing.",
     "yearlyTotal": "{amount} a year",
     "billingFree": "No card. Ever.",
     "billingProMonthly": "You are charged {amount} today and every month.",
@@ -399,6 +401,14 @@
       {
         "q": "How do I cancel?",
         "a": "From your account, in two clicks, whenever you like. No call, no email. Cancel during the trial and nothing is charged."
+      },
+      {
+        "q": "What happens when I reach the daily limit?",
+        "a": "Your text stays in the editor and the limit refills every day, in under 24 hours. Unlimited has no daily limit."
+      },
+      {
+        "q": "Can I change plans?",
+        "a": "Yes, from My account → Subscription, at any time; the change is prorated."
       },
       {
         "q": "What happens when the trial ends?",

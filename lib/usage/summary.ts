@@ -152,38 +152,6 @@ export async function getAdminTotals(): Promise<AdminTotals> {
   };
 }
 
-/**
- * Every word Verbalyx has ever processed, and the day it started counting.
- *
- * For the social-proof band on /pricing. Two rules make it safe to show:
- * the figure is rounded down where it is rendered, so it never claims more
- * than happened, and it is not shown at all below a hundred thousand
- * words -- a number smaller than that is an argument against us.
- *
- * `usage_daily` is aggregate, not text: it counts words, never stores any.
- * A failure returns null, because a marketing band is never worth a 500 on
- * the page that sells.
- */
-export async function getWordsProcessed(): Promise<{
-  words: number;
-  since: string;
-} | null> {
-  const FLOOR = 100_000;
-  try {
-    const [row] = await getDb()
-      .select({
-        words: sql<number>`coalesce(sum(${usageDaily.wordsIn}), 0)::bigint`,
-        since: sql<string | null>`min(${usageDaily.date})::text`,
-      })
-      .from(usageDaily);
-    const words = Number(row?.words ?? 0);
-    if (!row?.since || !Number.isFinite(words) || words < FLOOR) return null;
-    return { words, since: row.since };
-  } catch {
-    return null;
-  }
-}
-
 /** One line of the campaign table: a source, a campaign and what it sold. */
 export interface CampaignRow {
   /** `utm_source`, or null for a visit that carried no campaign at all. */
