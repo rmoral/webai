@@ -32,3 +32,57 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+  # The browser suite, against `pnpm dev` (playwright.config.ts starts it).
+  # Dev rather than a production build on purpose: in production the
+  # anti-abuse guards fail closed without Upstash and Turnstile secrets,
+  # and this job has neither. Nothing here reaches a real backend -- the
+  # specs that need one stub it or skip themselves -- so every value below
+  # is a placeholder, safe to commit, and none is a production secret.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Placeholders: the Supabase client refuses to be built without them,
+      # and the marketing pages build one to resolve the session. Nothing
+      # answers at this address; the browser treats every visitor as
+      # signed out.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: e2e-placeholder-anon-key
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      # The same test value the unit tests use. The AI routes hash the IP
+      # before anything else and refuse to run without a secret to hash it
+      # with; unsubscribe.spec signs its tokens with it too.
+      IP_HASH_SECRET: dGVzdC1zZWNyZXQtZm9yLXVuaXQtdGVzdHM=
+      # Cloudflare's public test site key, which always passes. With it the
+      # anti-bot specs run instead of skipping; without TURNSTILE_SECRET_KEY
+      # the server skips verification outside production.
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: pnpm test:e2e
+
+      - name: Upload the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
