@@ -16,6 +16,7 @@ import {
   PRICES,
   TRIAL,
   sharedYearlyDiscount,
+  yearlyDiscount,
   type BillingInterval,
 } from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
@@ -30,9 +31,16 @@ import type { Locale } from "@/lib/i18n/routing";
 // customer would be charged $29.99 -- two prices competing in one card,
 // and the single most expensive confusion on the site.
 //
-// And the rule that closes it: the trial exists on Unlimited monthly and
-// nowhere else, so the button and the disclosure both change with the
-// cycle rather than only the price.
+// Unlimited carries the trial on both cycles (F1-01); what changes with the
+// cycle is the amount the trial ends in, and the note under the button
+// names it -- the whole year, on the yearly cycle.
+
+/** The day the trial ends if it starts now: the day of the first charge. */
+function trialEnd(): Date {
+  const date = new Date();
+  date.setDate(date.getDate() + TRIAL.days);
+  return date;
+}
 
 export function PricingPlans() {
   const t = useTranslations("pricing");
@@ -43,10 +51,9 @@ export function PricingPlans() {
   const params = useSearchParams();
 
   // Yearly by default: it is the better deal for the reader and the one
-  // that lets us keep a customer for a year. The trial does not disappear
-  // with it -- the line under the toggle says where it lives and moves
-  // the page there in one click -- and a wall that opens with the trial
-  // links to `?cycle=monthly` so it lands on the cycle it just offered.
+  // that lets us keep a customer for a year, and it has the trial too. A
+  // wall that opens with the monthly trial links to `?cycle=monthly` so
+  // it lands on the cycle it just offered.
   const [interval, setInterval] = useState<BillingInterval>(
     params.get("cycle") === "monthly" ? "monthly" : "yearly",
   );
@@ -135,30 +142,6 @@ export function PricingPlans() {
           </span>
         )}
       </div>
-
-      {/* The trial is the strongest thing this page has to offer and the
-          yearly cycle does not have one. Rather than default to the cycle
-          that shows it, the page says where it is. Hidden from somebody
-          who is already paying: they cannot start one. */}
-      {!paying && (
-        <p className="text-muted-foreground mt-3 text-sm leading-normal">
-          {yearly
-            ? t("trialHint", { days: TRIAL.days })
-            : discount
-              ? t("yearlyHint", {
-                  percent: discount.percent,
-                  months: discount.freeMonths,
-                })
-              : t("yearlyHintGeneric")}{" "}
-          <button
-            type="button"
-            onClick={() => setInterval(yearly ? "monthly" : "yearly")}
-            className="text-brand cursor-pointer underline underline-offset-[3px]"
-          >
-            {yearly ? t("seeMonthly") : t("seeYearly")}
-          </button>
-        </p>
-      )}
 
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
         <Card
@@ -261,9 +244,7 @@ export function PricingPlans() {
           }
           billing={
             yearly
-              ? t("billingUnlimitedYearly", {
-                  amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
-                })
+              ? undefined
               : t("billingUnlimitedMonthly", {
                   days: TRIAL.days,
                   amount: formatUSD(PRICES.unlimited.monthly.amount, locale),
@@ -291,9 +272,7 @@ export function PricingPlans() {
                     query: { plan: "unlimited", cycle: interval },
                   }}
                 >
-                  {yearly
-                    ? t("chooseUnlimitedYearly")
-                    : t("tryFree", { days: TRIAL.days })}
+                  {t("tryFree", { days: TRIAL.days })}
                 </Link>
               </Button>
             )
@@ -310,15 +289,21 @@ export function PricingPlans() {
                 {t("switchNote")}
               </p>
             ) : yearly ? (
-              // Explaining why there is no trial here turns an absence into
-              // the reason it exists.
+              // What the trial ends in, said under the button that starts
+              // it: on this cycle, the whole year at once.
               <p
-                className="border-brand-line bg-brand-softer text-brand-ink mt-3 rounded-xl border p-3 text-sm leading-normal"
-                data-testid="trial-disclosure"
+                className="mt-2.5 text-center text-[13px] leading-[18px] text-neutral-700"
+                data-testid="trial-note"
               >
-                {t("annualNoTrial", {
+                {t("trialNoteYearly", {
+                  zero: formatUSD(0, locale),
+                  date: format.dateTime(trialEnd(), {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }),
                   amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
-                  days: TRIAL.days,
+                  months: yearlyDiscount("unlimited").freeMonths,
                 })}
               </p>
             ) : (
@@ -352,7 +337,7 @@ function Card({
   suffix?: string;
   /** The amount actually charged, when it differs from the headline. */
   total?: string;
-  billing: string;
+  billing?: string;
   features: string[];
   cta: React.ReactNode;
   disclosure?: React.ReactNode;
@@ -398,9 +383,11 @@ function Card({
           {total}
         </p>
       )}
-      <p className="text-muted-foreground mt-2 text-sm leading-normal">
-        {billing}
-      </p>
+      {billing && (
+        <p className="text-muted-foreground mt-2 text-sm leading-normal">
+          {billing}
+        </p>
+      )}
 
       <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
         {features.map((feature) => (

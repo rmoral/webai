@@ -20,14 +20,40 @@ test("the trial discloses charge date and amount before payment", async ({
   page,
 }) => {
   // Required by ROSCA and the state auto-renewal laws (study §6.1). The
-  // page opens on the yearly cycle, which has no trial, so the cycle that
-  // does is asked for by name -- the same link the walls use.
+  // monthly cycle is asked for by name -- the same link the walls use.
   await page.goto("/precios?cycle=monthly");
   const disclosure = page.getByTestId("trial-disclosure");
   await expect(disclosure).toBeVisible();
   await expect(disclosure).toContainText("Hoy no se te cobra nada");
   await expect(disclosure).toContainText("29,99");
   await expect(disclosure).toContainText("cancelar");
+
+  // F1-01: the yearly cycle -- the one the page opens on -- has the trial
+  // too, and no longer charges today. Its note names nothing today, the
+  // date, and the whole year as the amount.
+  await page.goto("/precios");
+  const note = page.getByTestId("trial-note");
+  await expect(note).toContainText("Hoy US$0,00");
+  await expect(note).toContainText("US$179,88");
+  await expect(note).toContainText(/\d+ de [a-z]+ de \d{4}/);
+});
+
+test("the yearly trial charges nothing today, and the whole year after", async ({
+  page,
+}) => {
+  await page.goto("/registro?next=%2Fpago%3Fplan%3Dunlimited%26cycle%3Dyearly");
+  const aside = page.getByRole("complementary");
+  await expect(aside.getByText(/Ilimitado · anual/)).toBeVisible();
+  await expect(aside.getByTestId("plan-row-trial")).toContainText("3 días");
+  await expect(aside.getByTestId("plan-row-today")).toHaveText("US$0,00");
+  const first = aside.getByTestId("plan-row-firstCharge");
+  await expect(first).toContainText("US$179,88");
+  await expect(first).toContainText(/\d+ de [a-z]+ de \d{4}/);
+  // What the year works out at still shows on the yearly cycle.
+  await expect(aside.getByTestId("plan-row-equivalent")).toContainText(
+    "US$14,99",
+  );
+  await expect(aside.getByText(/por el año entero/)).toBeVisible();
 });
 
 test("choosing a plan without a session opens sign-up, keeping the plan", async ({
@@ -283,7 +309,7 @@ test("the pricing plans lead to the embedded checkout, not off-site", async ({
     {
       radio: "Anual",
       links: [
-        ["Elegir Ilimitado anual", "plan=unlimited&cycle=yearly"],
+        ["Probar 3 días gratis", "plan=unlimited&cycle=yearly"],
         ["Elegir Pro anual", "plan=pro&cycle=yearly"],
       ],
     },

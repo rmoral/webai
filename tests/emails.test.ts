@@ -183,6 +183,51 @@ describe("receipt", () => {
   });
 });
 
+describe("yearly trial (03c, 04b)", () => {
+  // F1-01. The yearly trial ends in a charge for the whole year, so every
+  // place the amount appears says so, and the cheaper exit is Pro yearly.
+  const DATE = longDate("es", CHARGE);
+
+  it("confirms the trial with the whole year as the first charge", async () => {
+    const body = await render(
+      SubscriptionConfirmationEmail({
+        appUrl: APP,
+        locale: "es",
+        trialDays: 3,
+        yearly: true,
+        chargeDate: DATE,
+        chargeAmount: "US$179,88",
+        paidToday: "US$0,00",
+        plan: "Ilimitado · anual",
+      }),
+    );
+    expect(body).toContain("US$179,88, el año entero");
+    expect(body).not.toContain("/mes");
+  });
+
+  it("warns with the yearly amount, and steps down to Pro yearly", async () => {
+    const body = await render(
+      TrialReminderEmail({
+        appUrl: APP,
+        locale: "es",
+        yearly: true,
+        chargeDate: DATE,
+        chargeAmount: "US$179,88",
+        proAmount: "US$89,88",
+      }),
+    );
+    expect(body).toContain("se cobra el año entero");
+    expect(body).toContain("Se cobran US$179,88 por el año entero");
+    expect(body).toContain("Bajar a Pro anual, US$89,88 al año");
+    expect(body).not.toContain("/mes");
+    // The subject carries the yearly figure, which is why this one matters
+    // more than the monthly reminder.
+    expect(
+      subject("es", "reminderSubject", { amount: "US$179,88", date: DATE }),
+    ).toContain("US$179,88");
+  });
+});
+
 describe("trial reminder", () => {
   async function html(locale: "es" | "en") {
     return render(

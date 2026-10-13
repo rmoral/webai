@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { getSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
-import { TRIAL } from "@/lib/billing/plans";
+import { trialDaysFor } from "@/lib/billing/plans";
 import {
   describeCheckoutRejection,
   findPrice,
@@ -13,12 +13,10 @@ import {
 } from "@/lib/billing/stripe";
 import { getDb } from "@/lib/db/client";
 import { events } from "@/lib/db/schema";
+import { TERMS_VERSION } from "@/lib/i18n/legal";
 import { getPathname } from "@/lib/i18n/navigation";
 import { routing } from "@/lib/i18n/routing";
 import { hashIp } from "@/lib/security/crypto";
-
-// Terms version recorded with the consent, per study §6.7.
-const TERMS_VERSION = "2026-09-15";
 
 const bodySchema = z.object({
   plan: z.enum(["pro", "unlimited", "topup"]),
@@ -95,12 +93,9 @@ async function handle(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
   const isSubscription = plan !== "topup";
-  // The trial is only offered on Ilimitado monthly, and only to newcomers.
-  const withTrial =
-    isSubscription &&
-    plan === TRIAL.tier &&
-    interval === TRIAL.interval &&
-    subscriber.plan.id === "free";
+  // The trial is offered on Ilimitado, either cycle, and only to newcomers.
+  const trialDays = isSubscription ? trialDaysFor(plan) : null;
+  const withTrial = trialDays !== null && subscriber.plan.id === "free";
 
   try {
     const session = await getStripe().checkout.sessions.create({
@@ -131,7 +126,7 @@ async function handle(request: NextRequest) {
             subscription_data: {
               ...(withTrial
                 ? {
-                    trial_period_days: TRIAL.days,
+                    trial_period_days: trialDays,
                     trial_settings: {
                       end_behavior: {
                         missing_payment_method: "cancel" as const,

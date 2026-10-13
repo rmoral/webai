@@ -354,6 +354,7 @@
     "switchToPro": "Cambiar a Pro",
     "switchNote": "El cambio se hace desde Mi cuenta. Antes de confirmar verás el importe exacto que se ajusta en tu próxima factura.",
     "tryFree": "Probar {days} días gratis",
+    "trialNoteYearly": "Hoy {zero} · el {date} {amount} ({months} meses gratis). Cancela antes y no pagas nada.",
     "topupTitle": "Recarga de palabras",
     "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
     "topupCta": "Comprar recarga",
@@ -364,21 +365,13 @@
     "cycleLabel": "Ciclo de facturación",
     "yearlySaveGeneric": "Pagando al año ahorras frente al mensual.",
     "saveHalf": "Ahorra {percent} % ({months} meses gratis)",
-    "trialHint": "¿Prefieres probar antes? La prueba gratis de {days} días está en Ilimitado mensual.",
-    "seeMonthly": "Ver precios mensuales",
-    "yearlyHint": "Pagando al año ahorras un {percent} % ({months} meses gratis), sin prueba gratuita.",
-    "yearlyHintGeneric": "Pagando al año ahorras frente al mensual, sin prueba gratuita.",
-    "seeYearly": "Ver precios anuales",
     "yearlyTotal": "{amount} al año",
     "billingFree": "Sin tarjeta. Para siempre.",
     "billingProMonthly": "Se te cobran {amount} hoy y cada mes.",
     "billingProYearly": "Se cobran {amount} hoy, una vez al año.",
     "billingUnlimitedMonthly": "{days} días de prueba. Después, {amount}/mes.",
-    "billingUnlimitedYearly": "Se cobran {amount} hoy, una vez al año.",
     "chooseProMonthly": "Elegir Pro mensual",
     "chooseProYearly": "Elegir Pro anual",
-    "chooseUnlimitedYearly": "Elegir Ilimitado anual",
-    "annualNoTrial": "El plan anual se cobra hoy, entero: {amount}. No lleva prueba gratuita — la prueba de {days} días solo existe en el ciclo mensual, para que nadie acabe con un cargo anual que no esperaba.",
     "compareTitle": "Qué incluye cada plan",
     "rowWordsDay": "Palabras al día",
     "rowWordsMonth": "Palabras al mes",
@@ -399,7 +392,7 @@
     "faq": [
       {
         "q": "¿Cuándo se me cobra?",
-        "a": "En Pro y en Ilimitado anual, hoy mismo al completar el pago. En la prueba de Ilimitado, al cuarto día: los tres primeros no se cobra nada y verás la fecha exacta antes de dar la tarjeta."
+        "a": "En Pro, hoy mismo al completar el pago. En Ilimitado, mensual o anual, al terminar los 3 días de prueba: hasta entonces no se cobra nada y verás la fecha exacta antes de dar la tarjeta."
       },
       {
         "q": "¿Cómo cancelo?",
@@ -515,6 +508,7 @@
     "title": "Elige cómo sigues. Hoy todavía no se te ha cobrado nada.",
     "body": "Has usado Ilimitado durante {days} días. Puedes continuar, bajar a Pro o cancelar: las tres opciones están aquí y ninguna requiere escribirnos.",
     "perMonth": "/mes",
+    "perYear": " al año",
     "unlimitedBody": "{month} palabras al mes, {request} por petición y prioridad de cola.",
     "proBody": "{month} palabras al mes, {request} por petición. Todas las herramientas e historial.",
     "continueUnlimited": "Continuar en Ilimitado",
@@ -522,7 +516,8 @@
     "cancel": "Cancelar mi suscripción",
     "working": "Un momento…",
     "failed": "No hemos podido aplicar el cambio. Vuelve a intentarlo en unos minutos.",
-    "disclosure": "Si no eliges nada, hoy se te cobrarán {unlimited} y la suscripción de Ilimitado seguirá activa mes a mes. Cambiar a Pro aplica el prorrateo automáticamente. Cancelar lleva dos clics desde tu cuenta y puedes hacerlo ahora mismo."
+    "disclosure": "Si no eliges nada, hoy se te cobrarán {unlimited} y la suscripción de Ilimitado seguirá activa mes a mes. Cambiar a Pro aplica el prorrateo automáticamente. Cancelar lleva dos clics desde tu cuenta y puedes hacerlo ahora mismo.",
+    "disclosureYearly": "Si no eliges nada, hoy se te cobrarán {amount} por el año entero y la suscripción de Ilimitado se renovará cada año. Cambiar a Pro anual aplica el prorrateo automáticamente. Cancelar lleva dos clics desde tu cuenta y puedes hacerlo ahora mismo."
   },
   "detector": {
     "bands": {
@@ -663,6 +658,7 @@
     "valueTrialDays": "{days} días gratis",
     "valuePerMonth": "{amount}/mes",
     "planNoteTrial": "Hoy no se te cobra nada. El {date} se te cobrarán {amount}/mes salvo que canceles antes, en dos clics desde tu cuenta.",
+    "planNoteTrialYearly": "Hoy no se te cobra nada. El {date} se te cobrarán {amount} por el año entero salvo que canceles antes, en dos clics desde tu cuenta.",
     "planNoteCharge": "Se cobra al confirmar el pago, en el paso siguiente. Nada se cobra al crear la cuenta.",
     "changePlan": "Cambiar de plan"
   },
@@ -735,6 +731,7 @@
     "firstCharge": "Primer cobro",
     "nextRenewal": "Próxima renovación",
     "chargeNoteTrial": "{amount}/mes, salvo que canceles antes",
+    "chargeNoteTrialYearly": "{amount} por el año entero, salvo que canceles antes",
     "chargeNotePaid": "{amount}, con renovación automática",
     "rowPlan": "Plan",
     "rowPaidToday": "Hoy has pagado",
@@ -747,6 +744,7 @@
   },
   "payment": {
     "formDisclosureTrial": "Hoy no se te cobra nada. Guardamos tu tarjeta y el {date}, al terminar los {days} días de prueba, se te cobrarán {amount}/mes. La suscripción se renueva automáticamente cada mes hasta que la canceles, en dos clics desde tu cuenta y también durante la prueba.",
+    "formDisclosureTrialYearly": "Hoy no se te cobra nada. Guardamos tu tarjeta y el {date}, al terminar los {days} días de prueba, se te cobrarán {amount} por el año entero. La suscripción se renueva automáticamente cada año hasta que la canceles, en dos clics desde tu cuenta y también durante la prueba.",
     "formDisclosureCharge": "Hoy se te cobran {amount}. La suscripción se renueva automáticamente el {date} por {amount} y se repite cada ciclo hasta que la canceles. Puedes cancelar en dos clics desde tu cuenta.",
     "consent": "Entiendo que la suscripción se renueva automáticamente y que puedo cancelarla online en cualquier momento.",
     "consentFirst": "Marca la casilla de renovación automática antes de pagar.",
@@ -800,7 +798,7 @@
         },
         {
           "heading": "Suscripción, prueba gratuita y renovación automática",
-          "body": "Los pagos se procesan a través de Stripe. El plan Ilimitado incluye un periodo de prueba de {trialDays} días que requiere método de pago. Antes de introducir tus datos de pago te mostramos, de forma clara y destacada, que hoy no se te cobra nada, la fecha exacta del primer cargo y su importe. Si no cancelas antes de que termine la prueba, la suscripción se activa y se cobra el plan elegido. Todas las suscripciones se renuevan automáticamente por periodos equivalentes al contratado hasta que las canceles."
+          "body": "Los pagos se procesan a través de Stripe. El plan Ilimitado, tanto mensual como anual, incluye un periodo de prueba de {trialDays} días que requiere método de pago. Antes de introducir tus datos de pago te mostramos, de forma clara y destacada, que hoy no se te cobra nada, la fecha exacta del primer cargo y su importe. Si no cancelas antes de que termine la prueba, la suscripción se activa y se cobra el plan elegido; en el plan anual, ese primer cargo es el importe anual completo. Todas las suscripciones se renuevan automáticamente por periodos equivalentes al contratado hasta que las canceles."
         },
         {
           "heading": "Cancelación",
@@ -912,6 +910,7 @@
     "confirmSubject": "Tu prueba de Verbalyx empieza hoy — primer cobro el {date}",
     "confirmPaidSubject": "Tu suscripción de Verbalyx está activa — próxima renovación el {date}",
     "confirmTrialPreview": "Hoy no se te cobra nada. El primer cobro es el {date}: {amount}.",
+    "confirmTrialPreviewYearly": "Hoy no se te cobra nada. El primer cobro es el {date}: {amount}, el año entero.",
     "confirmPaidPreview": "Hoy se te han cobrado {amount}. La próxima renovación es el {date}.",
     "confirmTrialHeading": "Tu prueba de Ilimitado empieza hoy",
     "confirmPaidHeading": "Tu suscripción está activa",
@@ -922,12 +921,16 @@
     "confirmTrialReminder": "Te avisaremos otra vez 24 horas antes del cobro.",
     "reminderSubject": "El {date} se te cobran {amount} — cancela antes si no quieres continuar",
     "reminderPreview": "El {date} se te cobran {amount}. Si no quieres continuar, cancela antes en dos clics.",
+    "reminderPreviewYearly": "Tu prueba de Ilimitado anual termina el {date} y se cobra el año entero. Si no quieres continuar, cancela antes en dos clics.",
     "reminderHeading": "El {date} se te cobran {amount}",
     "reminderBody": "Tu prueba de Ilimitado termina el {date}. Te avisamos con tiempo para que decidas sin prisa: continuar, bajar a Pro o cancelar.",
     "reminderStay": "Seguir en Ilimitado. No hagas nada.",
+    "reminderStayYearly": "Seguir en Ilimitado. No hagas nada. Se cobran {amount} por el año entero y se renueva cada año.",
     "reminderDowngrade": "Bajar a Pro, {amount}/mes. El prorrateo se aplica solo.",
+    "reminderDowngradeYearly": "Bajar a Pro anual, {amount} al año. El prorrateo se aplica solo.",
     "reminderCancel": "Cancelar. Sin cargo y sin explicaciones. Conservas el acceso hasta el {date}.",
     "firstCharge": "Primer cobro",
+    "chargeYearly": "{amount}, el año entero",
     "nextRenewal": "Próxima renovación",
     "goToApp": "Ir a la app",
     "footerCompany": "YBB Solutions, LLC — Verbalyx",

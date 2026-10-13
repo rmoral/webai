@@ -23,6 +23,7 @@ export function SubscriptionConfirmationEmail({
   locale,
   /** null when money moved today; the trial length otherwise. */
   trialDays,
+  yearly = false,
   chargeDate,
   chargeAmount,
   paidToday,
@@ -33,6 +34,8 @@ export function SubscriptionConfirmationEmail({
   appUrl: string;
   locale: Locale;
   trialDays: number | null;
+  /** A yearly trial converts into a charge for the whole year (03c). */
+  yearly?: boolean;
   chargeDate: string;
   chargeAmount: string;
   paidToday: string;
@@ -49,7 +52,10 @@ export function SubscriptionConfirmationEmail({
       locale={locale}
       preview={
         trial
-          ? t("confirmTrialPreview", { date: chargeDate, amount: chargeAmount })
+          ? t(yearly ? "confirmTrialPreviewYearly" : "confirmTrialPreview", {
+              date: chargeDate,
+              amount: chargeAmount,
+            })
           : t("receiptPreview", { date: chargeDate, amount: chargeAmount })
       }
     >
@@ -66,7 +72,11 @@ export function SubscriptionConfirmationEmail({
       <ChargeBlock
         label={trial ? t("firstCharge") : t("nextRenewal")}
         date={chargeDate}
-        amount={chargeAmount}
+        amount={
+          trial && yearly
+            ? t("chargeYearly", { amount: chargeAmount })
+            : chargeAmount
+        }
       />
 
       {receipt && receipt.length > 0 && <DataRows rows={receipt} />}

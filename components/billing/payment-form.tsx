@@ -98,7 +98,7 @@ export function PaymentPanel({
 }) {
   const t = useTranslations("payment");
   const locale = useLocale() as Locale;
-  const trialDays = trialDaysFor(target.tier, target.interval);
+  const trialDays = trialDaysFor(target.tier);
   const amountCents = Math.round(
     PRICES[target.tier][target.interval].amount * 100,
   );
@@ -161,7 +161,7 @@ function PaymentForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const trialDays = trialDaysFor(target.tier, target.interval);
+  const trialDays = trialDaysFor(target.tier);
   const price = PRICES[target.tier][target.interval].amount;
   const dueToday = trialDays !== null ? 0 : price;
 

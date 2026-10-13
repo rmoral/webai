@@ -25,14 +25,22 @@ import { pathFor } from "@/lib/i18n/routing";
 export function TrialReminderEmail({
   appUrl,
   locale,
+  yearly = false,
   chargeDate,
   chargeAmount,
   proAmount,
 }: {
   appUrl: string;
   locale: Locale;
+  /**
+   * The yearly trial (04b). Its charge is the whole year, which makes this
+   * the more important of the two reminders: every line that names the
+   * amount says it is the year, and stepping down quotes Pro yearly.
+   */
+  yearly?: boolean;
   chargeDate: string;
   chargeAmount: string;
+  /** Pro on the same cycle, already formatted. */
   proAmount: string;
 }) {
   const t = emailTranslator(locale);
@@ -41,7 +49,10 @@ export function TrialReminderEmail({
   return (
     <EmailShell
       locale={locale}
-      preview={t("reminderPreview", { amount: chargeAmount, date: chargeDate })}
+      preview={t(yearly ? "reminderPreviewYearly" : "reminderPreview", {
+        amount: chargeAmount,
+        date: chargeDate,
+      })}
     >
       <EmailHeading>
         {t("reminderHeading", { amount: chargeAmount })}
@@ -52,11 +63,21 @@ export function TrialReminderEmail({
       <ChargeBlock
         label={t("firstCharge")}
         date={chargeDate}
-        amount={chargeAmount}
+        amount={
+          yearly ? t("chargeYearly", { amount: chargeAmount }) : chargeAmount
+        }
       />
 
-      <EmailBody>{t("reminderStay")}</EmailBody>
-      <EmailBody>{t("reminderDowngrade", { amount: proAmount })}</EmailBody>
+      <EmailBody>
+        {yearly
+          ? t("reminderStayYearly", { amount: chargeAmount })
+          : t("reminderStay")}
+      </EmailBody>
+      <EmailBody>
+        {t(yearly ? "reminderDowngradeYearly" : "reminderDowngrade", {
+          amount: proAmount,
+        })}
+      </EmailBody>
 
       <EmailButton href={account}>{t("reviewSubscription")}</EmailButton>
 

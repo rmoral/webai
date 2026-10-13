@@ -52,19 +52,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, action: "cancel" });
     }
 
-    const price = await findPrice(lookupKeyFor("pro", "monthly"));
-    if (!price) return error(400, "price_not_configured");
-
     const current = await stripe.subscriptions.retrieve(row.subscriptionId);
     const item = current.items.data[0];
     if (!item) return error(400, "no_subscription");
+
+    // Down to Pro on the same cycle: a yearly trial steps down to Pro
+    // yearly, which is what the wall and the reminder email both quote.
+    const cycle =
+      item.price.recurring?.interval === "year" ? "yearly" : "monthly";
+    const price = await findPrice(lookupKeyFor("pro", cycle));
+    if (!price) return error(400, "price_not_configured");
 
     await stripe.subscriptions.update(row.subscriptionId, {
       items: [{ id: item.id, price: price.id }],
       // The difference is credited or charged automatically, which is what
       // the wall's disclosure promises in as many words.
       proration_behavior: "create_prorations",
-      metadata: { ...current.metadata, plan: "pro", cycle: "monthly" },
+      metadata: { ...current.metadata, plan: "pro", cycle },
     });
 
     // The row is refreshed by customer.subscription.updated; nothing here

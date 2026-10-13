@@ -100,9 +100,8 @@ test("the cycle toggle moves the headline price, not a footnote", async ({
 });
 
 test("the page opens on the cycle the link asked for", async ({ page }) => {
-  // The walls offer the trial, which only the monthly cycle has, so they
-  // link to it by name rather than dropping the reader on a page with no
-  // trial on it.
+  // The walls offer the monthly trial, so they link to that cycle by name
+  // rather than dropping the reader on the yearly one.
   const card = await unlimitedCard(page, "?cycle=monthly");
   await expect(card.getByTestId("plan-price")).toContainText(/29,99/);
   await expect(
@@ -110,27 +109,22 @@ test("the page opens on the cycle the link asked for", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("the trial is offered on the monthly cycle and nowhere else", async ({
-  page,
-}) => {
+test("the trial is offered on both cycles of Ilimitado", async ({ page }) => {
   const card = await unlimitedCard(page);
 
-  // Yearly: no trial, and a disclosure that says why rather than staying
-  // quiet about it.
+  // Yearly (F1-01): the same trial, and a note naming the whole year as
+  // what it ends in. The box explaining why there was no trial is gone.
   await expect(
-    card.getByRole("link", { name: "Elegir Ilimitado anual" }),
-  ).toBeVisible();
-  const yearlyNote = card.getByTestId("trial-disclosure");
-  await expect(yearlyNote).toContainText("No lleva prueba gratuita");
-  await expect(yearlyNote).toContainText("179,88");
+    card.getByRole("link", { name: "Probar 3 días gratis" }),
+  ).toHaveAttribute("href", /cycle=yearly/);
+  await expect(card.getByTestId("trial-disclosure")).toHaveCount(0);
+  await expect(card.getByTestId("trial-note")).toContainText("179,88");
 
-  // The trial has not been hidden, only moved: the line under the toggle
-  // says where it is and takes the reader there.
-  await page.getByRole("button", { name: "Ver precios mensuales" }).click();
+  await page.getByRole("radio", { name: "Mensual" }).click();
 
   await expect(
     card.getByRole("link", { name: "Probar 3 días gratis" }),
-  ).toBeVisible();
+  ).toHaveAttribute("href", /cycle=monthly/);
   const monthlyNote = card.getByTestId("trial-disclosure");
   await expect(monthlyNote).toContainText("Hoy no se te cobra nada");
   await expect(monthlyNote).toContainText("29,99");
