@@ -356,7 +356,8 @@
     "switchToPro": "Cambiar a Pro",
     "switchNote": "El cambio se hace desde Mi cuenta. Antes de confirmar verás el importe exacto que se ajusta en tu próxima factura.",
     "tryFree": "Probar {days} días gratis",
-    "trialNoteYearly": "Hoy {zero} · el {date} {amount} ({months} meses gratis). Cancela antes y no pagas nada.",
+    "trialNoteYearly": "Hoy <b>{zero}</b> · el {date} <b>{amount}</b> ({months} meses gratis). Cancela antes y no pagas nada.",
+    "trialNoteMonthly": "Hoy <b>{zero}</b> · el {date} <b>{amount}</b>, y después cada mes. Cancela antes y no pagas nada.",
     "topupTitle": "Recarga de palabras",
     "topupBody": "{amount} por {words} palabras adicionales. No caducan. Requiere una suscripción activa.",
     "topupCta": "Comprar recarga",
@@ -367,6 +368,7 @@
     "cycleLabel": "Ciclo de facturación",
     "yearlySaveGeneric": "Pagando al año ahorras frente al mensual.",
     "saveHalf": "Ahorra {percent} % ({months} meses gratis)",
+    "trialBand": "<b>Prueba Ilimitado {days} días gratis</b> — hoy no se cobra nada; cancela antes de que termine y no pagas.",
     "yearlyTotal": "{amount} al año",
     "billingFree": "Sin tarjeta. Para siempre.",
     "billingProMonthly": "Se te cobran {amount} hoy y cada mes.",
@@ -399,6 +401,14 @@
       {
         "q": "¿Cómo cancelo?",
         "a": "Desde tu cuenta, en dos clics, cuando quieras. No hay que llamar ni escribir un correo. Si cancelas durante la prueba, no se cobra nada."
+      },
+      {
+        "q": "¿Qué pasa cuando llego al límite diario?",
+        "a": "El texto se queda en el editor y el límite se recarga cada día, en menos de 24 h. Con Ilimitado no hay límite diario."
+      },
+      {
+        "q": "¿Puedo cambiar de plan?",
+        "a": "Sí, desde Mi cuenta → Suscripción, en cualquier momento; el cambio se prorratea."
       },
       {
         "q": "¿Qué pasa cuando termina la prueba?",

@@ -11,12 +11,14 @@ import {
 // embedded flow here only creates subscriptions.
 import { CheckoutButton } from "@/components/marketing/checkout-button";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
-import { PLANS, TOPUP, TRIAL } from "@/lib/billing/plans";
+import { DetectorProof } from "@/components/marketing/detector-proof";
+import { PLANS, PRICES, TOPUP, TRIAL } from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
 import { alternatesFor } from "@/lib/i18n/metadata";
 import { Link } from "@/lib/i18n/navigation";
 import { LEGAL_SLUGS } from "@/lib/i18n/legal";
 import type { Locale } from "@/lib/i18n/routing";
+import { cn } from "@/lib/utils";
 
 type Params = { params: Promise<{ locale: Locale }> };
 
@@ -56,20 +58,21 @@ export default async function PricingPage({ params }: Params) {
     return value === null ? none : n(value);
   };
 
+  // Values in the order the cards read on a desktop: Gratis · Ilimitado ·
+  // Pro, with Ilimitado in the middle (F1-15).
+  const TIERS = ["free", "unlimited", "pro"] as const;
   const rows: { label: string; values: string[] }[] = [
     {
       label: t("rowWordsDay"),
-      values: [perDay("free"), perDay("pro"), perDay("unlimited")],
+      values: TIERS.map(perDay),
     },
     {
       label: t("rowWordsMonth"),
-      values: [perMonth("free"), perMonth("pro"), perMonth("unlimited")],
+      values: TIERS.map(perMonth),
     },
     {
       label: t("rowPerRequest"),
-      values: (["free", "pro", "unlimited"] as const).map((tier) =>
-        n(limitsOf(tier).maxWordsPerRequest),
-      ),
+      values: TIERS.map((tier) => n(limitsOf(tier).maxWordsPerRequest)),
     },
     {
       label: t("rowTools"),
@@ -77,40 +80,42 @@ export default async function PricingPage({ params }: Params) {
     },
     {
       label: t("rowHistory"),
-      values: (["free", "pro", "unlimited"] as const).map((tier) =>
-        limitsOf(tier).history ? yes : no,
-      ),
+      values: TIERS.map((tier) => (limitsOf(tier).history ? yes : no)),
     },
     {
       label: t("rowBreakdown"),
-      values: (["free", "pro", "unlimited"] as const).map((tier) =>
+      values: TIERS.map((tier) =>
         limitsOf(tier).sentenceHighlight ? yes : no,
       ),
     },
     {
       label: t("rowPriority"),
-      values: (["free", "pro", "unlimited"] as const).map((tier) =>
-        limitsOf(tier).priorityQueue ? yes : no,
-      ),
+      values: TIERS.map((tier) => (limitsOf(tier).priorityQueue ? yes : no)),
     },
     {
       label: t("rowTopup"),
-      values: [
-        t("valueTopupNeedsPlan"),
-        t("valueTopup", {
-          amount: formatUSD(TOPUP.amount, locale),
-          words: n(TOPUP.words),
-        }),
-        t("valueTopup", {
-          amount: formatUSD(TOPUP.amount, locale),
-          words: n(TOPUP.words),
-        }),
-      ],
+      values: TIERS.map((tier) =>
+        tier === "free"
+          ? t("valueTopupNeedsPlan")
+          : t("valueTopup", {
+              amount: formatUSD(TOPUP.amount, locale),
+              words: n(TOPUP.words),
+            }),
+      ),
     },
   ];
 
+  // "—" and "No" are absences, and read as such: greyed, not black.
+  const absent = (value: string) => value === none || value === no;
+  // The accordion lists the plans the way the cards stack on a phone.
+  const stacked = [1, 2, 0] as const;
+  const headline = (tier: (typeof TIERS)[number]) =>
+    tier === "free"
+      ? formatUSD(0, locale)
+      : `${formatUSD(PRICES[tier].yearly.monthlyEquivalent, locale)}${t("perMonth")}`;
+
   return (
-    <main className="mx-auto max-w-[65rem] px-6 py-12">
+    <main className="mx-auto max-w-[65rem] px-4 pt-6 pb-12 sm:px-6 md:pt-10">
       <h1 className="text-3xl font-bold tracking-tight">{t("h1")}</h1>
       <p className="text-muted-foreground mt-3">
         {t("intro", { days: TRIAL.days })}
@@ -122,58 +127,141 @@ export default async function PricingPage({ params }: Params) {
         <PricingPlans />
       </Suspense>
 
-      {/* Above the table, not below it: the promise that makes the table
-          worth reading is that none of it is a trap. The way out is named
-          in full -- the three clicks, in order -- because "cancel whenever
-          you want" is what every subscription says. */}
-      <p className="text-success-ink border-success-line bg-success-soft mt-6 rounded-xl border px-5 py-4 text-sm leading-normal">
-        <strong className="font-semibold">{t("guaranteeLead")}</strong>
-        {t("guaranteeBody")}
-      </p>
+      {/* The proof that it works, and the promise that none of it is a
+          trap, side by side. The way out is named in full -- the clicks,
+          in order -- because "cancel whenever you want" is what every
+          subscription says. Without detector figures the first renders
+          nothing and the second takes the row. */}
+      <div className="mt-6 grid gap-4 md:grid-cols-[1fr_320px] md:gap-5">
+        <DetectorProof
+          variant="block"
+          className="mt-0 md:mt-0 md:grid-cols-[200px_1fr]"
+        />
+        <p className="text-success-ink border-success-line bg-success-soft rounded-[14px] border p-5 text-sm leading-normal">
+          <strong className="font-semibold">{t("guaranteeLead")}</strong>
+          {t("guaranteeBody")}
+        </p>
+      </div>
 
       <h2 className="mt-10 text-xl font-semibold tracking-tight">
         {t("compareTitle")}
       </h2>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[34rem] text-left text-sm">
-          <thead>
-            <tr className="border-b">
-              <th scope="col" className="py-2 pr-4 font-medium" />
-              {(["free", "pro", "unlimited"] as const).map((tier) => (
-                <th key={tier} scope="col" className="py-2 pr-4 font-semibold">
-                  {plans(tier)}
-                </th>
+
+      {/* A phone gets one plan at a time, Ilimitado open: a three-column
+          table at 390 was a sideways scroll nobody did. */}
+      <div className="mt-4 flex flex-col gap-3 md:hidden">
+        {stacked.map((column) => {
+          const tier = TIERS[column];
+          return (
+            <details
+              key={tier}
+              open={tier === "unlimited"}
+              className="group rounded-xl border px-4"
+            >
+              <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2 text-base font-semibold [&::-webkit-details-marker]:hidden">
+                {plans(tier)}
+                <span className="text-muted-foreground text-[13px] font-normal">
+                  {headline(tier)}
+                </span>
+                <svg
+                  aria-hidden
+                  viewBox="0 0 10 6"
+                  className="ml-auto w-[9px] transition-transform group-open:rotate-180"
+                >
+                  <path
+                    d="M1 1l4 4 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              </summary>
+              <dl className="pb-2">
+                {rows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-[1fr_auto] gap-4 border-t border-neutral-100 py-[9px] text-sm leading-5"
+                  >
+                    <dt className="text-neutral-600">{row.label}</dt>
+                    <dd
+                      className={cn(
+                        "text-right font-medium",
+                        absent(row.values[column]) && "text-neutral-400",
+                      )}
+                    >
+                      {row.values[column]}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          );
+        })}
+      </div>
+
+      <table className="mt-4 hidden w-full text-left text-sm leading-5 md:table">
+        <thead>
+          <tr className="border-b">
+            <th scope="col" className="px-4 py-[11px] font-semibold" />
+            {TIERS.map((tier) => (
+              <th
+                key={tier}
+                scope="col"
+                className={cn(
+                  "px-4 py-[11px] font-semibold",
+                  tier === "unlimited" && "bg-brand-softer",
+                )}
+              >
+                {plans(tier)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label} className="border-b last:border-0">
+              <th scope="row" className="px-4 py-[11px] font-normal">
+                {row.label}
+              </th>
+              {row.values.map((value, i) => (
+                <td
+                  key={i}
+                  className={cn(
+                    "text-muted-foreground px-4 py-[11px]",
+                    TIERS[i] === "unlimited" && "bg-brand-softer",
+                    absent(value) && "text-neutral-400",
+                  )}
+                >
+                  {value}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody className="text-muted-foreground">
-            {rows.map((row) => (
-              <tr key={row.label} className="border-b last:border-0">
-                <th
-                  scope="row"
-                  className="text-foreground py-2 pr-4 font-normal"
-                >
-                  {row.label}
-                </th>
-                {row.values.map((value, i) => (
-                  <td key={i} className="py-2 pr-4">
-                    {value}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
 
       <h2 className="mt-10 text-xl font-semibold tracking-tight">
         {t("faqTitle")}
       </h2>
-      <dl className="mt-4 space-y-5">
+      {/* An accordion on a phone; two columns above, no answer split
+          across them. */}
+      <div className="mt-4 md:hidden">
         {faq.map((entry) => (
-          <div key={entry.q}>
-            <dt className="font-medium">{entry.q}</dt>
-            <dd className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          <details key={entry.q} className="border-b">
+            <summary className="flex min-h-[52px] cursor-pointer list-none items-center py-3 text-[15px] leading-[21px] font-semibold [&::-webkit-details-marker]:hidden">
+              {entry.q}
+            </summary>
+            <p className="pb-4 text-sm leading-[21px] text-neutral-600">
+              {entry.a}
+            </p>
+          </details>
+        ))}
+      </div>
+      <dl className="mt-4 hidden gap-10 md:block md:columns-2">
+        {faq.map((entry) => (
+          <div key={entry.q} className="mb-6 break-inside-avoid">
+            <dt className="text-[15px] font-semibold">{entry.q}</dt>
+            <dd className="mt-1 text-sm leading-[21px] text-neutral-600">
               {entry.a}
             </dd>
           </div>

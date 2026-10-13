@@ -22,11 +22,11 @@ test("the trial discloses charge date and amount before payment", async ({
   // Required by ROSCA and the state auto-renewal laws (study §6.1). The
   // monthly cycle is asked for by name -- the same link the walls use.
   await page.goto("/precios?cycle=monthly");
-  const disclosure = page.getByTestId("trial-disclosure");
+  const disclosure = page.getByTestId("trial-note");
   await expect(disclosure).toBeVisible();
-  await expect(disclosure).toContainText("Hoy no se te cobra nada");
-  await expect(disclosure).toContainText("29,99");
-  await expect(disclosure).toContainText("cancelar");
+  await expect(disclosure).toContainText("Hoy US$0,00");
+  await expect(disclosure).toContainText("US$29,99, y después cada mes");
+  await expect(disclosure).toContainText("Cancela antes y no pagas nada");
 
   // F1-01: the yearly cycle -- the one the page opens on -- has the trial
   // too, and no longer charges today. Its note names nothing today, the

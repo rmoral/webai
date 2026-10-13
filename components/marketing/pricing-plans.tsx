@@ -5,7 +5,6 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 
-import { TrialDisclosure } from "@/components/billing/paywall";
 import { useViewer } from "@/components/marketing/viewer";
 import { track } from "@/lib/analytics/events";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +21,7 @@ import {
 import { formatUSD } from "@/lib/format";
 import { Link } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
+import { cn } from "@/lib/utils";
 
 // The three plans, with the cycle as a toggle.
 //
@@ -33,7 +33,8 @@ import type { Locale } from "@/lib/i18n/routing";
 //
 // Unlimited carries the trial on both cycles (F1-01); what changes with the
 // cycle is the amount the trial ends in, and the note under the button
-// names it -- the whole year, on the yearly cycle.
+// names it -- the whole year, on the yearly cycle. The hierarchy is in the
+// buttons (F1-10): Ilimitado filled, Pro outlined, Gratis a text link.
 
 /** The day the trial ends if it starts now: the day of the first charge. */
 function trialEnd(): Date {
@@ -95,7 +96,7 @@ export function PricingPlans() {
   const currentPlan = (
     <div
       data-testid="current-plan"
-      className="text-muted-foreground flex h-11 w-full items-center justify-center rounded-md border border-dashed text-sm font-medium md:h-9"
+      className="text-muted-foreground flex h-12 w-full items-center justify-center rounded-md border border-dashed text-sm font-medium"
     >
       {t("currentPlan")}
     </div>
@@ -103,21 +104,40 @@ export function PricingPlans() {
 
   /** A change of plan is a proration, and Stripe's portal owns it. */
   const switchTo = (label: string, filled: boolean) => (
-    <Button variant={filled ? "default" : "outline"} className="w-full" asChild>
+    <Button
+      size="lg"
+      variant={filled ? "default" : "outline"}
+      className="w-full"
+      asChild
+    >
       <Link href="/app/account">{label}</Link>
     </Button>
   );
 
+  /** "Hoy US$0,00 · el {date} …", with the two figures in bold. */
+  const trialNote = (key: "trialNoteYearly" | "trialNoteMonthly") =>
+    t.rich(key, {
+      zero: formatUSD(0, locale),
+      date: format.dateTime(trialEnd(), {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      amount: formatUSD(PRICES.unlimited[interval].amount, locale),
+      months: yearlyDiscount("unlimited").freeMonths,
+      b: (chunks) => <b className="text-foreground font-semibold">{chunks}</b>,
+    });
+
   return (
     <>
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div
           role="radiogroup"
           // Not the page's heading: this group chooses a billing cycle,
           // and a screen reader announcing "what each plan includes" here
           // describes the table further down instead.
           aria-label={t("cycleLabel")}
-          className="flex flex-wrap items-center gap-2"
+          className="flex items-center gap-1.5"
         >
           {(["yearly", "monthly"] as const).map((option) => (
             <Chip
@@ -126,13 +146,14 @@ export function PricingPlans() {
               aria-checked={interval === option}
               pressed={interval === option}
               onClick={() => setInterval(option)}
+              className="h-10 px-4 text-[15px] md:h-9 md:px-3.5 md:text-sm"
             >
               {t(option)}
             </Chip>
           ))}
         </div>
         {yearly && (
-          <span className="text-success-ink text-sm font-medium">
+          <span className="text-success text-sm font-medium">
             {discount
               ? t("saveHalf", {
                   percent: discount.percent,
@@ -143,91 +164,27 @@ export function PricingPlans() {
         )}
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
-        <Card
-          title={plans("free")}
-          price={formatUSD(0, locale)}
-          billing={t("billingFree")}
-          features={[
-            t("wordsPerDay", { words: n(PLANS.free.limits.wordsPerDay ?? 0) }),
-            t("perRequest", { words: n(PLANS.free.limits.maxWordsPerRequest) }),
-            t("freeTools"),
-          ]}
-          cta={
-            // Never propose something already done. With a session this
-            // column went on selling "create a free account" to somebody
-            // reading it from their own account -- and to a customer it
-            // has nothing to say at all.
-            viewer?.plan === "free" ? (
-              currentPlan
-            ) : paying ? null : (
-              <Button
-                variant="outline"
-                className="w-full"
-                asChild
-                // Holds the row while the session resolves, so the card
-                // does not change its mind in front of the reader.
-                aria-busy={viewer === undefined}
-              >
-                <Link href="/signup">{t("signup")}</Link>
-              </Button>
-            )
-          }
-        />
+      {/* F1-02: the trial is the offer, on both cycles, so it is said once
+          above the cards rather than only inside one of them. Not to
+          somebody who is already paying: they cannot start one. */}
+      {!paying && (
+        <p className="border-success-line bg-success-soft text-success-ink mt-4 rounded-[10px] border px-3.5 py-3 text-sm leading-5 md:mt-[18px] md:px-4 md:text-center">
+          {t.rich("trialBand", {
+            days: TRIAL.days,
+            b: (chunks) => <b className="font-semibold">{chunks}</b>,
+          })}
+        </p>
+      )}
 
-        <Card
-          title={plans("pro")}
-          price={formatUSD(PRICES.pro[interval].monthlyEquivalent, locale)}
-          suffix={t("perMonth")}
-          total={
-            yearly
-              ? t("yearlyTotal", {
-                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
-                })
-              : undefined
-          }
-          billing={
-            yearly
-              ? t("billingProYearly", {
-                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
-                })
-              : t("billingProMonthly", {
-                  amount: formatUSD(PRICES.pro.monthly.amount, locale),
-                })
-          }
-          features={[
-            t("wordsPerMonth", {
-              words: n(PLANS.pro.limits.wordsPerMonth ?? 0),
-            }),
-            t("perRequest", { words: n(PLANS.pro.limits.maxWordsPerRequest) }),
-            t("proTools"),
-          ]}
-          cta={
-            viewer?.plan === "pro" ? (
-              currentPlan
-            ) : viewer?.plan === "unlimited" ? (
-              switchTo(t("switchToPro"), false)
-            ) : (
-              // Outline, because the only filled button on this page is
-              // the one we are recommending.
-              <Button variant="outline" className="w-full" asChild>
-                <Link
-                  href={{
-                    pathname: "/checkout",
-                    query: { plan: "pro", cycle: interval },
-                  }}
-                >
-                  {yearly ? t("chooseProYearly") : t("chooseProMonthly")}
-                </Link>
-              </Button>
-            )
-          }
-        />
-
+      {/* In the DOM, Ilimitado first: on a phone what is read first is
+          what is read at all. From md up the order puts it in the middle,
+          Gratis · Ilimitado · Pro, which is how the eye reads three. */}
+      <div className="mt-4 grid items-stretch gap-4 md:mt-5 md:grid-cols-3 md:gap-5">
         <Card
           highlighted
+          className="md:order-2"
           // The only badge on the page, and it names the recommendation
-          // rather than an offer that half the cycles do not have.
+          // rather than an offer.
           badge={t("mostPopular")}
           title={plans("unlimited")}
           price={formatUSD(
@@ -265,7 +222,7 @@ export function PricingPlans() {
             ) : viewer?.plan === "pro" ? (
               switchTo(t("switchToUnlimited"), true)
             ) : (
-              <Button className="w-full" asChild>
+              <Button size="lg" className="w-full" asChild>
                 <Link
                   href={{
                     pathname: "/checkout",
@@ -277,40 +234,104 @@ export function PricingPlans() {
               </Button>
             )
           }
-          disclosure={
+          note={
             viewer?.plan === "unlimited" ? null : viewer?.plan === "pro" ? (
               // A proration is arithmetic we do not do here. Promising an
               // amount we have not computed is how a change of plan turns
               // into a complaint.
-              <p
-                className="border-brand-line bg-brand-softer text-brand-ink mt-3 rounded-xl border p-3 text-sm leading-normal"
-                data-testid="trial-disclosure"
-              >
-                {t("switchNote")}
-              </p>
-            ) : yearly ? (
-              // What the trial ends in, said under the button that starts
-              // it: on this cycle, the whole year at once.
-              <p
-                className="mt-2.5 text-center text-[13px] leading-[18px] text-neutral-700"
-                data-testid="trial-note"
-              >
-                {t("trialNoteYearly", {
-                  zero: formatUSD(0, locale),
-                  date: format.dateTime(trialEnd(), {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }),
-                  amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
-                  months: yearlyDiscount("unlimited").freeMonths,
-                })}
-              </p>
+              <span data-testid="trial-disclosure">{t("switchNote")}</span>
             ) : (
-              <TrialDisclosure
-                className="mt-3"
-                data-testid="trial-disclosure"
-              />
+              // What the trial ends in, under the button that starts it:
+              // the whole year on the yearly cycle.
+              <span data-testid="trial-note">
+                {trialNote(yearly ? "trialNoteYearly" : "trialNoteMonthly")}
+              </span>
+            )
+          }
+        />
+
+        <Card
+          className="md:order-3"
+          title={plans("pro")}
+          price={formatUSD(PRICES.pro[interval].monthlyEquivalent, locale)}
+          suffix={t("perMonth")}
+          total={
+            yearly
+              ? t("yearlyTotal", {
+                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
+                })
+              : undefined
+          }
+          billing={
+            yearly
+              ? t("billingProYearly", {
+                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
+                })
+              : t("billingProMonthly", {
+                  amount: formatUSD(PRICES.pro.monthly.amount, locale),
+                })
+          }
+          features={[
+            t("wordsPerMonth", {
+              words: n(PLANS.pro.limits.wordsPerMonth ?? 0),
+            }),
+            t("perRequest", { words: n(PLANS.pro.limits.maxWordsPerRequest) }),
+            t("proTools"),
+          ]}
+          cta={
+            viewer?.plan === "pro" ? (
+              currentPlan
+            ) : viewer?.plan === "unlimited" ? (
+              switchTo(t("switchToPro"), false)
+            ) : (
+              // Outlined in the brand colour: second in line, still a plan
+              // somebody can buy here (F1-10).
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-brand text-brand hover:bg-brand-softer hover:text-brand w-full border-[1.5px]"
+                asChild
+              >
+                <Link
+                  href={{
+                    pathname: "/checkout",
+                    query: { plan: "pro", cycle: interval },
+                  }}
+                >
+                  {yearly ? t("chooseProYearly") : t("chooseProMonthly")}
+                </Link>
+              </Button>
+            )
+          }
+        />
+
+        <Card
+          className="md:order-1"
+          title={plans("free")}
+          price={formatUSD(0, locale)}
+          billing={t("billingFree")}
+          features={[
+            t("wordsPerDay", { words: n(PLANS.free.limits.wordsPerDay ?? 0) }),
+            t("perRequest", { words: n(PLANS.free.limits.maxWordsPerRequest) }),
+            t("freeTools"),
+          ]}
+          cta={
+            // Never propose something already done. With a session this
+            // column went on selling "create a free account" to somebody
+            // reading it from their own account -- and to a customer it
+            // has nothing to say at all.
+            viewer?.plan === "free" ? (
+              currentPlan
+            ) : paying ? null : (
+              // A text link with a full-width 48px target: the free account
+              // used to be the biggest button above the fold (F1-16).
+              <Link
+                href="/signup"
+                aria-busy={viewer === undefined}
+                className="text-brand focus-visible:ring-brand/30 flex h-12 w-full items-center justify-center rounded-md text-base font-semibold outline-none hover:underline focus-visible:ring-[3px]"
+              >
+                {t("signup")}
+              </Link>
             )
           }
         />
@@ -328,8 +349,9 @@ function Card({
   billing,
   features,
   cta,
-  disclosure,
+  note,
   highlighted = false,
+  className,
 }: {
   title: string;
   badge?: string;
@@ -340,21 +362,23 @@ function Card({
   billing?: string;
   features: string[];
   cta: React.ReactNode;
-  disclosure?: React.ReactNode;
+  /** Under the button. The space is kept on every card, so the three
+      buttons sit on one line. */
+  note?: React.ReactNode;
   highlighted?: boolean;
+  className?: string;
 }) {
   return (
     <section
       aria-label={title}
-      className={`flex flex-col rounded-xl border p-5 ${
-        // First in one column: it is the recommendation, and what is read
-        // first in a stack is what is read at all.
-        highlighted
-          ? "border-brand ring-brand order-first ring-1 sm:order-none"
-          : ""
-      }`}
+      className={cn(
+        "flex flex-col rounded-[14px] border p-5 md:p-6",
+        highlighted &&
+          "border-brand border-2 p-[19px] md:p-[23px] md:shadow-[0_8px_24px_rgb(43_69_196/0.10)]",
+        className,
+      )}
     >
-      <h2 className="flex items-center gap-2 font-semibold">
+      <h2 className="flex items-center gap-2 text-[17px] font-semibold">
         {title}
         {badge && <Badge variant="brand">{badge}</Badge>}
       </h2>
@@ -363,40 +387,48 @@ function Card({
           sentence about when it is taken. */}
       <p
         data-testid="plan-price"
-        className="mt-2 text-3xl font-semibold tracking-tight"
+        className="mt-2 text-4xl font-bold tracking-[-0.02em]"
       >
         {price}
         {suffix && (
-          <span className="text-muted-foreground text-base font-normal">
+          <span className="text-muted-foreground text-base font-normal tracking-normal">
             {" "}
             {suffix}
           </span>
         )}
       </p>
-      {/* The row is kept even when there is no yearly total, so the cards
-          do not jump as the cycle changes under the reader's cursor. */}
-      {suffix && (
-        <p
-          data-testid="plan-total"
-          className="min-h-[1.3em] text-sm font-medium"
-        >
-          {total}
-        </p>
-      )}
-      {billing && (
-        <p className="text-muted-foreground mt-2 text-sm leading-normal">
-          {billing}
-        </p>
-      )}
+      {/* The row is kept on every card, so the cards do not jump as the
+          cycle changes under the reader's cursor. */}
+      <p data-testid="plan-total" className="min-h-5 text-sm font-medium">
+        {total}
+      </p>
+      {/* Two lines held on every card, so switching cycle does not move
+          the buttons: Pro's yearly line wraps and its monthly one does not. */}
+      <p
+        className={cn(
+          "text-muted-foreground mt-2 text-sm leading-5 md:min-h-10",
+          !billing && "max-md:hidden",
+        )}
+      >
+        {billing}
+      </p>
 
-      <ul className="text-muted-foreground mt-4 space-y-1 text-sm">
+      {/* Grows, so the three buttons line up whatever each list holds. */}
+      <ul className="text-muted-foreground mt-4 flex-1 space-y-1 text-sm">
         {features.map((feature) => (
           <li key={feature}>{feature}</li>
         ))}
       </ul>
 
-      <div className="mt-5 flex-1 content-end">{cta}</div>
-      {disclosure}
+      <div className="mt-[18px]">{cta}</div>
+      <p
+        className={cn(
+          "mt-2.5 text-center text-[13px] leading-[18px] text-neutral-700 md:min-h-[54px]",
+          !note && "hidden md:invisible md:block",
+        )}
+      >
+        {note}
+      </p>
     </section>
   );
 }

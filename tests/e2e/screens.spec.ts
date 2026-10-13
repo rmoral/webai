@@ -125,9 +125,60 @@ test("the trial is offered on both cycles of Ilimitado", async ({ page }) => {
   await expect(
     card.getByRole("link", { name: "Probar 3 días gratis" }),
   ).toHaveAttribute("href", /cycle=monthly/);
-  const monthlyNote = card.getByTestId("trial-disclosure");
-  await expect(monthlyNote).toContainText("Hoy no se te cobra nada");
-  await expect(monthlyNote).toContainText("29,99");
+  const monthlyNote = card.getByTestId("trial-note");
+  await expect(monthlyNote).toContainText("Hoy US$0,00");
+  await expect(monthlyNote).toContainText("29,99, y después cada mes");
+});
+
+test("the trial is announced above the cards, on both cycles", async ({
+  page,
+}) => {
+  await page.goto("/precios");
+  const band = page.getByText(/Prueba Ilimitado 3 días gratis/);
+  await expect(band).toBeVisible();
+  await page.getByRole("radio", { name: "Mensual" }).click();
+  await expect(band).toBeVisible();
+  // C9's lines about the trial living on the monthly cycle are gone.
+  await expect(page.getByText(/Prefieres probar antes/)).toHaveCount(0);
+});
+
+test("on a desktop: Gratis · Ilimitado · Pro, buttons on one line", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto("/precios");
+  const cards = ["Gratis", "Ilimitado", "Pro"].map((name) =>
+    page.getByRole("region", { name, exact: true }),
+  );
+  const boxes = await Promise.all(cards.map((card) => card.boundingBox()));
+  expect(boxes[0]!.x).toBeLessThan(boxes[1]!.x);
+  expect(boxes[1]!.x).toBeLessThan(boxes[2]!.x);
+
+  // Filled, outlined, text: one recommendation, and all three at the same
+  // height, 48 tall.
+  const buttons = await Promise.all([
+    cards[0].getByRole("link", { name: "Crear cuenta gratis" }).boundingBox(),
+    cards[1].getByRole("link", { name: "Probar 3 días gratis" }).boundingBox(),
+    cards[2].getByRole("link", { name: "Elegir Pro anual" }).boundingBox(),
+  ]);
+  for (const button of buttons) {
+    expect(button!.height).toBe(48);
+    expect(Math.abs(button!.y - buttons[1]!.y)).toBeLessThan(1);
+  }
+});
+
+test("on a phone the comparison is one plan at a time, Ilimitado open", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/precios");
+  // Ilimitado first in the stack, and open.
+  const first = page.getByRole("region").first();
+  await expect(first).toHaveAttribute("aria-label", "Ilimitado");
+  const open = page.locator("details[open] summary");
+  await expect(open).toHaveCount(1);
+  await expect(open).toContainText("Ilimitado");
+  await expect(page.getByRole("table")).toBeHidden();
 });
 
 test("one badge, and one filled button, on the whole page", async ({
@@ -161,8 +212,22 @@ test("promises two clicks to cancel above the table, not after it", async ({
   await expect(
     page.getByRole("heading", { name: "Preguntas sobre la facturación" }),
   ).toBeVisible();
-  await expect(page.getByText("¿Cuándo se me cobra?")).toBeVisible();
-  await expect(page.getByText("¿Cómo cancelo?")).toBeVisible();
+  // Two new questions after "¿Cómo cancelo?", and the first one corrected
+  // for the yearly trial.
+  const questions = page.getByRole("term");
+  await expect(questions).toHaveText([
+    "¿Cuándo se me cobra?",
+    "¿Cómo cancelo?",
+    "¿Qué pasa cuando llego al límite diario?",
+    "¿Puedo cambiar de plan?",
+    "¿Qué pasa cuando termina la prueba?",
+    "¿Las palabras caducan?",
+    "¿Los precios llevan impuestos?",
+    "¿Hacéis reembolsos?",
+  ]);
+  await expect(page.getByRole("definition").first()).toContainText(
+    "En Ilimitado, mensual o anual, al terminar los 3 días",
+  );
 });
 
 test("the confirmation page is behind a session", async ({ page }) => {
