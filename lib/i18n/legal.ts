@@ -14,7 +14,7 @@ import type { Locale } from "./routing";
  * It is also what the legal pages print as their last-updated date, so the
  * two can never drift apart.
  */
-export const TERMS_VERSION = "2026-09-17";
+export const TERMS_VERSION = "2026-10-13";
 
 export const LEGAL_DOCS = [
   "legalNotice",

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { TrialEndWall } from "@/components/billing/trial-end";
+import type { BillingInterval } from "@/lib/billing/plans";
 
 /**
  * Shows wall E once, on entering the app on the last day of the trial.
@@ -17,8 +18,10 @@ import { TrialEndWall } from "@/components/billing/trial-end";
  * somebody who opens the app is somebody who has not yet been told they
  * are about to be charged.
  */
-export function TrialEndGate() {
+export function TrialEndGate({ interval }: { interval: BillingInterval }) {
   const [settled, setSettled] = useState(false);
   if (settled) return null;
-  return <TrialEndWall onSettled={() => setSettled(true)} />;
+  return (
+    <TrialEndWall interval={interval} onSettled={() => setSettled(true)} />
+  );
 }

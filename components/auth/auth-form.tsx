@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { planRows } from "@/lib/billing/disclosure";
 import {
   PLANS,
-  PRICES,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
@@ -415,6 +414,7 @@ function ChosenPlan({
       case "today":
         return money(row.amount);
       case "firstCharge":
+        return `${day(row.date)} · ${money(row.amount)}`;
       case "renewal":
         return day(row.date);
       default:
@@ -466,9 +466,9 @@ function ChosenPlan({
 
       <p className="text-muted-foreground mt-4 text-sm leading-normal">
         {firstCharge
-          ? t("planNoteTrial", {
+          ? t(interval === "yearly" ? "planNoteTrialYearly" : "planNoteTrial", {
               date: day(firstCharge.date),
-              amount: money(PRICES[tier][interval].monthlyEquivalent),
+              amount: money(firstCharge.amount),
             })
           : t("planNoteCharge")}
       </p>

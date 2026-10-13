@@ -137,7 +137,11 @@ export default async function AppLayout({
             <ToolTabs plan={subscriber?.plan.id ?? "free"} />
           </div>
         </header>
-        {trialEndsWithin24h && <TrialEndGate />}
+        {trialEndsWithin24h && (
+          <TrialEndGate
+            interval={subscriber.interval === "year" ? "yearly" : "monthly"}
+          />
+        )}
         {children}
       </div>
     </AllowanceProvider>

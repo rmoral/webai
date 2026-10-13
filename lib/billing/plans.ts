@@ -181,7 +181,11 @@ export const CURRENCY = "USD";
  */
 export const PAYMENT_METHOD_TYPES = ["card", "link"] as const;
 
-/** The trial runs on Ilimitado so the user sees the ceiling of the product. */
+/**
+ * The trial runs on Ilimitado so the user sees the ceiling of the product,
+ * on either cycle (F1-01). `interval` is the cycle the paywall offers it
+ * on: the wall sells the monthly trial, whatever /precios defaults to.
+ */
 export const TRIAL = {
   tier: "unlimited" as const,
   interval: "monthly" as const,
@@ -208,23 +212,20 @@ export const TRIAL = {
 export const TRIAL_REMINDER = { leadHours: 24, windowHours: 2 } as const;
 
 /**
- * Whether this combination starts with a free trial, and for how long.
+ * Whether a plan starts with a free trial, and for how long.
  *
- * This is the rule the whole redesign turns on. A trial hanging off a
- * yearly cycle is what made the headline price and the disclosure disagree:
- * "3 days free" over a charge of $179.88. The trial exists on Ilimitado
- * monthly and nowhere else.
+ * Ilimitado, monthly or yearly; Pro never. The yearly trial ends in a
+ * charge for the whole year, which is why every surface that offers it --
+ * the card note, the disclosure above the card field, the reminder email
+ * -- names that amount and says it is the year, not a month (F1-01).
  *
  * It lives here rather than next to the Stripe call because the disclosure,
  * the pricing page and the paywall all have to agree with it, and those run
  * in the browser -- importing them into the module that talks to Stripe
  * would put the secret-key SDK in the client bundle.
  */
-export function trialDaysFor(
-  tier: PaidTier,
-  interval: BillingInterval,
-): number | null {
-  return tier === TRIAL.tier && interval === TRIAL.interval ? TRIAL.days : null;
+export function trialDaysFor(tier: PaidTier): number | null {
+  return tier === TRIAL.tier ? TRIAL.days : null;
 }
 
 /** Yearly saving in dollars — §2 asks for the figure, not just the percentage. */

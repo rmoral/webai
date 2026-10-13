@@ -161,7 +161,7 @@ export function subscriptionParams(args: {
   /** Which ad paid for this, when the customer let us keep it. */
   attribution?: Attribution | null;
 }): Stripe.SubscriptionCreateParams {
-  const trialDays = trialDaysFor(args.tier, args.interval);
+  const trialDays = trialDaysFor(args.tier);
 
   return {
     customer: args.customerId,
@@ -226,7 +226,7 @@ export async function createSubscription(args: {
   attribution?: Attribution | null;
 }): Promise<SubscribeResult> {
   const { tier, interval } = args;
-  const trialDays = trialDaysFor(tier, interval);
+  const trialDays = trialDaysFor(tier);
 
   const price = await findPrice(lookupKeyFor(tier, interval));
   if (!price) throw new SubscribeError("price_not_configured");

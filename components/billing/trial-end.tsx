@@ -8,7 +8,12 @@ import { PaywallDialog } from "@/components/billing/paywall";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics/events";
-import { PLANS, PRICES, TRIAL } from "@/lib/billing/plans";
+import {
+  PLANS,
+  PRICES,
+  TRIAL,
+  type BillingInterval,
+} from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
 import { useRouter } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
@@ -27,7 +32,14 @@ import type { Locale } from "@/lib/i18n/routing";
 
 type Action = "switch_to_pro" | "cancel";
 
-export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
+export function TrialEndWall({
+  interval,
+  onSettled,
+}: {
+  /** The cycle the trial converts into; yearly charges the whole year. */
+  interval: BillingInterval;
+  onSettled: () => void;
+}) {
   const t = useTranslations("trialEnd");
   const plans = useTranslations("plans");
   const locale = useLocale() as Locale;
@@ -78,6 +90,11 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
 
   const unlimited = PLANS.unlimited.limits;
   const pro = PLANS.pro.limits;
+  // Both cards and the disclosure quote the cycle being converted into:
+  // stepping down from a yearly trial lands on Pro yearly.
+  const yearly = interval === "yearly";
+  const per = t(yearly ? "perYear" : "perMonth");
+  const unlimitedAmount = formatUSD(PRICES.unlimited[interval].amount, locale);
 
   return (
     <PaywallDialog
@@ -103,8 +120,8 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
           <div>
             <p className="font-semibold">{plans("unlimited")}</p>
             <p className="text-sm">
-              {formatUSD(PRICES.unlimited.monthly.amount, locale)}
-              {t("perMonth")}
+              {unlimitedAmount}
+              {per}
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-normal">
               {t("unlimitedBody", {
@@ -129,8 +146,8 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
           <div>
             <p className="font-semibold">{plans("pro")}</p>
             <p className="text-sm">
-              {formatUSD(PRICES.pro.monthly.amount, locale)}
-              {t("perMonth")}
+              {formatUSD(PRICES.pro[interval].amount, locale)}
+              {per}
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-normal">
               {t("proBody", {
@@ -151,9 +168,9 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
       </div>
 
       <p className="border-brand-line bg-brand-softer text-brand-ink mt-5 rounded-xl border p-4 text-sm leading-normal">
-        {t("disclosure", {
-          unlimited: formatUSD(PRICES.unlimited.monthly.amount, locale),
-        })}
+        {yearly
+          ? t("disclosureYearly", { amount: unlimitedAmount })
+          : t("disclosure", { unlimited: unlimitedAmount })}
       </p>
 
       {error && (

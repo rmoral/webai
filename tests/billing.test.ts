@@ -262,20 +262,17 @@ describe("describeCheckoutRejection", () => {
 });
 
 describe("trialDaysFor", () => {
-  // The rule the whole redesign turns on. A trial hanging off a yearly
-  // cycle is what made the headline price and the disclosure disagree:
-  // "3 days free" printed over a charge of $179.88.
-  it("gives the trial to Ilimitado monthly and to nothing else", () => {
-    expect(trialDaysFor("unlimited", "monthly")).toBe(TRIAL.days);
-    expect(trialDaysFor("unlimited", "yearly")).toBeNull();
-    expect(trialDaysFor("pro", "monthly")).toBeNull();
-    expect(trialDaysFor("pro", "yearly")).toBeNull();
+  // F1-01: the trial covers Ilimitado on both cycles; the yearly one ends
+  // in a charge for the whole year, which the disclosures below spell out.
+  it("gives the trial to Ilimitado and never to Pro", () => {
+    expect(trialDaysFor("unlimited")).toBe(TRIAL.days);
+    expect(trialDaysFor("pro")).toBeNull();
   });
 
   it("reads the trial from PLANS rather than from a literal", () => {
     // If the trial ever moves tier or length, this follows it; a hardcoded
     // 3 here would keep passing while the product said something else.
-    expect(trialDaysFor(TRIAL.tier, TRIAL.interval)).toBe(TRIAL.days);
+    expect(trialDaysFor(TRIAL.tier)).toBe(TRIAL.days);
   });
 });
 
@@ -306,15 +303,21 @@ describe("paymentDisclosure", () => {
   }
 
   it("promises no charge today only when there is actually a trial", () => {
-    expect(render("es", "unlimited", "monthly")).toContain(
-      "Hoy no se te cobra nada",
-    );
-    // The yearly cycle is charged in full today and has to say so. This is
-    // the sentence whose absence was the original bug.
-    expect(render("es", "unlimited", "yearly")).toContain("Hoy se te cobran");
-    expect(render("es", "unlimited", "yearly")).not.toContain(
-      "no se te cobra nada",
-    );
+    for (const interval of ["monthly", "yearly"] as const) {
+      expect(render("es", "unlimited", interval)).toContain(
+        "Hoy no se te cobra nada",
+      );
+    }
+    // Pro has no trial: charged today, and it has to say so.
+    expect(render("es", "pro", "yearly")).toContain("Hoy se te cobran");
+  });
+
+  it("says the yearly trial ends in a charge for the whole year", () => {
+    // "{amount}/mes" over 179,88 is the misreading that ends in a dispute.
+    const text = render("es", "unlimited", "yearly");
+    expect(text).toContain("por el año entero");
+    expect(text).not.toContain("/mes");
+    expect(render("es", "unlimited", "monthly")).toContain("/mes");
   });
 
   it("names the amount that will actually be charged, in each cycle", () => {
@@ -325,10 +328,12 @@ describe("paymentDisclosure", () => {
   });
 
   it("says the card is kept, but only where a card is being kept", () => {
-    expect(render("es", "unlimited", "monthly")).toContain(
-      "Guardamos tu tarjeta",
-    );
-    expect(render("es", "unlimited", "yearly")).not.toContain(
+    for (const interval of ["monthly", "yearly"] as const) {
+      expect(render("es", "unlimited", interval)).toContain(
+        "Guardamos tu tarjeta",
+      );
+    }
+    expect(render("es", "pro", "monthly")).not.toContain(
       "Guardamos tu tarjeta",
     );
   });
@@ -447,14 +452,23 @@ describe("subscriptionParams", () => {
     }
   });
 
-  it("asks for a trial on Ilimitado monthly and nowhere else", () => {
-    expect(
-      subscriptionParams({ ...base, tier: "unlimited", interval: "monthly" })
-        .trial_period_days,
-    ).toBe(TRIAL.days);
+  it("asks for a trial on Ilimitado, on both cycles, and nowhere else", () => {
+    for (const interval of ["monthly", "yearly"] as const) {
+      const params = subscriptionParams({
+        ...base,
+        tier: "unlimited",
+        interval,
+      });
+      expect(params.trial_period_days, interval).toBe(TRIAL.days);
+      // The card is saved for the charge the trial ends in -- the whole
+      // year, on the yearly cycle.
+      expect(params.payment_settings?.save_default_payment_method).toBe(
+        "on_subscription",
+      );
+      expect(params.expand).toEqual(["pending_setup_intent"]);
+    }
 
     for (const [tier, interval] of [
-      ["unlimited", "yearly"],
       ["pro", "monthly"],
       ["pro", "yearly"],
     ] as const) {
@@ -731,7 +745,18 @@ describe("planRows", () => {
     );
   });
 
-  it("never promises a yearly plan a trial it does not have", () => {
-    expect(keys("unlimited", "yearly")).not.toContain("trial");
+  it("starts the yearly trial at zero and names the whole year as the first charge", () => {
+    expect(keys("unlimited", "yearly")).toEqual([
+      "trial",
+      "today",
+      "firstCharge",
+      // "Equivale a US$14,99/mes" stays on the yearly cycle.
+      "equivalent",
+    ]);
+    expect(row("unlimited", "yearly", "today")).toMatchObject({ amount: 0 });
+    expect(row("unlimited", "yearly", "firstCharge")).toMatchObject({
+      date: new Date("2026-09-26T10:00:00.000Z"),
+      amount: PRICES.unlimited.yearly.amount,
+    });
   });
 });

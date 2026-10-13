@@ -51,7 +51,7 @@ export function OrderSummary({
   const locale = useLocale() as Locale;
   const [howTo, setHowTo] = useState(false);
 
-  const trialDays = trialDaysFor(target.tier, target.interval);
+  const trialDays = trialDaysFor(target.tier);
   const price = PRICES[target.tier][target.interval].amount;
   const dueToday = trialDays !== null ? 0 : price;
 
@@ -126,7 +126,7 @@ export function PaymentSuccess({
   const locale = useLocale() as Locale;
   const format = useFormatter();
 
-  const trialDays = trialDaysFor(target.tier, target.interval);
+  const trialDays = trialDaysFor(target.tier);
   const trial = trialDays !== null;
   const charged = paid.amountTodayCents / 100;
   const recurring = formatUSD(
@@ -167,7 +167,12 @@ export function PaymentSuccess({
         </p>
         <p className="text-brand-ink mt-1 text-sm">
           {trial
-            ? t("chargeNoteTrial", { amount: recurring })
+            ? t(
+                target.interval === "yearly"
+                  ? "chargeNoteTrialYearly"
+                  : "chargeNoteTrial",
+                { amount: recurring },
+              )
             : t("chargeNotePaid", { amount: recurring })}
         </p>
       </div>

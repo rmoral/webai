@@ -3,7 +3,7 @@ import { and, eq, gte, isNull, lte } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 import { sendTrialReminder } from "@/lib/billing/notify";
-import { PRICES, TRIAL_REMINDER } from "@/lib/billing/plans";
+import { TRIAL_REMINDER } from "@/lib/billing/plans";
 import { getDb } from "@/lib/db/client";
 import { subscriptions, users } from "@/lib/db/schema";
 import { isLocale, routing } from "@/lib/i18n/routing";
@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
     .select({
       userId: subscriptions.userId,
       trialEnd: subscriptions.trialEnd,
+      interval: subscriptions.interval,
       email: users.email,
       locale: users.locale,
     })
@@ -88,7 +89,9 @@ export async function GET(request: NextRequest) {
         locale: isLocale(row.locale) ? row.locale : routing.defaultLocale,
         appUrl,
         trialEnd: row.trialEnd,
-        amount: PRICES.unlimited.monthly.amount,
+        // Stripe's "year", mirrored by the webhook. Anything else is the
+        // monthly trial, which is what every trial was before F1.
+        interval: row.interval === "year" ? "yearly" : "monthly",
       });
       // Marked only once the send has returned, so a failure is retried by
       // the next run rather than swallowed.

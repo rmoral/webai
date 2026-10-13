@@ -65,23 +65,34 @@ export function paymentDisclosure(
   tier: PaidTier,
   interval: BillingInterval,
   t: (
-    key: "formDisclosureTrial" | "formDisclosureCharge",
+    key:
+      | "formDisclosureTrial"
+      | "formDisclosureTrialYearly"
+      | "formDisclosureCharge",
     values: Record<string, string | number>,
   ) => string,
   formatDate: (date: Date) => string,
   now = new Date(),
 ): string {
-  const trialDays = trialDaysFor(tier, interval);
+  const trialDays = trialDaysFor(tier);
   const amount = formatUSD(PRICES[tier][interval].amount, locale);
 
   if (trialDays !== null) {
     const chargeDate = new Date(now);
     chargeDate.setDate(chargeDate.getDate() + trialDays);
-    return t("formDisclosureTrial", {
-      date: formatDate(chargeDate),
-      days: trialDays,
-      amount,
-    });
+    // The yearly trial ends in a charge for the whole year, and says so in
+    // those words: "{amount}/mes" over 179,88 is the misreading that ends in
+    // a dispute.
+    return t(
+      interval === "yearly"
+        ? "formDisclosureTrialYearly"
+        : "formDisclosureTrial",
+      {
+        date: formatDate(chargeDate),
+        days: trialDays,
+        amount,
+      },
+    );
   }
 
   return t("formDisclosureCharge", {
@@ -106,7 +117,7 @@ export function paymentDisclosure(
 export type PlanRow =
   | { key: "trial"; days: number }
   | { key: "today"; amount: number }
-  | { key: "firstCharge"; date: Date }
+  | { key: "firstCharge"; date: Date; amount: number }
   | { key: "renewal"; date: Date }
   | { key: "after"; perMonth: number }
   | { key: "equivalent"; perMonth: number };
@@ -117,7 +128,7 @@ export function planRows(
   now = new Date(),
 ): PlanRow[] {
   const price = PRICES[tier][interval];
-  const trialDays = trialDaysFor(tier, interval);
+  const trialDays = trialDaysFor(tier);
 
   if (trialDays !== null) {
     const firstCharge = new Date(now);
@@ -126,8 +137,12 @@ export function planRows(
       { key: "trial", days: trialDays },
       // Nothing is taken today, and the column has to add up to that.
       { key: "today", amount: 0 },
-      { key: "firstCharge", date: firstCharge },
-      { key: "after", perMonth: price.monthlyEquivalent },
+      // The date and the whole amount together: on the yearly cycle that
+      // amount is the year, and it is the figure the decision turns on.
+      { key: "firstCharge", date: firstCharge, amount: price.amount },
+      interval === "yearly"
+        ? { key: "equivalent", perMonth: price.monthlyEquivalent }
+        : { key: "after", perMonth: price.monthlyEquivalent },
     ];
   }
 

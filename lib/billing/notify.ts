@@ -7,7 +7,7 @@ import { SubscriptionConfirmationEmail } from "@/emails/subscription-confirmatio
 import { TrialReminderEmail } from "@/emails/trial-reminder";
 import { WelcomeEmail, welcomeWords } from "@/emails/welcome";
 import { emailTranslator, numberIn, planTranslator } from "@/emails/translator";
-import { PLANS, PRICES } from "@/lib/billing/plans";
+import { PLANS, PRICES, type BillingInterval } from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
 import { sendEmail } from "@/lib/email";
 import type { Locale } from "@/lib/i18n/routing";
@@ -99,10 +99,11 @@ export async function sendSubscriptionConfirmation(args: {
     : null;
   const date = longDate(args.locale, charge);
 
+  const interval = args.subscription.items.data[0]?.price?.recurring?.interval;
   const plan = planLabel(
     args.locale,
     args.subscription.metadata?.plan,
-    args.subscription.items.data[0]?.price?.recurring?.interval,
+    interval,
   );
   const paidToday = formatUSD(args.paidTodayCents / 100, args.locale);
 
@@ -118,6 +119,7 @@ export async function sendSubscriptionConfirmation(args: {
       appUrl: args.appUrl,
       locale: args.locale,
       trialDays,
+      yearly: interval === "year",
       chargeDate: date,
       chargeAmount: formatUSD(amountOf(args.subscription), args.locale),
       paidToday,
@@ -239,10 +241,11 @@ export async function sendTrialReminder(args: {
   locale: Locale;
   appUrl: string;
   trialEnd: Date;
-  amount: number;
+  /** The cycle the trial converts into, which sets every amount quoted. */
+  interval: BillingInterval;
 }): Promise<void> {
   const t = emailTranslator(args.locale);
-  const amount = formatUSD(args.amount, args.locale);
+  const amount = formatUSD(PRICES.unlimited[args.interval].amount, args.locale);
   const date = longDate(args.locale, args.trialEnd);
 
   await sendEmail({
@@ -253,9 +256,10 @@ export async function sendTrialReminder(args: {
     react: TrialReminderEmail({
       appUrl: args.appUrl,
       locale: args.locale,
+      yearly: args.interval === "yearly",
       chargeDate: date,
       chargeAmount: amount,
-      proAmount: formatUSD(PRICES.pro.monthly.amount, args.locale),
+      proAmount: formatUSD(PRICES.pro[args.interval].amount, args.locale),
     }),
   });
 }

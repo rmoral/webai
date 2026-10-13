@@ -354,6 +354,7 @@
     "switchToPro": "Move to Pro",
     "switchNote": "The change happens in My account. Before you confirm you will see the exact amount adjusted on your next invoice.",
     "tryFree": "Try {days} days free",
+    "trialNoteYearly": "Today {zero} · on {date} {amount} ({months} months free). Cancel before then and you pay nothing.",
     "topupTitle": "Word top-up",
     "topupBody": "{amount} for {words} extra words. They do not expire. Requires an active subscription.",
     "topupCta": "Buy a top-up",
@@ -364,21 +365,13 @@
     "cycleLabel": "Billing cycle",
     "yearlySaveGeneric": "Paying yearly costs less than paying monthly.",
     "saveHalf": "Save {percent}% ({months} months free)",
-    "trialHint": "Would you rather try it first? The free {days}-day trial is on Unlimited monthly.",
-    "seeMonthly": "See monthly prices",
-    "yearlyHint": "Paying yearly saves you {percent}% ({months} months free), with no free trial.",
-    "yearlyHintGeneric": "Paying yearly saves you money against monthly, with no free trial.",
-    "seeYearly": "See yearly prices",
     "yearlyTotal": "{amount} a year",
     "billingFree": "No card. Ever.",
     "billingProMonthly": "You are charged {amount} today and every month.",
     "billingProYearly": "You are charged {amount} today, once a year.",
     "billingUnlimitedMonthly": "{days}-day trial. After that, {amount}/month.",
-    "billingUnlimitedYearly": "You are charged {amount} today, once a year.",
     "chooseProMonthly": "Choose Pro monthly",
     "chooseProYearly": "Choose Pro yearly",
-    "chooseUnlimitedYearly": "Choose Unlimited yearly",
-    "annualNoTrial": "The yearly plan is charged today, in full: {amount}. It carries no free trial — the {days}-day trial exists only on the monthly cycle, so that nobody ends up with a yearly charge they did not expect.",
     "compareTitle": "What each plan includes",
     "rowWordsDay": "Words a day",
     "rowWordsMonth": "Words a month",
@@ -399,7 +392,7 @@
     "faq": [
       {
         "q": "When am I charged?",
-        "a": "On Pro and on Unlimited yearly, today, as soon as the payment goes through. On the Unlimited trial, on the fourth day: nothing is charged for the first three, and you see the exact date before handing over a card."
+        "a": "On Pro, today, as soon as the payment goes through. On Unlimited, monthly or yearly, when the 3-day trial ends: nothing is charged until then, and you see the exact date before handing over a card."
       },
       {
         "q": "How do I cancel?",
@@ -515,6 +508,7 @@
     "title": "Choose how you carry on. Nothing has been charged yet.",
     "body": "You have had Unlimited for {days} days. You can continue, step down to Pro, or cancel — all three are here and none of them needs an email to us.",
     "perMonth": "/month",
+    "perYear": "/year",
     "unlimitedBody": "{month} words a month, {request} per request, and queue priority.",
     "proBody": "{month} words a month, {request} per request. Every tool, and history.",
     "continueUnlimited": "Stay on Unlimited",
@@ -522,7 +516,8 @@
     "cancel": "Cancel my subscription",
     "working": "One moment…",
     "failed": "We could not apply the change. Try again in a few minutes.",
-    "disclosure": "If you choose nothing, you will be charged {unlimited} today and the Unlimited subscription carries on month to month. Switching to Pro applies the proration by itself. Cancelling takes two clicks from your account, and you can do it right now."
+    "disclosure": "If you choose nothing, you will be charged {unlimited} today and the Unlimited subscription carries on month to month. Switching to Pro applies the proration by itself. Cancelling takes two clicks from your account, and you can do it right now.",
+    "disclosureYearly": "If you choose nothing, you will be charged {amount} today for the whole year and the Unlimited subscription renews every year. Switching to Pro yearly applies the proration by itself. Cancelling takes two clicks from your account, and you can do it right now."
   },
   "detector": {
     "bands": {
@@ -663,6 +658,7 @@
     "valueTrialDays": "{days} days free",
     "valuePerMonth": "{amount}/month",
     "planNoteTrial": "Nothing is charged today. On {date} you will be charged {amount}/month unless you cancel first, in two clicks from your account.",
+    "planNoteTrialYearly": "Nothing is charged today. On {date} you will be charged {amount} for the whole year unless you cancel first, in two clicks from your account.",
     "planNoteCharge": "You are charged when you confirm the payment, on the next step. Nothing is charged for creating the account.",
     "changePlan": "Change plan"
   },
@@ -735,6 +731,7 @@
     "firstCharge": "First charge",
     "nextRenewal": "Next renewal",
     "chargeNoteTrial": "{amount}/month, unless you cancel first",
+    "chargeNoteTrialYearly": "{amount} for the whole year, unless you cancel first",
     "chargeNotePaid": "{amount}, renewing automatically",
     "rowPlan": "Plan",
     "rowPaidToday": "Paid today",
@@ -747,6 +744,7 @@
   },
   "payment": {
     "formDisclosureTrial": "You are not charged today. We keep your card, and on {date}, when the {days}-day trial ends, you will be charged {amount}/month. The subscription renews automatically each month until you cancel — two clicks from your account, during the trial as well.",
+    "formDisclosureTrialYearly": "You are not charged today. We keep your card, and on {date}, when the {days}-day trial ends, you will be charged {amount} for the whole year. The subscription renews automatically each year until you cancel — two clicks from your account, during the trial as well.",
     "formDisclosureCharge": "You are charged {amount} today. The subscription renews automatically on {date} for {amount}, and every cycle after that until you cancel. You can cancel in two clicks from your account.",
     "consent": "I understand the subscription renews automatically and that I can cancel it online at any time.",
     "consentFirst": "Tick the auto-renewal box before paying.",
@@ -800,7 +798,7 @@
         },
         {
           "heading": "Subscription, free trial and automatic renewal",
-          "body": "Payments are processed through Stripe. The Unlimited plan includes a {trialDays}-day trial that requires a payment method. Before you enter your payment details we show you, clearly and conspicuously, that you are not charged today, the exact date of the first charge and its amount. If you do not cancel before the trial ends, the subscription starts and the plan you chose is charged. All subscriptions renew automatically for periods equal to the one you signed up for, until you cancel."
+          "body": "Payments are processed through Stripe. The Unlimited plan, monthly or yearly, includes a {trialDays}-day trial that requires a payment method. Before you enter your payment details we show you, clearly and conspicuously, that you are not charged today, the exact date of the first charge and its amount. If you do not cancel before the trial ends, the subscription starts and the plan you chose is charged; on the yearly plan, that first charge is the full yearly amount. All subscriptions renew automatically for periods equal to the one you signed up for, until you cancel."
         },
         {
           "heading": "Cancellation",
@@ -912,6 +910,7 @@
     "confirmSubject": "Your Verbalyx trial starts today — first charge on {date}",
     "confirmPaidSubject": "Your Verbalyx subscription is active — next renewal on {date}",
     "confirmTrialPreview": "Nothing is charged today. The first charge is on {date}: {amount}.",
+    "confirmTrialPreviewYearly": "Nothing is charged today. The first charge is on {date}: {amount}, for the whole year.",
     "confirmPaidPreview": "You were charged {amount} today. The next renewal is on {date}.",
     "confirmTrialHeading": "Your Unlimited trial starts today",
     "confirmPaidHeading": "Your subscription is active",
@@ -922,12 +921,16 @@
     "confirmTrialReminder": "We will remind you again 24 hours before the charge.",
     "reminderSubject": "You will be charged {amount} on {date} — cancel before then if you do not want to continue",
     "reminderPreview": "You will be charged {amount} on {date}. If you do not want to continue, cancel before then in two clicks.",
+    "reminderPreviewYearly": "Your yearly Unlimited trial ends on {date} and the whole year is charged. If you do not want to continue, cancel before then in two clicks.",
     "reminderHeading": "You will be charged {amount} on {date}",
     "reminderBody": "Your Unlimited trial ends on {date}. We are telling you in good time so you can decide without rushing: continue, step down to Pro, or cancel.",
     "reminderStay": "Stay on Unlimited. Do nothing.",
+    "reminderStayYearly": "Stay on Unlimited. Do nothing. {amount} is charged for the whole year and renews every year.",
     "reminderDowngrade": "Step down to Pro, {amount}/month. The proration applies by itself.",
+    "reminderDowngradeYearly": "Step down to Pro yearly, {amount} a year. The proration applies by itself.",
     "reminderCancel": "Cancel. No charge and no explanation needed. You keep access until {date}.",
     "firstCharge": "First charge",
+    "chargeYearly": "{amount}, for the whole year",
     "nextRenewal": "Next renewal",
     "goToApp": "Go to the app",
     "footerCompany": "YBB Solutions, LLC — Verbalyx",
