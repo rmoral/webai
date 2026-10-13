@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { usePostHog } from "posthog-js/react";
@@ -169,7 +169,10 @@ export function PaywallDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
+  // Before paint, not after: the wall can be on screen for a frame before
+  // a passive effect runs, and an Escape pressed in that frame -- by a
+  // reader quick on the key, or a loaded machine -- went nowhere.
+  useLayoutEffect(() => {
     const node = ref.current;
     if (!node) return;
     const opener = document.activeElement as HTMLElement | null;
