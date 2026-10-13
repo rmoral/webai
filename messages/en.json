@@ -7,17 +7,19 @@
     "pricing": "Pricing",
     "login": "Sign in",
     "signup": "Create a free account",
+    "signupShort": "Sign up",
     "account": "My account",
     "language": "Language",
-    "soon": "Coming soon"
+    "soon": "Coming soon",
+    "menu": "Menu",
+    "closeMenu": "Close menu"
   },
   "consent": {
     "title": "Cookies",
-    "body": "We use strictly necessary cookies to make the service work. Analytics and advertising ones only if you let us, and refusing changes nothing about what you can do here.",
-    "policy": "Cookie policy",
+    "body": "Necessary cookies, always. Analytics and advertising ones only if you accept; refusing them changes nothing.",
+    "policy": "Policy",
     "accept": "Accept",
     "reject": "Reject",
-    "choose": "Choose",
     "save": "Save",
     "close": "Close",
     "analytics": "Analytics",
@@ -326,6 +328,12 @@
         "pricing": "see the plans"
       }
     }
+  },
+  "proof": {
+    "title": "Tested against the detectors",
+    "foot": "Test of {date} · <link>see methodology</link>",
+    "rowLead": "Tested with:",
+    "human": "human"
   },
   "pricing": {
     "metaTitle": "Pricing",

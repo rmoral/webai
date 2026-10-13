@@ -25,11 +25,11 @@ import {
   CURRENCY,
   PAYMENT_METHOD_TYPES,
   PRICES,
-  formatUsd,
   trialDaysFor,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { pathFor, type Locale } from "@/lib/i18n/routing";
 import { getPathname, useRouter } from "@/lib/i18n/navigation";
 
@@ -372,8 +372,8 @@ function PaymentForm({
         {busy
           ? t("processing")
           : trialDays !== null
-            ? t("startTrialCta", { amount: formatUsd(dueToday, locale) })
-            : t("payCta", { amount: formatUsd(dueToday, locale) })}
+            ? t("startTrialCta", { amount: formatUSD(dueToday, locale) })
+            : t("payCta", { amount: formatUSD(dueToday, locale) })}
       </Button>
 
       <p className="text-muted-foreground text-xs leading-normal">

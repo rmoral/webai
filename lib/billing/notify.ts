@@ -7,7 +7,8 @@ import { SubscriptionConfirmationEmail } from "@/emails/subscription-confirmatio
 import { TrialReminderEmail } from "@/emails/trial-reminder";
 import { WelcomeEmail, welcomeWords } from "@/emails/welcome";
 import { emailTranslator, numberIn, planTranslator } from "@/emails/translator";
-import { PLANS, PRICES, formatUsd } from "@/lib/billing/plans";
+import { PLANS, PRICES } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { sendEmail } from "@/lib/email";
 import type { Locale } from "@/lib/i18n/routing";
 
@@ -103,7 +104,7 @@ export async function sendSubscriptionConfirmation(args: {
     args.subscription.metadata?.plan,
     args.subscription.items.data[0]?.price?.recurring?.interval,
   );
-  const paidToday = formatUsd(args.paidTodayCents / 100, args.locale);
+  const paidToday = formatUSD(args.paidTodayCents / 100, args.locale);
 
   await sendEmail({
     to: args.to,
@@ -118,7 +119,7 @@ export async function sendSubscriptionConfirmation(args: {
       locale: args.locale,
       trialDays,
       chargeDate: date,
-      chargeAmount: formatUsd(amountOf(args.subscription), args.locale),
+      chargeAmount: formatUSD(amountOf(args.subscription), args.locale),
       paidToday,
       plan,
       receipt: args.receipt,
@@ -149,7 +150,7 @@ export async function receiptRows(args: {
 }): Promise<DataRow[]> {
   const { invoice, locale } = args;
   const t = emailTranslator(locale);
-  const money = (cents: number) => formatUsd(cents / 100, locale);
+  const money = (cents: number) => formatUSD(cents / 100, locale);
   const rows: DataRow[] = [];
 
   rows.push({
@@ -241,7 +242,7 @@ export async function sendTrialReminder(args: {
   amount: number;
 }): Promise<void> {
   const t = emailTranslator(args.locale);
-  const amount = formatUsd(args.amount, args.locale);
+  const amount = formatUSD(args.amount, args.locale);
   const date = longDate(args.locale, args.trialEnd);
 
   await sendEmail({
@@ -254,7 +255,7 @@ export async function sendTrialReminder(args: {
       locale: args.locale,
       chargeDate: date,
       chargeAmount: amount,
-      proAmount: formatUsd(PRICES.pro.monthly.amount, args.locale),
+      proAmount: formatUSD(PRICES.pro.monthly.amount, args.locale),
     }),
   });
 }
@@ -330,13 +331,13 @@ export async function sendCancellation(args: {
       rows: {
         lastCharge:
           !args.trial && args.lastChargeCents && args.lastChargeAt
-            ? `${longDate(args.locale, args.lastChargeAt)} · ${formatUsd(
+            ? `${longDate(args.locale, args.lastChargeAt)} · ${formatUSD(
                 args.lastChargeCents / 100,
                 args.locale,
               )}`
             : undefined,
         freeWords: n(PLANS.free.limits.wordsPerDay ?? 0),
-        zero: formatUsd(0, args.locale),
+        zero: formatUSD(0, args.locale),
       },
     }),
   });

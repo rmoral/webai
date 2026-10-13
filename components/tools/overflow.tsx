@@ -3,7 +3,8 @@
 import { useRef, type ChangeEvent } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 
-import { PLANS, TOPUP, formatUsd, type PlanId } from "@/lib/billing/plans";
+import { PLANS, TOPUP, type PlanId } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/routing";
 import { truncateToWords } from "@/lib/security/validation";
 import { cn } from "@/lib/utils";
@@ -209,7 +210,7 @@ export function LimitNotice({
     body = t("spentProBody", {
       date: renewsOn ?? "",
       words: n(TOPUP.words),
-      price: formatUsd(TOPUP.amount, locale),
+      price: formatUSD(TOPUP.amount, locale),
     });
   } else {
     lead = t("spentLead", { limit: n(dailyLimit) });

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-import { formatUsd } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 
 const STATUS_LABELS: Record<string, string> = {
   trialing: "En prueba",
@@ -68,8 +68,8 @@ export default async function AdminPage() {
         { label: "Usuarios", value: totals.users.toLocaleString("es-ES") },
         { label: "De pago activos", value: totals.pro.toLocaleString("es-ES") },
         { label: "En prueba", value: totals.trialing.toLocaleString("es-ES") },
-        { label: "MRR", value: formatUsd(totals.mrr) },
-        { label: "Coste IA (mes)", value: formatUsd(totals.aiCostMonth) },
+        { label: "MRR", value: formatUSD(totals.mrr) },
+        { label: "Coste IA (mes)", value: formatUSD(totals.aiCostMonth) },
       ]
     : [];
 
@@ -322,7 +322,7 @@ export default async function AdminPage() {
                       {row.purchases.toLocaleString("es-ES")}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {formatUsd(row.revenue)}
+                      {formatUSD(row.revenue)}
                     </td>
                     <td className="px-3 py-2 text-right">
                       {row.withClickId.toLocaleString("es-ES")}
@@ -386,7 +386,7 @@ export default async function AdminPage() {
                   {row.wordsMonth.toLocaleString("es-ES")}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  {formatUsd(row.costCentsMonth / 100)}
+                  {formatUSD(row.costCentsMonth / 100)}
                 </td>
                 <td className="px-3 py-2">
                   {row.createdAt.toLocaleDateString("es-ES")}

@@ -61,8 +61,8 @@ describe("subscription confirmation", () => {
         locale,
         trialDays: 3,
         chargeDate: longDate(locale, CHARGE),
-        chargeAmount: locale === "es" ? "29,99 US$" : "$29.99",
-        paidToday: locale === "es" ? "0,00 US$" : "$0.00",
+        chargeAmount: locale === "es" ? "US$29,99" : "US$29.99",
+        paidToday: locale === "es" ? "US$0,00" : "US$0.00",
         plan: locale === "es" ? "Ilimitado · mensual" : "Unlimited · monthly",
       }),
     );
@@ -138,12 +138,12 @@ describe("receipt", () => {
         locale,
         trialDays: null,
         chargeDate: longDate(locale, CHARGE),
-        chargeAmount: locale === "es" ? "89,88 US$" : "$89.88",
-        paidToday: locale === "es" ? "89,88 US$" : "$89.88",
+        chargeAmount: locale === "es" ? "US$89,88" : "US$89.88",
+        paidToday: locale === "es" ? "US$89,88" : "US$89.88",
         plan: locale === "es" ? "Pro · anual" : "Pro · yearly",
         receipt: [
-          { key: "Importe pagado", value: "89,88 US$", lead: true },
-          { key: "De los cuales, impuestos", value: "15,60 US$" },
+          { key: "Importe pagado", value: "US$89,88", lead: true },
+          { key: "De los cuales, impuestos", value: "US$15,60" },
           { key: "En tu extracto bancario", value: "VERBALYX" },
           {
             key: "Factura",
@@ -190,8 +190,8 @@ describe("trial reminder", () => {
         appUrl: APP,
         locale,
         chargeDate: longDate(locale, CHARGE),
-        chargeAmount: locale === "es" ? "29,99 US$" : "$29.99",
-        proAmount: locale === "es" ? "14,99 US$" : "$14.99",
+        chargeAmount: locale === "es" ? "US$29,99" : "US$29.99",
+        proAmount: locale === "es" ? "US$14,99" : "US$14.99",
       }),
     );
   }
@@ -209,18 +209,18 @@ describe("trial reminder", () => {
     // A good share of people decide whether this matters from the inbox
     // list alone, without opening it.
     const es = subject("es", "reminderSubject", {
-      amount: "29,99 US$",
+      amount: "US$29,99",
       date: "21 de septiembre de 2026",
     });
-    expect(es).toContain("29,99 US$");
+    expect(es).toContain("US$29,99");
     expect(es).toContain("21 de septiembre de 2026");
-    expect(await html("es")).toContain("29,99 US$");
+    expect(await html("es")).toContain("US$29,99");
 
     const en = subject("en", "reminderSubject", {
-      amount: "$29.99",
+      amount: "US$29.99",
       date: "21 September 2026",
     });
-    expect(en).toContain("$29.99");
+    expect(en).toContain("US$29.99");
     expect(en).toContain("21 September 2026");
   });
 
@@ -281,11 +281,9 @@ describe("cancellation", () => {
         until: longDate(locale, CHARGE),
         cancelledOn: longDate(locale, new Date("2026-09-14T10:00:00Z")),
         rows: {
-          lastCharge: trial
-            ? undefined
-            : "14 de septiembre de 2026 · 14,99 US$",
+          lastCharge: trial ? undefined : "14 de septiembre de 2026 · US$14,99",
           freeWords: "500",
-          zero: locale === "es" ? "0,00 US$" : "$0.00",
+          zero: locale === "es" ? "US$0,00" : "US$0.00",
         },
       }),
     );
@@ -302,7 +300,7 @@ describe("cancellation", () => {
   it("is unambiguous that a cancelled trial cost nothing", async () => {
     const body = await html("es", true);
     expect(body).toContain("No se te ha cobrado nada");
-    expect(body).toContain("0,00 US$");
+    expect(body).toContain("US$0,00");
   });
 
   it("does not try to win the customer back", async () => {

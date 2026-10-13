@@ -22,13 +22,8 @@ import {
 } from "@/lib/analytics/events";
 import type { ToolId } from "@/lib/ai/tools";
 import { trialDisclosure } from "@/lib/billing/disclosure";
-import {
-  PLANS,
-  PRICES,
-  TRIAL,
-  formatUsd,
-  type PlanId,
-} from "@/lib/billing/plans";
+import { PLANS, PRICES, TRIAL, type PlanId } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/routing";
 import {
   Link,
@@ -528,7 +523,7 @@ export function QuotaPaywall({
                       words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
                     })
                   : t("seePro", {
-                      price: formatUsd(PRICES.pro.monthly.amount, locale),
+                      price: formatUSD(PRICES.pro.monthly.amount, locale),
                     })}
               </Link>
             </Button>

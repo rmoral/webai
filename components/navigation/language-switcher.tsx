@@ -27,7 +27,14 @@ import { cn } from "@/lib/utils";
  * Spanish speaker to /en because their browser header says so breaks
  * indexing and surprises the visitor. This is the way across.
  */
-export function LanguageSwitcher({ className }: { className?: string }) {
+export function LanguageSwitcher({
+  className,
+  chips = false,
+}: {
+  className?: string;
+  /** The phone menu's version: two 36px chips instead of "ES / EN". */
+  chips?: boolean;
+}) {
   const pathname = usePathname();
   const params = useParams();
   const active = useLocale();
@@ -63,11 +70,11 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   return (
     <nav
       aria-label={t("language")}
-      className={cn("flex items-center", className)}
+      className={cn("flex items-center", chips && "gap-2", className)}
     >
       {routing.locales.map((locale, i) => (
         <span key={locale} className="flex items-center">
-          {i > 0 && (
+          {i > 0 && !chips && (
             <span aria-hidden className="text-muted-foreground/40 px-1 text-xs">
               /
             </span>
@@ -77,10 +84,18 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             hrefLang={locale}
             aria-current={locale === active ? "true" : undefined}
             className={cn(
-              "px-1 text-xs font-medium uppercase transition-colors",
-              locale === active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground",
+              "uppercase transition-colors",
+              chips
+                ? "flex h-9 items-center rounded-md border px-3 text-sm font-semibold"
+                : "px-1 text-xs font-medium",
+              chips &&
+                (locale === active
+                  ? "bg-brand-soft text-brand-ink border-brand-line"
+                  : "text-muted-foreground"),
+              !chips &&
+                (locale === active
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"),
             )}
             title={LOCALE_LABELS[locale]}
           >

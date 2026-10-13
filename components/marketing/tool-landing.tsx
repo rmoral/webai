@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { DetectorProof } from "@/components/marketing/detector-proof";
 import { ToolEditor } from "@/components/tools/tool-editor";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { Link } from "@/lib/i18n/navigation";
@@ -96,6 +97,7 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
       <div className="mt-8">
         <ToolEditor tool={tool} />
       </div>
+      <DetectorProof variant="block" />
 
       <section className="mt-16">
         <h2 className="text-2xl font-semibold">{t("signalsTitle")}</h2>

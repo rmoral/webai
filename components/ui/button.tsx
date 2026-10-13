@@ -26,10 +26,12 @@ const buttonVariants = cva(
       // 44px on a phone, the sizes the design system asks for above it.
       // A 36px target is missed often enough on a touch screen to cost a
       // press, and the presses on this site are the ones that get paid for.
+      // `lg` is the one primary action of a screen -- run, choose a plan,
+      // the paywall's CTA, pay -- and is 48 at every width (F1).
       size: {
         default: "h-11 px-4 py-2 has-[>svg]:px-3 md:h-9",
         sm: "h-11 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 md:h-8",
-        lg: "h-11 rounded-md px-6 has-[>svg]:px-4 md:h-10",
+        lg: "h-12 rounded-md px-7 text-base font-semibold has-[>svg]:px-5",
         icon: "size-11 md:size-9",
       },
     },

@@ -7,10 +7,10 @@ import {
   PRICES,
   TOPUP,
   TRIAL_REMINDER,
-  formatUsd,
   sharedYearlyDiscount,
   yearlyDiscount,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { SITE_ORIGIN } from "@/lib/i18n/routing";
 import { ONBOARDING } from "@/lib/onboarding/due";
 import en from "@/messages/en.json";
@@ -115,8 +115,8 @@ describe("no figure is written by hand", () => {
       for (const [key, text] of strings(catalogue)) {
         for (const amount of amounts) {
           for (const written of [
-            formatUsd(amount, "es"),
-            formatUsd(amount, "en"),
+            formatUSD(amount, "es"),
+            formatUSD(amount, "en"),
             amount.toFixed(2).replace(".", ","),
           ]) {
             expect(

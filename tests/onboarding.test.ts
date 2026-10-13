@@ -125,7 +125,7 @@ describe("which emails may be refused", () => {
           freeWords: "500",
           proMonth: "60.000",
           proRequest: "3.000",
-          proAmount: "9,99 US$",
+          proAmount: "US$9,99",
           optOutHref: optOut,
         }),
       ),
@@ -170,7 +170,7 @@ describe("which emails may be refused", () => {
         freeWords: "500",
         proMonth: "60.000",
         proRequest: "3.000",
-        proAmount: "9,99 US$",
+        proAmount: "US$9,99",
         optOutHref: optOut,
       }),
     );

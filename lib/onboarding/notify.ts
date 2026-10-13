@@ -1,7 +1,8 @@
 import { OnboardingDay2Email, OnboardingDay5Email } from "@/emails/onboarding";
 import { emailTranslator, numberIn } from "@/emails/translator";
 import type { ToolId } from "@/lib/ai/tools";
-import { PLANS, PRICES, formatUsd } from "@/lib/billing/plans";
+import { PLANS, PRICES } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { sendEmail } from "@/lib/email";
 import { optOutToken } from "@/lib/email/optout";
 import { getPathname } from "@/lib/i18n/navigation";
@@ -112,7 +113,7 @@ export async function sendOnboardingDay5(args: {
       freeWords: n(PLANS.free.limits.wordsPerDay ?? 0),
       proMonth: n(pro.wordsPerMonth ?? 0),
       proRequest: n(pro.maxWordsPerRequest),
-      proAmount: formatUsd(PRICES.pro.monthly.amount, args.locale),
+      proAmount: formatUSD(PRICES.pro.monthly.amount, args.locale),
       optOutHref: optOutUrl(args.appUrl, args.locale, args.userId),
     }),
     headers: unsubscribeHeaders(

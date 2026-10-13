@@ -5,7 +5,8 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 
 import { useAllowance } from "@/components/billing/allowance";
 import { Button } from "@/components/ui/button";
-import { PLANS, PRICES, formatUsd, type MeterKind } from "@/lib/billing/plans";
+import { PLANS, PRICES, type MeterKind } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { Link } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
 import { minutesUntilQuotaReset } from "@/lib/usage/day";
@@ -261,7 +262,7 @@ export function UsageMeter({
               <p>
                 {t("tipTrialCharge", {
                   date: trialEnd ? longDate(trialEnd) : "",
-                  amount: formatUsd(PRICES.unlimited.monthly.amount, locale),
+                  amount: formatUSD(PRICES.unlimited.monthly.amount, locale),
                 })}
               </p>
               <p className="text-muted-foreground">{t("tipTrialCancel")}</p>

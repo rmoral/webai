@@ -1,11 +1,11 @@
 import {
   PRICES,
   TRIAL,
-  formatUsd,
   trialDaysFor,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/routing";
 
 /**
@@ -35,8 +35,8 @@ export function trialDisclosure(
   return t("disclosure", {
     date: formatDate(chargeDate),
     days: TRIAL.days,
-    unlimited: formatUsd(PRICES.unlimited.monthly.amount, locale),
-    pro: formatUsd(PRICES.pro.monthly.amount, locale),
+    unlimited: formatUSD(PRICES.unlimited.monthly.amount, locale),
+    pro: formatUSD(PRICES.pro.monthly.amount, locale),
   });
 }
 
@@ -72,7 +72,7 @@ export function paymentDisclosure(
   now = new Date(),
 ): string {
   const trialDays = trialDaysFor(tier, interval);
-  const amount = formatUsd(PRICES[tier][interval].amount, locale);
+  const amount = formatUSD(PRICES[tier][interval].amount, locale);
 
   if (trialDays !== null) {
     const chargeDate = new Date(now);
