@@ -10,6 +10,13 @@ import type { FullConfig } from "@playwright/test";
 // Against a production build this would be unnecessary, but the suite runs
 // on the dev server so that Turnstile does not fail closed on the tool
 // endpoints.
+//
+// One route at a time. Fired all at once against a cold server, the
+// compiles overlapped and one of them left a JSON file under .next
+// half-written: from then on every page rendered "SyntaxError: Unexpected
+// non-whitespace character after JSON" as a 500, and 99 of 107 specs
+// failed in CI. Every route a spec visits is listed, so none compiles for
+// the first time while two workers are already making requests.
 
 const ROUTES = [
   "/",
@@ -28,6 +35,14 @@ const ROUTES = [
   "/en/pricing",
   "/sitemap.xml",
   "/robots.txt",
+  "/app/historial",
+  "/baja-emails",
+  "/blog",
+  "/blog/como-humanizar-un-texto-de-ia",
+  "/legal/terminos",
+  "/no-existe",
+  "/en/blog",
+  "/en/paraphrasing-tool",
 ];
 
 export default async function warmUp(config: FullConfig) {
@@ -36,10 +51,8 @@ export default async function warmUp(config: FullConfig) {
     config.projects[0]?.use?.baseURL ??
     "http://localhost:3000";
 
-  await Promise.all(
-    ROUTES.map((route) =>
-      // A redirect or a 404 still compiles the route, which is the point.
-      fetch(new URL(route, base)).catch(() => undefined),
-    ),
-  );
+  for (const route of ROUTES) {
+    // A redirect or a 404 still compiles the route, which is the point.
+    await fetch(new URL(route, base)).catch(() => undefined);
+  }
 }

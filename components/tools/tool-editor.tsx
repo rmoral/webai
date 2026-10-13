@@ -169,10 +169,20 @@ export function ToolEditor({
   const viewer = useViewer();
   const plan = viewer?.plan ?? serverPlan;
 
+  // Whether the plan may use this tool at all. Checked here so a visitor
+  // sees the paywall before writing, not as a 403 after pressing the
+  // button. The server enforces it either way.
+  const included = PLANS[plan].limits.tools.includes(tool);
+
   // The anti-bot check, though, stays keyed to what the server said. A
   // browser that claimed a plan could otherwise skip it; claiming to be
   // anonymous only ever means answering one more challenge.
-  const needsToken = Boolean(TURNSTILE_KEY) && serverPlan === "anonymous";
+  //
+  // And only where something can run. On a paid tool's landing an
+  // anonymous visitor's button opens the paywall, so Cloudflare's script
+  // would load, hold a connection open and hand out a token nothing spends.
+  const needsToken =
+    Boolean(TURNSTILE_KEY) && serverPlan === "anonymous" && included;
   // Whether a usable token is in hand. Held in state and not only in a ref
   // because the run button waits on it: the button used to be live before
   // Turnstile had resolved, so the first click of the visit -- the first
@@ -358,10 +368,6 @@ export function ToolEditor({
       label={pricing("topupCta")}
     />
   );
-  // Whether the plan may use this tool at all. Checked here so a visitor
-  // sees the paywall before writing, not as a 403 after pressing the
-  // button. The server enforces it either way.
-  const included = PLANS[plan].limits.tools.includes(tool);
 
   // What is left, for a page that has no server render to read it from.
   //

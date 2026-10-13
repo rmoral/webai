@@ -193,7 +193,16 @@ for (const { path, name } of [
   test(`${name}: meets the paywall on reaching for the tool`, async ({
     page,
   }) => {
+    // Nothing on this page can run for an anonymous visitor, so the
+    // anti-bot script has nothing to protect and is not loaded.
+    const antibot: string[] = [];
+    page.on("request", (request) => {
+      if (request.url().includes("challenges.cloudflare.com")) {
+        antibot.push(request.url());
+      }
+    });
     await page.goto(path, { waitUntil: "networkidle" });
+    expect(antibot).toEqual([]);
 
     // Not on arrival. The landing is the SEO asset and a modal over content
     // reached from a search result is an intrusive interstitial.
