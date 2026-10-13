@@ -262,15 +262,6 @@ export function PricingPlans() {
                 })
               : undefined
           }
-          billing={
-            yearly
-              ? t("billingProYearly", {
-                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
-                })
-              : t("billingProMonthly", {
-                  amount: formatUSD(PRICES.pro.monthly.amount, locale),
-                })
-          }
           features={[
             t("wordsPerMonth", {
               words: n(PLANS.pro.limits.wordsPerMonth ?? 0),
@@ -402,11 +393,11 @@ function Card({
       <p data-testid="plan-total" className="min-h-5 text-sm font-medium">
         {total}
       </p>
-      {/* Two lines held on every card, so switching cycle does not move
-          the buttons: Pro's yearly line wraps and its monthly one does not. */}
+      {/* One line held on every card, so switching cycle does not move
+          the buttons: Ilimitado has a line on the monthly cycle only. */}
       <p
         className={cn(
-          "text-muted-foreground mt-2 text-sm leading-5 md:min-h-10",
+          "text-muted-foreground mt-2 text-sm leading-5 md:min-h-5",
           !billing && "max-md:hidden",
         )}
       >

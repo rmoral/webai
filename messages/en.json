@@ -371,8 +371,6 @@
     "trialBand": "<b>Try Unlimited free for {days} days</b> — nothing is charged today; cancel before it ends and you pay nothing.",
     "yearlyTotal": "{amount} a year",
     "billingFree": "No card. Ever.",
-    "billingProMonthly": "You are charged {amount} today and every month.",
-    "billingProYearly": "You are charged {amount} today, once a year.",
     "billingUnlimitedMonthly": "{days}-day trial. After that, {amount}/month.",
     "chooseProMonthly": "Choose Pro monthly",
     "chooseProYearly": "Choose Pro yearly",

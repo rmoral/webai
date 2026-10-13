@@ -371,8 +371,6 @@
     "trialBand": "<b>Prueba Ilimitado {days} días gratis</b> — hoy no se cobra nada; cancela antes de que termine y no pagas.",
     "yearlyTotal": "{amount} al año",
     "billingFree": "Sin tarjeta. Para siempre.",
-    "billingProMonthly": "Se te cobran {amount} hoy y cada mes.",
-    "billingProYearly": "Se cobran {amount} hoy, una vez al año.",
     "billingUnlimitedMonthly": "{days} días de prueba. Después, {amount}/mes.",
     "chooseProMonthly": "Elegir Pro mensual",
     "chooseProYearly": "Elegir Pro anual",
