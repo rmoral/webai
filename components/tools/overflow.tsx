@@ -20,8 +20,11 @@ import { cn } from "@/lib/utils";
 // nothing at all would be processed -- and showed "300 / 300" in red
 // without saying what either number meant.
 
+// 16px at every width -- below that iOS zooms into the box on focus -- and
+// it grows with the text up to 480 before it scrolls (F1-11). Browsers
+// without `field-sizing` keep the minimum height and the resize handle.
 const TEXTAREA_CLASS =
-  "w-full resize-y bg-transparent p-5 text-base outline-none md:text-sm";
+  "w-full resize-y bg-transparent p-3 text-base leading-6 outline-none [field-sizing:content] max-h-[480px] md:p-4";
 
 /**
  * The editor's input box, with everything past the cut dimmed.
@@ -227,9 +230,9 @@ export function LimitNotice({
       role="status"
       data-kind={kind}
       data-testid="limit-notice"
-      className="border-warning-line bg-warning-soft flex flex-wrap items-center gap-x-4 gap-y-3 border-t px-5 py-3"
+      className="border-warning-line bg-warning-soft flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-3 py-2.5 md:flex-nowrap md:px-4"
     >
-      <p className="text-warning-ink flex-1 basis-72 text-sm leading-normal">
+      <p className="text-warning-ink flex-1 basis-60 text-[13px] leading-[18px]">
         <b className="font-semibold">{lead}</b>
         {body}
       </p>

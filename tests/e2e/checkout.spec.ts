@@ -361,7 +361,7 @@ test("the paywall sends a signed-out reader to sign in, not to a card", async ({
 
   await page.goto("/humanizador-de-texto-ia");
   await typeInto(page, "Texto de entrada", "palabra ".repeat(40).trim());
-  await page.getByRole("button", { name: "Humanizador" }).click();
+  await page.getByRole("button", { name: "Humanizar" }).click();
 
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();

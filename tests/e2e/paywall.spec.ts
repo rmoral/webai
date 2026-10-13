@@ -49,7 +49,7 @@ test("names both figures and both paid ceilings, without interrupting", async ({
   // Amber is a ceiling, not an error, so nothing is blocked: the button
   // still runs and no modal has taken over the page. The wait is the
   // anti-bot check, which the button now waits for (C3), not the ceiling.
-  await expect(page.getByRole("button", { name: "Humanizador" })).toBeEnabled({
+  await expect(page.getByRole("button", { name: "Humanizar" })).toBeEnabled({
     timeout: 15_000,
   });
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -64,14 +64,10 @@ test("names both figures and both paid ceilings, without interrupting", async ({
     strip.getByRole("link", { name: /Crear cuenta gratis/ }),
   ).toHaveCount(0);
 
-  // And the cost of pressing it, before it is pressed.
-  await expect(page.getByTestId("run-cost")).toContainText(
-    `${PASTED} palabras`,
-  );
-  await expect(page.getByTestId("run-cost")).toContainText(
-    `se procesarán ${CEILING}`,
-  );
-  // The counter names the cut rather than only the total.
+  // The landings carry no cost line beside the button (F1-12): the strip
+  // above and the counter below already say it, and the line pushed the
+  // button below the fold. The counter names the cut, not only the total.
+  await expect(page.getByTestId("run-cost")).toHaveCount(0);
   await expect(page.getByTestId("word-count")).toContainText(
     `máx. ${CEILING} en esta petición`,
   );
@@ -95,7 +91,7 @@ test("says the same thing in English", async ({ page }) => {
     page.getByText(`We will process the first ${CEILING} words`),
   ).toBeVisible();
   await expect(page.getByText(`of the ${PASTED} you pasted`)).toBeVisible();
-  await expect(page.getByRole("button", { name: "AI humanizer" })).toBeEnabled({
+  await expect(page.getByRole("button", { name: "Humanize" })).toBeEnabled({
     timeout: 15_000,
   });
 });
@@ -134,7 +130,7 @@ async function partialAnswer(page: Page) {
 async function hitTheWall(page: Page) {
   await page.goto("/humanizador-de-texto-ia");
   await typeInto(page, "Texto de entrada", OVER_QUOTA_PASTE);
-  await page.getByRole("button", { name: "Humanizador" }).click();
+  await page.getByRole("button", { name: "Humanizar" }).click();
   return page.getByRole("dialog");
 }
 
@@ -245,7 +241,7 @@ test("a spent allowance is answered by the strip, not by a red banner", async ({
 
   await page.goto("/humanizador-de-texto-ia");
   await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-  await page.getByRole("button", { name: "Humanizador" }).click();
+  await page.getByRole("button", { name: "Humanizar" }).click();
 
   // Nothing was generated, so there is no wall to show -- only the strip.
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -430,16 +426,23 @@ test("the words left come from the response, and move without a reload", async (
   await page.goto("/humanizador-de-texto-ia");
   await typeInto(page, "Texto de entrada", "cuatro palabras de prueba");
 
-  // Known before the button is pressed, not after the words are spent.
-  await expect(page.getByTestId("run-cost")).toContainText("te quedan 300 hoy");
+  // No cost line on a landing (F1-12); the balance shows up where it
+  // binds, in the strip.
+  await expect(page.getByTestId("run-cost")).toHaveCount(0);
 
   await page
-    .getByRole("button", { name: "Humanizador" })
+    .getByRole("button", { name: "Humanizar" })
     .click({ timeout: 20_000 });
   await expect(page.getByText("Un resultado corriente.")).toBeVisible();
 
-  // The response said 296, and the page says 296 -- no navigation between.
-  await expect(page.getByTestId("run-cost")).toContainText("te quedan 296 hoy");
+  // The response said 296, and the page says 296 -- no navigation between:
+  // a full-size paste is now cut at what is left, not at the ceiling.
+  await page
+    .getByLabel("Texto de entrada")
+    .fill(Array.from({ length: CEILING }, (_, i) => `p${i}`).join(" "));
+  const strip = page.getByTestId("limit-notice");
+  await expect(strip).toHaveAttribute("data-kind", "partial");
+  await expect(strip).toContainText("Te quedan 296 palabras hoy.");
 });
 
 test("the locked tool button keeps answering after the wall is closed", async ({
@@ -513,9 +516,6 @@ test("with a partial balance it promises what it can do, and no more", async ({
   // ceiling of 300 is not what stops this run.
   await expect(strip).not.toContainText("Procesaremos las primeras 300");
 
-  await expect(page.getByTestId("run-cost")).toContainText("se procesarán 200");
-  await expect(page.getByTestId("run-cost")).toContainText("te quedan 200");
-
   // The text is untouched, before and after.
   await expect(page.getByLabel("Texto de entrada")).toHaveValue(LONG_TEXT);
 });
@@ -539,8 +539,6 @@ test("the detector refuses a partial run instead of scoring a fragment", async (
   await expect(strip).toContainText("daría un resultado equivocado");
 
   await expect(page.getByTestId("run")).toBeDisabled();
-  await expect(page.getByTestId("run-cost")).toContainText("necesita 280");
-  await expect(page.getByTestId("run-cost")).toContainText("te quedan 200");
 });
 
 test("the detector says so when the text is longer than one request", async ({
@@ -568,9 +566,9 @@ test("nothing is dimmed when nothing will be processed", async ({ page }) => {
   await expect(strip).toHaveAttribute("data-kind", "exhausted");
   // The whole text is legible: dimming marks a cut, and there is no cut.
   await expect(page.getByLabel("Texto de entrada")).toHaveValue(LONG_TEXT);
-  await expect(page.getByTestId("run-cost")).toContainText(
-    "no te quedan palabras hoy",
-  );
+  // Nothing will run, and the button says so rather than failing.
+  await expect(page.getByTestId("run")).toBeDisabled();
+  await expect(page.getByTestId("run")).toHaveText("Sin palabras hoy");
 });
 
 test("the paid tools say so in the tab strip, before the wall does", async ({

@@ -57,6 +57,10 @@ declare global {
           // sending a token the server will refuse.
           "expired-callback"?: () => void;
           "error-callback"?: () => void;
+          /** Invisible unless Cloudflare decides it needs a click. */
+          appearance?: "always" | "execute" | "interaction-only";
+          "before-interactive-callback"?: () => void;
+          "after-interactive-callback"?: () => void;
         },
       ) => string;
       reset: (id: string) => void;
@@ -71,6 +75,7 @@ export function ToolEditor({
   plan: serverPlan = "anonymous",
   initialRemaining = null,
   periodEnd = null,
+  showCost = false,
 }: {
   tool: ToolId;
   plan?: PlanId;
@@ -82,6 +87,12 @@ export function ToolEditor({
   initialRemaining?: number | null;
   /** When a paid plan's period renews. ISO, formatted here. */
   periodEnd?: string | null;
+  /**
+   * The cost line beside the button. /app only: on the landings it pushed
+   * the button below the fold and said what the counter and the strip
+   * already say (F1-12).
+   */
+  showCost?: boolean;
 }) {
   const t = useTranslations("editor");
   const names = useTranslations("tools");
@@ -175,6 +186,9 @@ export function ToolEditor({
   // after ten seconds the visitor goes through and the server decides.
   // An ad blocker should cost a round trip, not the product.
   const [waived, setWaived] = useState(false);
+  // Cloudflare asked for a click. The widget is invisible until then
+  // (`interaction-only`), and when it appears it needs a line saying why.
+  const [interactive, setInteractive] = useState(false);
 
   const receiveToken = useCallback((token: string) => {
     tokenRef.current = token;
@@ -231,21 +245,20 @@ export function ToolEditor({
     setToolPopover(false);
   }, [tool]);
 
-  useEffect(() => {
-    if (!needsToken || !widgetRef.current || widgetId.current) return;
-    const interval = setInterval(() => {
-      if (window.turnstile && widgetRef.current && !widgetId.current) {
-        widgetId.current = window.turnstile.render(widgetRef.current, {
-          sitekey: TURNSTILE_KEY!,
-          callback: receiveToken,
-          "expired-callback": loseToken,
-          "error-callback": loseToken,
-        });
-        clearInterval(interval);
-      }
-    }, 300);
-    return () => clearInterval(interval);
-  }, [needsToken, receiveToken, loseToken]);
+  // Rendered when the script says it is ready -- on load, and on every
+  // mount after that -- rather than by polling for `window.turnstile`.
+  const renderWidget = useCallback(() => {
+    if (!window.turnstile || !widgetRef.current || widgetId.current) return;
+    widgetId.current = window.turnstile.render(widgetRef.current, {
+      sitekey: TURNSTILE_KEY!,
+      appearance: "interaction-only",
+      callback: receiveToken,
+      "expired-callback": loseToken,
+      "error-callback": loseToken,
+      "before-interactive-callback": () => setInteractive(true),
+      "after-interactive-callback": () => setInteractive(false),
+    });
+  }, [receiveToken, loseToken]);
 
   useEffect(() => {
     if (!needsToken || hasToken || waived) return;
@@ -325,8 +338,12 @@ export function ToolEditor({
   // move: anonymous and free both stop at the same number of words per
   // run. Offering "create a free account" there would be offering
   // something that does not fix what the reader just ran into.
+  // The strip's own button: white on amber, so it reads as part of the
+  // notice rather than as a second run button beside the real one.
+  const noticeButton =
+    "border-warning-line text-warning-ink hover:bg-warning-soft h-8 shrink-0 px-3 text-[13px] font-semibold md:h-8";
   const seePlans = (
-    <Button size="sm" asChild>
+    <Button size="sm" variant="outline" className={noticeButton} asChild>
       <Link href="/pricing">{t("seePlans")}</Link>
     </Button>
   );
@@ -419,15 +436,22 @@ export function ToolEditor({
    * used to end in a red banner whose only link was to pricing, offered
    * to a reader whose next step cost nothing.
    */
-  const wayOut =
+  const wayOut = (className?: string) =>
     plan === "anonymous" ? (
-      <Button size="sm" asChild>
+      <Button
+        size="sm"
+        variant={className ? "outline" : "default"}
+        className={className}
+        asChild
+      >
         <Link href={{ pathname: "/signup", query: { next: here } }}>
           {wall("createAccount", {
             words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
           })}
         </Link>
       </Button>
+    ) : className ? (
+      seePlans
     ) : (
       <Button size="sm" asChild>
         <Link href="/pricing">{t("seePlans")}</Link>
@@ -605,6 +629,11 @@ export function ToolEditor({
     }
   }
 
+  // A verb on the button ("Humanizar"); the tool's own name stays on the
+  // tab and the page. Only the humanizer has its verb so far.
+  const runLabel =
+    tool === "humanize" ? t("run.humanize") : names(`${tool}.name`);
+
   const hint = tourStep({
     dismissed: tour.dismissed,
     hasModes: modes.length > 0,
@@ -618,6 +647,7 @@ export function ToolEditor({
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
           strategy="lazyOnload"
+          onReady={renderWidget}
         />
       )}
 
@@ -641,11 +671,16 @@ export function ToolEditor({
         />
       )}
 
-      <div className="bg-card overflow-hidden rounded-xl border shadow-sm">
+      <div className="bg-card overflow-hidden rounded-[14px] border shadow-sm">
         {modes.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-b px-5 py-3">
+          <div className="flex flex-wrap items-center gap-2 border-b p-3 md:px-4">
             {modes.map((m) => (
-              <Chip key={m} pressed={m === mode} onClick={() => setPicked(m)}>
+              <Chip
+                key={m}
+                pressed={m === mode}
+                onClick={() => setPicked(m)}
+                className="h-8"
+              >
                 {modeLabel(m)}
               </Chip>
             ))}
@@ -655,8 +690,32 @@ export function ToolEditor({
         {hint === 2 && <Hint step={2} onDismiss={tour.dismiss} />}
 
         <div className="grid md:grid-cols-2 md:divide-x">
-          <div className="flex flex-col">
-            {hint === 1 && <Hint step={1} onDismiss={tour.dismiss} />}
+          {/* The working column, in the order a phone reads it: what is
+              wrong or worth knowing, the text, how much of it, and the
+              button -- above the result, so it is on screen before there
+              is anything to scroll to (F1-03). */}
+          <div className="flex min-w-0 flex-col">
+            {kind ? (
+              <LimitNotice
+                kind={kind}
+                plan={plan}
+                words={words}
+                ceiling={ceiling}
+                remaining={left}
+                resetsIn={resetsIn}
+                renewsOn={renewsOn}
+                monthly={monthly}
+                action={
+                  kind === "overflow"
+                    ? seePlans
+                    : kind === "exhausted" && monthly
+                      ? topUp
+                      : wayOut(noticeButton)
+                }
+              />
+            ) : (
+              hint === 1 && <Hint step={1} onDismiss={tour.dismiss} />
+            )}
             <EditorInput
               value={input}
               onChange={setInput}
@@ -665,28 +724,116 @@ export function ToolEditor({
               label={t("inputLabel")}
               processable={processable}
               dimmed={dimmed}
-              className="min-h-44 md:min-h-64"
+              className="min-h-[200px] md:min-h-[168px]"
             />
-            <p
-              // Rendered from state, so it is also the signal that the
-              // client has taken over: before hydration the box can hold
-              // text while React still believes it is empty.
-              data-testid="word-count"
-              className="text-muted-foreground border-t px-5 py-2 text-xs"
-            >
-              <span
+
+            <div className="flex flex-col border-t md:flex-row md:items-center md:gap-3 md:py-3 md:pr-3 md:pl-4">
+              <p
+                // Rendered from state, so it is also the signal that the
+                // client has taken over: before hydration the box can hold
+                // text while React still believes it is empty.
+                data-testid="word-count"
+                className="text-muted-foreground flex h-9 items-center px-3 text-[13px] md:h-auto md:px-0"
+              >
+                <span
+                  className={cn(
+                    (words > processable || blocked) &&
+                      "text-danger-ink font-medium",
+                  )}
+                >
+                  {t("words", { words })}
+                </span>
+                {dimmed && (
+                  <>
+                    &nbsp;·{" "}
+                    {wall("maxThisRequest", {
+                      words: format.number(processable),
+                    })}
+                  </>
+                )}
+              </p>
+              {/* What the next run costs, before the click rather than
+                  after. In the app only; see `showCost`. */}
+              {showCost && (
+                <div className="px-3 pb-2 md:px-0 md:pb-0">
+                  <RunCost
+                    words={words}
+                    ceiling={ceiling}
+                    remaining={left}
+                    monthly={monthly}
+                    detector={measures}
+                  />
+                </div>
+              )}
+              <div className="relative border-t p-3 md:ml-auto md:border-t-0 md:p-0">
+                <Button
+                  onClick={
+                    included
+                      ? run
+                      : () => {
+                          setWantedTool(true);
+                          // The modal is shown once per tool per session.
+                          // After that this button had nothing left to
+                          // open, so it did nothing at all -- a dead
+                          // control on the one screen where the reader is
+                          // asking to buy.
+                          if (toolWallDismissed) setToolPopover(true);
+                        }
+                  }
+                  disabled={
+                    included &&
+                    (status === "loading" ||
+                      words === 0 ||
+                      verifying ||
+                      blocked)
+                  }
+                  size="lg"
+                  className="w-full disabled:opacity-45 md:w-auto md:min-w-[168px]"
+                  // The label legitimately changes -- the tool, "Verificando…",
+                  // "Sin palabras hoy" -- so the tests need something that
+                  // does not.
+                  data-testid="run"
+                >
+                  {!included
+                    ? t("paywallCta")
+                    : status === "loading"
+                      ? t("processing")
+                      : kind === "exhausted"
+                        ? wall(monthly ? "noWordsMonth" : "noWordsDay")
+                        : verifying
+                          ? t("verifying")
+                          : runLabel}
+                </Button>
+                {toolPopover && !included && (
+                  <ToolLockPopover
+                    tool={tool}
+                    plan={plan}
+                    onClose={() => setToolPopover(false)}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Invisible unless Cloudflare wants a click; then it sits under
+                the button with a line saying what it is. */}
+            {needsToken && (
+              <div
                 className={cn(
-                  (words > processable || blocked) && "text-danger-ink",
+                  "flex flex-col items-center gap-1.5 px-3 md:items-end",
+                  interactive && "pb-3",
                 )}
               >
-                {t("words", { words })}
-              </span>
-              {dimmed &&
-                wall("maxThisRequest", { words: format.number(processable) })}
-            </p>
+                {interactive && (
+                  <p className="text-muted-foreground text-xs leading-4">
+                    {t("turnstileNeeded")}
+                  </p>
+                )}
+                <div ref={widgetRef} />
+              </div>
+            )}
           </div>
 
-          <div className="flex min-h-44 flex-col border-t md:min-h-64 md:border-t-0">
+          <div className="flex min-h-[120px] min-w-0 flex-col border-t md:min-h-64 md:border-t-0">
             {hint === 3 && <Hint step={3} onDismiss={tour.dismiss} />}
             {measures && report ? (
               <DetectorResultView
@@ -695,7 +842,7 @@ export function ToolEditor({
                 plan={plan}
               />
             ) : (
-              <div className="flex-1 p-5 text-base whitespace-pre-wrap md:text-sm">
+              <div className="flex-1 p-3 text-[15px] whitespace-pre-wrap md:p-4 md:text-sm">
                 {status === "done" && !measures ? (
                   <DiffMarks parts={parts} fallback={output} />
                 ) : (
@@ -714,94 +861,20 @@ export function ToolEditor({
               </div>
             )}
             {status === "done" && parts && !measures && (
-              <div className="flex flex-wrap items-center gap-4 border-t px-5 py-2">
+              <div className="flex flex-wrap items-center gap-4 border-t px-3 py-2 md:px-4">
                 <HighlightLegend kind="rewritten" />
                 <HighlightLegend kind="added" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto"
+                  onClick={() => navigator.clipboard.writeText(output)}
+                >
+                  {t("copyResult")}
+                </Button>
               </div>
             )}
           </div>
-        </div>
-
-        {kind && (
-          <LimitNotice
-            kind={kind}
-            plan={plan}
-            words={words}
-            ceiling={ceiling}
-            remaining={left}
-            resetsIn={resetsIn}
-            renewsOn={renewsOn}
-            monthly={monthly}
-            action={
-              kind === "overflow"
-                ? seePlans
-                : kind === "exhausted" && monthly
-                  ? topUp
-                  : wayOut
-            }
-          />
-        )}
-
-        <div className="flex flex-wrap items-center gap-3 border-t px-5 py-3">
-          <Button
-            onClick={
-              included
-                ? run
-                : () => {
-                    setWantedTool(true);
-                    // The modal is shown once per tool per session. After
-                    // that this button had nothing left to open, so it did
-                    // nothing at all -- a dead control on the one screen
-                    // where the reader is asking to buy.
-                    if (toolWallDismissed) setToolPopover(true);
-                  }
-            }
-            disabled={
-              included &&
-              (status === "loading" || words === 0 || verifying || blocked)
-            }
-            size="lg"
-            // The label legitimately changes -- the tool, "Verificando…",
-            // "Sin palabras hoy" -- so the tests need something that does
-            // not.
-            data-testid="run"
-          >
-            {!included
-              ? t("paywallCta")
-              : status === "loading"
-                ? t("processing")
-                : kind === "exhausted"
-                  ? wall(monthly ? "noWordsMonth" : "noWordsDay")
-                  : verifying
-                    ? t("verifying")
-                    : names(`${tool}.name`)}
-          </Button>
-          {/* What the next run costs, before the click rather than after. */}
-          <RunCost
-            words={words}
-            ceiling={ceiling}
-            remaining={left}
-            monthly={monthly}
-            detector={measures}
-          />
-          {status === "done" && !measures && (
-            <Button
-              variant="outline"
-              onClick={() => navigator.clipboard.writeText(output)}
-            >
-              {t("copyResult")}
-            </Button>
-          )}
-          {toolPopover && !included && (
-            <div className="relative">
-              <ToolLockPopover
-                tool={tool}
-                plan={plan}
-                onClose={() => setToolPopover(false)}
-              />
-            </div>
-          )}
-          <div ref={widgetRef} className="ml-auto" />
         </div>
       </div>
 
@@ -825,7 +898,7 @@ export function ToolEditor({
           the reader pressed Escape -- the only way out there was -- and
           the words they had just waited for went with the modal. */}
       {quotaNotice && (
-        <UpsellBanner tone="quota" action={wayOut}>
+        <UpsellBanner tone="quota" action={wayOut()}>
           {wall("quotaInline", {
             words: format.number(quotaNotice.withheldWords),
           })}

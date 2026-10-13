@@ -1,17 +1,31 @@
-import { getTranslations } from "next-intl/server";
+import localFont from "next/font/local";
+import { getFormatter, getTranslations } from "next-intl/server";
 
 import { DetectorProof } from "@/components/marketing/detector-proof";
 import { ToolEditor } from "@/components/tools/tool-editor";
 import { TOOLS, type ToolId } from "@/lib/ai/tools";
 import { Link } from "@/lib/i18n/navigation";
+import { cn } from "@/lib/utils";
 import type { Locale } from "@/lib/i18n/routing";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, PRICES, TRIAL } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 
 // One landing for four tools. The pages used to be four near-identical files
 // of about 150 lines each, which is how the detector's landing ended up
 // describing an engine that had been replaced: nobody edits four copies.
 // Everything specific to a tool is now copy in messages/<locale>.json, so
 // adding a language adds no page and changing one changes one thing.
+
+// The landing H1, and only that, in Inter 700 (F1-22): one weight, Latin
+// subset, self-hosted -- no Google Fonts. Preloaded only on the pages that
+// render this component, with a metric-matched Arial fallback so the swap
+// does not move the editor under the reader's thumb.
+const inter = localFont({
+  src: "../../app/fonts/inter-latin-700.woff2",
+  weight: "700",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
 
 export interface ToolLandingProps {
   tool: ToolId;
@@ -34,6 +48,7 @@ const VALUES = {
 export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
   const t = await getTranslations(`landing.${tool}`);
   const shared = await getTranslations();
+  const format = await getFormatter();
 
   const signals = t.raw("signals") as { term: string; description: string }[];
   const notes = t.raw("notes") as { title: string; body: string }[];
@@ -80,23 +95,60 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
   };
 
   return (
-    <main className="mx-auto max-w-[65rem] px-6 py-12">
+    <main className="mx-auto max-w-[65rem] px-4 pt-5 pb-12 sm:px-6 md:pt-8">
       {/* Our own serialised object, never user input. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+      <h1
+        className={cn(
+          inter.className,
+          "text-[32px] leading-[37px] font-bold tracking-[-0.02em] text-balance md:text-[44px] md:leading-[48px]",
+        )}
+      >
         {t("h1")}
       </h1>
-      <p className="text-muted-foreground mt-3 max-w-2xl text-lg">
-        {t("intro")}
-      </p>
+      {/* One line on a phone, where the editor has to reach the fold; the
+          full sentence above it. Only the humanizer has the short form so
+          far, so the others keep their sentence everywhere. */}
+      {t.has("introShort") ? (
+        <>
+          <p className="text-muted-foreground mt-2 text-[15px] leading-[22px] sm:hidden">
+            {t("introShort")}
+          </p>
+          <p className="text-muted-foreground mt-2.5 hidden max-w-[680px] text-lg leading-7 sm:block">
+            {t("intro")}
+          </p>
+        </>
+      ) : (
+        <p className="text-muted-foreground mt-2 max-w-[680px] text-[15px] leading-[22px] sm:mt-2.5 sm:text-lg sm:leading-7">
+          {t("intro")}
+        </p>
+      )}
 
-      <div className="mt-8">
+      <div className="mt-4 md:mt-6">
         <ToolEditor tool={tool} />
       </div>
+
+      {/* Every figure from the catalogue: Pro "from" is its yearly price
+          per month, the free figure is the account's daily allowance. */}
+      <p className="mt-3 text-sm leading-[21px] text-neutral-600 md:mt-3.5">
+        {shared.rich("landing.priceLine", {
+          free: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+          pro: formatUSD(PRICES.pro.yearly.monthlyEquivalent, locale),
+          days: TRIAL.days,
+          link: (chunks) => (
+            <Link
+              href="/pricing"
+              className="text-brand font-semibold whitespace-nowrap hover:underline"
+            >
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
       <DetectorProof variant="block" />
 
       <section className="mt-16">
