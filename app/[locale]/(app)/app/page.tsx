@@ -45,6 +45,7 @@ export default async function AppPage({
           plan={subscriber?.plan.id}
           initialRemaining={allowance?.remaining ?? null}
           periodEnd={subscriber?.periodEnd?.toISOString() ?? null}
+          showCost
         />
       </div>
     </main>

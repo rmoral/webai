@@ -80,7 +80,7 @@ test("the button waits for the token instead of failing on the first click", asy
   await expect(waiting).toBeDisabled();
 
   // And once the token lands, the button becomes the tool again.
-  await expect(page.getByRole("button", { name: "Humanizador" })).toBeEnabled({
+  await expect(page.getByRole("button", { name: "Humanizar" })).toBeEnabled({
     timeout: 20_000,
   });
   await expect(page.getByText(ERROR)).toHaveCount(0);
@@ -122,7 +122,7 @@ test("a failed check recovers on its own, without the reader doing anything", as
   );
 
   await page
-    .getByRole("button", { name: "Humanizador" })
+    .getByRole("button", { name: "Humanizar" })
     .click({ timeout: 20_000 });
 
   await expect(
@@ -131,4 +131,44 @@ test("a failed check recovers on its own, without the reader doing anything", as
   // The refusal happened, and the reader never learned about it.
   expect(attempts).toBe(2);
   await expect(page.getByText(ERROR)).toHaveCount(0);
+});
+
+test("when Cloudflare wants a click, the widget says so under the button", async ({
+  page,
+}) => {
+  // F1: the widget is `interaction-only`, so nothing shows unless
+  // Cloudflare asks. When it does, it appears below the run button with a
+  // line saying what it is, instead of an unexplained box in the editor.
+  const state = { requested: false };
+  await page.route("**/challenges.cloudflare.com/**", async (route) => {
+    state.requested = true;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: `
+        window.turnstile = {
+          render(el, options) {
+            el.setAttribute("data-testid", "antibot");
+            el.style.height = "65px";
+            options["before-interactive-callback"]();
+            return "stub-widget";
+          },
+          reset() {},
+        };
+      `,
+    });
+  });
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera para probar.");
+  test.skip(
+    !(await usesTurnstile(page, state)),
+    "This build carries no Turnstile site key",
+  );
+
+  await expect(
+    page.getByText("Cloudflare necesita comprobar que no eres un robot."),
+  ).toBeVisible();
+  const run = await page.getByTestId("run").boundingBox();
+  const widget = await page.getByTestId("antibot").boundingBox();
+  expect(widget!.y).toBeGreaterThan(run!.y + run!.height);
 });

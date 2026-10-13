@@ -84,11 +84,13 @@
   },
   "landing": {
     "faqTitle": "Preguntas frecuentes",
+    "priceLine": "Gratis: {free} palabras/día con cuenta · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>",
     "humanize": {
       "metaTitle": "Humanizador de texto IA gratis en español",
       "metaDescription": "Reescribe texto generado por IA para que suene escrito por una persona, conservando el significado. Tres registros, gratis y en español.",
       "h1": "Humanizador de texto IA",
       "intro": "Pega un texto generado y recupéralo con ritmo humano: frases de longitud variada, sin las muletillas de siempre y con el significado intacto. Gratis y sin registro.",
+      "introShort": "Ritmo humano, mismo significado. Sin registro.",
       "signalsTitle": "Qué cambia el humanizador",
       "signals": [
         {
@@ -436,10 +438,14 @@
     "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
     "processing": "Procesando…",
     "verifying": "Verificando…",
+    "turnstileNeeded": "Cloudflare necesita comprobar que no eres un robot.",
     "retry": "Reintentar",
     "copyResult": "Copiar resultado",
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
-    "seePlans": "Ver planes"
+    "seePlans": "Ver planes",
+    "run": {
+      "humanize": "Humanizar"
+    }
   },
   "tour": {
     "step1": "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",

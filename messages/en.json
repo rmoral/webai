@@ -84,11 +84,13 @@
   },
   "landing": {
     "faqTitle": "Frequently asked questions",
+    "priceLine": "Free: {free} words/day with an account · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
     "humanize": {
       "metaTitle": "Free AI humanizer — rewrite AI text to sound human",
       "metaDescription": "Rewrite generated text so it reads like a person wrote it, with the meaning intact. Three registers, free, no sign-up.",
       "h1": "AI humanizer",
       "intro": "Paste generated text and get its rhythm back: sentences of varied length, none of the usual filler, and the meaning untouched. Free, no account needed.",
+      "introShort": "Human rhythm, same meaning. No sign-up.",
       "signalsTitle": "What it changes",
       "signals": [
         {
@@ -436,10 +438,14 @@
     "genericError": "Something went wrong. Try again.",
     "processing": "Working…",
     "verifying": "Verifying…",
+    "turnstileNeeded": "Cloudflare needs to check that you are not a robot.",
     "retry": "Try again",
     "copyResult": "Copy result",
     "connectionError": "Connection error. Try again.",
-    "seePlans": "See plans"
+    "seePlans": "See plans",
+    "run": {
+      "humanize": "Humanize"
+    }
   },
   "tour": {
     "step1": "Paste the text you want to work on. The counter below tells you how much fits.",

@@ -85,6 +85,22 @@ test.describe("at 390px", () => {
     await expect(sheet).toHaveCount(0);
   });
 
+  test("the run button is on screen before the result, above the banner", async ({
+    page,
+  }) => {
+    // F1-03: tones, text, counter, button, then the result. The button used
+    // to sit under the result panel, around 1000px down.
+    await page.goto("/humanizador-de-texto-ia");
+    const run = await page.getByTestId("run").boundingBox();
+    const result = await page
+      .getByText("El resultado aparecerá aquí")
+      .boundingBox();
+    expect(run!.y + run!.height).toBeLessThan(result!.y);
+    // Clear of the cookie banner's 113px at the bottom of an 844 screen.
+    expect(run!.y + run!.height).toBeLessThanOrEqual(PHONE.height - 113);
+    expect(run!.height).toBe(48);
+  });
+
   test("the paywall becomes a bottom sheet, not a centred box", async ({
     page,
   }) => {
@@ -104,7 +120,7 @@ test.describe("at 390px", () => {
 
     await page.goto("/humanizador-de-texto-ia");
     await typeInto(page, "Texto de entrada", "palabra ".repeat(40).trim());
-    await page.getByRole("button", { name: "Humanizador" }).click();
+    await page.getByRole("button", { name: "Humanizar" }).click();
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
@@ -136,6 +152,21 @@ test.describe("at 480px", () => {
 });
 
 test.describe("on a desktop", () => {
+  test("the run button and the counter share the foot of the text column", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 800 });
+    await page.goto("/humanizador-de-texto-ia");
+    const run = await page.getByTestId("run").boundingBox();
+    const count = await page.getByTestId("word-count").boundingBox();
+    // One row: the counter's middle is within the button's height.
+    const middle = count!.y + count!.height / 2;
+    expect(middle).toBeGreaterThan(run!.y);
+    expect(middle).toBeLessThan(run!.y + run!.height);
+    // Starts above the 640 the brief sets for a laptop fold.
+    expect(run!.y).toBeLessThan(640);
+  });
+
   test("keyboard focus is visible on the things you press", async ({
     page,
   }) => {
