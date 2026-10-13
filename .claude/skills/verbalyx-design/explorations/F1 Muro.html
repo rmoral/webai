@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F1 · Modal de muro · 390 y 1440</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f4f5;color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+a{color:#2b45c4}a:hover{color:#2339a3}
+.doc{max-width:1500px;margin:0 auto;padding:36px 24px 80px}
+.doc>h1{margin:0;font-size:22px;font-weight:600}
+.doc>h2{margin:44px 0 0;font-size:18px;font-weight:600}
+.doc .lede{margin:8px 0 0;color:#525252;max-width:62rem;line-height:1.55;text-wrap:pretty}
+.frames{display:flex;flex-wrap:wrap;gap:36px 28px;margin-top:20px;align-items:flex-start}
+.cap{font:600 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:#525252;margin-bottom:8px}
+.cap span{display:block;font-weight:400;color:#737373;margin-top:2px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:390px}
+.ph{position:relative;width:390px;height:844px;background:#fff;border-radius:18px;box-shadow:0 0 0 1px #e5e5e5,0 8px 28px rgba(0,0,0,.06);overflow:hidden}
+.ph.tall{height:auto}
+.scale{position:relative;width:calc(1440px * var(--s));height:calc(var(--h) * var(--s));border-radius:12px;box-shadow:0 0 0 1px #e5e5e5,0 8px 28px rgba(0,0,0,.06);overflow:hidden;background:#fff}
+.dk{position:absolute;left:0;top:0;width:1440px;height:var(--h);transform:scale(var(--s));transform-origin:0 0;background:#fff;overflow:hidden}
+.bgpage{position:absolute;inset:0;filter:blur(3px);opacity:.9;pointer-events:none}
+.bgpage .bar{height:56px;border-bottom:1px solid #e5e5e5}
+.bgpage .t{margin:28px 16px 0;height:34px;width:70%;background:#e5e5e5;border-radius:6px}
+.bgpage .l{margin:12px 16px 0;height:14px;background:#efefef;border-radius:4px}
+.bgpage .box{margin:20px 16px 0;height:520px;border:1px solid #e5e5e5;border-radius:14px}
+.ov{position:absolute;inset:0;background:rgba(10,10,10,.42)}
+/* modal */
+.m{position:absolute;background:#fff;display:flex;flex-direction:column}
+.m.sheet{left:0;right:0;top:24px;bottom:0;border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18)}
+.m.sheet.static{position:relative;top:0;border-radius:0;box-shadow:none}
+.m.dlg{left:50%;top:40px;width:528px;transform:translateX(-50%);max-height:calc(100% - 80px);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.22)}
+.mb{padding:20px 20px 16px;overflow:hidden;display:flex;flex-direction:column;min-height:0}.mb>*{flex-shrink:0}
+.dlg .mb{padding:24px 24px 20px}
+.x{position:absolute;right:10px;top:10px;width:40px;height:40px;border-radius:8px;display:grid;place-items:center;font-size:20px;color:#525252}
+.chip{align-self:flex-start;height:24px;padding:0 8px;border-radius:6px;background:#fdf3e2;border:1px solid #edc98a;color:#7a4705;font-size:12px;font-weight:600;display:flex;align-items:center}
+.mt{margin:12px 40px 0 0;font-size:20px;line-height:26px;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.dlg .mt{font-size:22px;line-height:28px}
+.ml{margin:6px 0 0;font-size:15px;line-height:22px;color:#525252}
+.btn{text-decoration:none;display:flex;align-items:center;justify-content:center;border-radius:8px;font-family:inherit;border:0;width:100%;white-space:nowrap}
+.b1{margin-top:16px;height:48px;font-size:16px;font-weight:600;background:#2b45c4;color:#fff}
+.b2{height:48px;font-size:16px;font-weight:600;background:#fff;color:#2b45c4;box-shadow:inset 0 0 0 1.5px #2b45c4}
+.b3{height:44px;font-size:15px;font-weight:600;background:none;color:#2b45c4}
+.frag{margin-top:16px;border:1px solid #e5e5e5;border-radius:12px;padding:12px 14px;font-size:15px;line-height:23px;color:#0a0a0a;height:150px;overflow:hidden;position:relative}
+.dlg .frag{height:224px;padding:16px 18px}
+.frag:after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:linear-gradient(rgba(255,255,255,0),#fff)}
+.miss{margin:8px 0 0;font-size:14px;line-height:20px;color:#737373}
+.bul{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:20px;color:#262626}
+.bul b{font-weight:600;color:#0a0a0a}
+.prow{margin-top:14px;padding:10px 12px;border-radius:10px;background:#fafafa;border:1px solid #ededed;font-size:13px;line-height:19px;color:#525252}
+.prow b{font-weight:600;color:#0a0a0a}.prow i{font-style:normal;color:#0a0a0a;font-weight:500}
+.gap{margin-top:10px}
+.note{margin-top:14px;padding:12px 14px;border-radius:10px;background:#f7f8fe;border:1px solid #c6cef4;color:#1b2a76;font-size:14px;line-height:20px}
+.note b{font-weight:600}
+.foot{margin:12px 0 0;font-size:12px;line-height:17px;color:#737373;text-align:center}
+.tag{display:inline-block;font:600 10px/16px ui-monospace,monospace;padding:0 5px;border-radius:4px;background:#fff3b0;color:#5c4a00;vertical-align:1px}
+.fl{position:absolute;left:0;right:0;border-top:1.5px dashed #e7000b;z-index:30}
+.fl b{position:absolute;right:8px;top:-20px;font:600 10px/1 ui-monospace,monospace;color:#e7000b;background:#fff;padding:3px 5px;border-radius:4px}
+.dk .fl{border-top-width:2px}.dk .fl b{font-size:14px;top:-26px}
+.spec{margin-top:48px;background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:24px 24px 8px}
+.spec h2{margin:0 0 4px;font-size:18px;font-weight:600}
+.spec>p{margin:0 0 16px;color:#525252;line-height:1.55}
+.spec table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.45}
+.spec th{text-align:left;font-weight:600;color:#525252;padding:8px 10px;border-bottom:1px solid #e5e5e5;background:#fafafa}
+.spec td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.spec td:first-child{font-weight:600;white-space:nowrap}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.spec tr.g td{background:#f7f8fe;font-weight:600;color:#1b2a76}
+.notes{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.nt{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px}
+.nt h3{margin:0 0 10px;font-size:15px;font-weight:600}
+.nt ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;line-height:1.55;color:#262626}
+</style></head>
+<body><div class="doc">
+<p style="margin:0 0 10px;display:inline-flex;padding:4px 10px;border-radius:6px;background:#e6f4ed;border:1px solid #a8d8c1;color:#0f5537;font-size:13px;font-weight:600">Validado el 13-10-2026 · textos propuestos, revisión legal, orden de tarjetas y muro sin sesión aprobados · pendiente: datos de los detectores</p><h1>F1 · Modal de muro · 390 y 1440</h1>
+<p class="lede">Se mantienen la estructura y el copy actuales (<code>paywall.*</code>). Solo cambian tres cosas: el orden en móvil (F1-05), la fila «Probado con» (F1-07) y la variante sin sesión (F1-17). Las cifras pasan al formato «US$14,99». Fecha de ejemplo: hoy + 3 días, 16 de octubre de 2026. La línea roja marca el pliegue.</p>
+<h2>Móvil · 390 × 844</h2>
+<div class="frames" id="mob"></div>
+<h2>Escritorio · 1440 × 800 (al 62 %)</h2>
+<div class="frames" id="desk"></div>
+<div class="spec">
+<h2>Ficha de valores · modal de muro</h2>
+<p>Componente <code>components/billing/paywall.tsx</code>, variante B (cuota). Si una fila no aparece, ese elemento no cambia.</p>
+<table>
+<tr><th>Elemento</th><th>Valores</th><th>Cambio</th></tr>
+<tr class="g"><td colspan="3">Contenedor</td></tr>
+<tr><td>Móvil (&lt; 640)</td><td>hoja inferior a pantalla completa menos 24 arriba · radio 16 16 0 0 · sombra <code>0 -10px 30px rgb(0 0 0/.18)</code> · padding 20 20 16 · desplazamiento interno (<code>overflow-y:auto</code>, <code>overscroll-behavior:contain</code>) · capa #0a0a0a al 42 % · ✕ de 40×40 arriba a la derecha</td><td>antes, el mismo diálogo centrado que en escritorio</td></tr>
+<tr><td>Escritorio</td><td>diálogo de 528 · top 40 · <code>max-height: calc(100vh - 80px)</code> con desplazamiento interno · radio 16 · padding 24 24 20 · sombra <code>0 24px 60px rgb(0 0 0/.22)</code></td><td>sin cambio</td></tr>
+<tr class="g"><td colspan="3">Orden</td></tr>
+<tr><td>Móvil (F1-05)</td><td>chip → título → entradilla → <b>CTA primario</b> → fragmento → «Faltan N palabras» → ventajas → <b>fila «Probado con»</b> → secundario(s) → nota de cobro → pie</td><td>el CTA primario sube por encima del fragmento</td></tr>
+<tr><td>Escritorio</td><td>chip → título → entradilla → fragmento → «Faltan» → ventajas → <b>fila «Probado con»</b> → CTA primario → secundario(s) → nota de cobro → pie</td><td>solo se añade la fila (F1-05: «encima de los CTA»)</td></tr>
+<tr class="g"><td colspan="3">Piezas</td></tr>
+<tr><td>Chip</td><td>alto 24 · padding 0 8 · radio 6 · 12/600 · <code>--warning-soft #fdf3e2</code> / borde <code>--warning-line #edc98a</code> / texto <code>--warning-ink #7a4705</code> · «500 / 500 palabras de hoy» (con sesión) o «300 / 300…» (sin sesión)</td><td>sin cambio</td></tr>
+<tr><td>Título</td><td>móvil 20 / 26 · escritorio 22 / 28 · 600 · tracking -0,01 em · margen derecho 40 (para la ✕)</td><td>sin cambio</td></tr>
+<tr><td>Entradilla</td><td>15 / 22 · #525252 · <code>quotaLeadUser</code> o <code>quotaLeadAnon</code></td><td>sin cambio</td></tr>
+<tr><td>CTA primario</td><td>«Probar Ilimitado 3 días gratis» · 48 · 16/600 · ancho 100 % · #2b45c4 · radio 8 · margen superior 16</td><td>antes 40, 15/500</td></tr>
+<tr><td>Fragmento</td><td>borde 1 #e5e5e5 · radio 12 · 15 / 23 · móvil: alto 150, padding 12 14 · escritorio: alto 224, padding 16 18 · desplazable · degradado de 40 al blanco abajo</td><td>móvil: antes 224</td></tr>
+<tr><td>«Faltan N palabras»</td><td>14 / 20 · #737373 · margen superior 8</td><td>sin cambio</td></tr>
+<tr><td>Ventajas</td><td>14 / 20 · gap 6 · arranque 600 #0a0a0a</td><td>sin cambio</td></tr>
+<tr><td>Fila «Probado con» (F1-07)</td><td>margen superior 14 · padding 10 12 · radio 10 · fondo #fafafa · borde 1 #ededed · 13 / 19 #525252 · «Probado con:» 600 #0a0a0a · cada detector en 500 #0a0a0a + «{%}» · separador « · » · los datos salen de la misma fuente que en la landing (<code>lib/proof/detectors.ts</code>) · sin datos, la fila no se pinta</td><td>nueva</td></tr>
+<tr><td>Secundario con sesión</td><td>«Ver Pro — US$14,99/mes» · contorno 1,5 #2b45c4 · 48 · 16/600 · margen superior 10</td><td>antes contorno gris, 40</td></tr>
+<tr><td>Secundarios sin sesión (F1-17)</td><td>«Crear cuenta gratis · 500 palabras/día» como <b>contorno</b> (48 · 16/600) · «Ver Pro — US$14,99/mes» pasa a <b>enlace de texto</b> (44 · 15/600 #2b45c4)</td><td>propuesta (ver notas)</td></tr>
+<tr><td>Nota de cobro</td><td>padding 12 14 · radio 10 · <code>--brand-softer #f7f8fe</code> / borde <code>--brand-line #c6cef4</code> / texto <code>--brand-ink #1b2a76</code> 14 / 20 · <code>checkout.disclosure</code> con el formato nuevo</td><td>sin cambio de copy</td></tr>
+<tr><td>Pie</td><td>12 / 17 · #737373 · centrado · <code>trustLine</code></td><td>sin cambio</td></tr>
+<tr class="g"><td colspan="3">Medido</td></tr>
+<tr><td>Móvil</td><td>Con sesión: <b>CTA primario 198–246</b> · fragmento 262–412 · fila «Probado con» 534–594 · nota de cobro 666–792 (todo dentro de 844, sin desplazar). Sin sesión: CTA 198–246 · «Crear cuenta gratis» 604–652 · la nota y el pie quedan bajo el pliegue y se ven al desplazar. Contenido completo: 830 (con sesión) y 874 (sin sesión)</td><td>antes, el CTA quedaba a ≈ 560 dentro del diálogo</td></tr>
+<tr><td>Escritorio</td><td>Diálogo 40–760. Con sesión: fila «Probado con» 526–586 · <b>CTA 602–650</b> · «Ver Pro» 660–708 · la nota empieza a 722 y se corta en 760 (hay que desplazar dentro del diálogo). Sin sesión: CTA 624–672 · «Ver Pro» (enlace) 730–774 · nota 788 en adelante, por debajo</td><td>—</td></tr>
+</table>
+</div>
+<div class="notes">
+<div class="nt"><h3>Para validar</h3><ul>
+<li><b>Sin sesión, tres botones.</b> El brief añade «Crear cuenta gratis · 500 palabras/día» como segundo CTA, pero no dice qué pasa con «Ver Pro». Propuesta: «Crear cuenta gratis» en contorno (es la salida gratuita, la más probable para quien viene de un anuncio) y «Ver Pro» como enlace de texto. Así hay tres salidas sin que compitan tres botones.</li>
+<li><b>«Probar Ilimitado» sin sesión</b> lleva a <code>/registro?next=/checkout?plan=unlimited&amp;cycle=monthly</code> (dos pasos, ya existe). La nota de cobro no cambia.</li>
+<li><b>Fila «Probado con» sin «ver metodología».</b> El brief no lo pide y en el muro no hay sitio, pero un «{%}» sin fuente es justo lo que el FAQ desaconseja. Propuesta: que «Probado con:» sea un enlace a la metodología.</li>
+</ul></div>
+<div class="nt"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>El chip ámbar «500 / 500» anuncia un límite, pero el título dice que lo hemos procesado. Un chip neutro encajaría mejor con el tono de «valor entregado».</li>
+<li>En escritorio, con la fila nueva, la nota de cobro queda cortada por el borde del diálogo (empieza a 722 y el diálogo acaba en 760). Con el fragmento a 160 en lugar de 224, entraría entera en el caso con sesión.</li>
+<li>La ✕ y «Ahora no» no existen como salida explícita en el pie: solo se cierra con la ✕ o tocando fuera.</li>
+</ul></div>
+</div>
+</div>
+<script>
+const FECHA = '16 de octubre de 2026';
+const FRAG = '<p style="margin:0 0 10px;font-weight:600">El impacto de las redes sociales en la atención de los adolescentes</p>Las redes sociales forman parte del día a día de la mayoría de adolescentes. Instagram, TikTok y YouTube generan un flujo continuo de contenido pensado para mantener enganchados a sus usuarios el mayor tiempo posible. Pero esto plantea una pregunta inevitable: ¿qué efecto tiene en la capacidad de concentración de los jóvenes?';
+const parts = (anon) => ({
+  chip: `<span class="chip">${anon ? '300 / 300' : '500 / 500'} palabras de hoy</span>`,
+  head: `<h3 class="mt">Hemos procesado las palabras que te quedaban</h3><p class="ml">${anon ? 'Crea una cuenta gratis y pasas a 500 palabras al día, o prueba Ilimitado y terminas este texto ahora.' : 'Con Ilimitado terminas este texto ahora y dejas de tener límite diario.'}</p>`,
+  cta: '<a class="btn b1" href="#">Probar Ilimitado 3 días gratis</a>',
+  frag: `<div class="frag">${FRAG}</div><p class="miss">Faltan 100 palabras de tu texto.</p>`,
+  bul: '<ul class="bul"><li><b>Sin límite diario</b> y hasta 8000 palabras por petición.</li><li><b>Las cuatro herramientas,</b> historial cifrado y desglose por pasajes.</li></ul>',
+  proof: '<div class="prow"><b>Probado con:</b> <i>GPTZero</i> {%} · <i>Originality</i> {%} · <i>Copyleaks</i> {%} · <i>ZeroGPT</i> {%}</div>',
+  sec: anon ? '<a class="btn b2 gap" href="#">Crear cuenta gratis · 500 palabras/día</a><a class="btn b3" href="#">Ver Pro — US$14,99/mes</a>' : '<a class="btn b2 gap" href="#">Ver Pro — US$14,99/mes</a>',
+  note: `<div class="note">Hoy no se te cobra nada. El <b>${FECHA}</b>, al terminar los 3 días de prueba, se te cobrarán <b>US$29,99/mes</b> salvo que canceles antes. Puedes cancelar o cambiar a Pro (US$14,99/mes) en dos clics desde tu cuenta.</div>`,
+  foot: '<p class="foot">Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento</p>',
+});
+const mobBody = (a) => { const p = parts(a); return p.chip + p.head + p.cta + p.frag + p.bul + p.proof + p.sec + p.note + p.foot; };
+const deskBody = (a) => { const p = parts(a); return p.chip + p.head + p.frag + p.bul + p.proof + p.cta.replace('b1', 'b1') + p.sec + p.note + p.foot; };
+const bg = '<div class="bgpage"><div class="bar"></div><div class="t"></div><div class="l"></div><div class="l" style="width:60%"></div><div class="box"></div></div><div class="ov"></div>';
+const fl = (y) => `<div class="fl" style="top:${y}px"><b>pliegue ${y}</b></div>`;
+const M = [
+ ['1 · Con sesión · pliegue', 'El CTA primario entra en el primer pliegue del modal, por encima del fragmento.', `${bg}<div class="m sheet"><span class="x">×</span><div class="mb">${mobBody(false)}</div></div>`],
+ ['2 · Sin sesión · pliegue', 'Mismo modal, con «Crear cuenta gratis · 500 palabras/día» como segunda salida (F1-17).', `${bg}<div class="m sheet"><span class="x">×</span><div class="mb">${mobBody(true)}</div></div>`],
+ ['3 · Con sesión · contenido completo', 'El modal entero desplegado, para ver el orden.', `<div class="m sheet static"><span class="x">×</span><div class="mb">${mobBody(false)}</div></div>`, true],
+ ['4 · Sin sesión · contenido completo', 'Tres salidas: prueba (relleno), cuenta gratis (contorno) y Pro (enlace).', `<div class="m sheet static"><span class="x">×</span><div class="mb">${mobBody(true)}</div></div>`, true],
+];
+document.getElementById('mob').innerHTML = M.map(([t, d, h, tall], i) => `<div data-screen-label="F1 muro móvil ${i + 1}"><div class="cap">${t}<span>${d}</span></div><div class="ph${tall ? ' tall' : ''}">${h}${tall ? '' : ''}</div></div>`).join('');
+const dbg = '<div class="bgpage" style="filter:blur(4px)"><div class="bar"></div><div style="width:992px;margin:0 auto"><div class="t" style="margin:40px 0 0;width:480px;height:48px"></div><div class="l" style="margin:14px 0 0;width:680px"></div><div class="box" style="margin:24px 0 0;height:560px"></div></div></div><div class="ov"></div>';
+const D = [
+ ['5 · Con sesión · 1440 × 800', 'Se añade la fila «Probado con» encima de los CTA. El resto, igual que hoy.', `${dbg}<div class="m dlg"><span class="x">×</span><div class="mb">${deskBody(false)}</div></div>`],
+ ['6 · Sin sesión · 1440 × 800', 'Mismos tres niveles que en móvil.', `${dbg}<div class="m dlg"><span class="x">×</span><div class="mb">${deskBody(true)}</div></div>`],
+];
+document.getElementById('desk').innerHTML = D.map(([t, d, h], i) => `<div data-screen-label="F1 muro escritorio ${i + 1}"><div class="cap">${t}<span>${d}</span></div><div class="scale" style="--s:.62;--h:800px"><div class="dk">${h}</div></div></div>`).join('');
+</script>
+</body></html>

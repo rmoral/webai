@@ -10,13 +10,14 @@ Guía para Claude Code. Parte de `main` con C0–C6 hechos (comprobado el 23-09-
 | D4 · Registro | C10 | `C9-C13.md` | `explorations/D4 Registro.html`, `ui_kits/auth/AuthPage.*` |
 | — | C11, C12 | `C9-C13.md` | aparecen dentro de D1 y D2 |
 | D5 · Invitación | C13 | `C9-C13.md` | `explorations/D5 Invitacion.html`, `components/feedback/SignupInvite.*` |
+| F1 · Landing, precios, muro | F1 | `F1.md` | `explorations/F1 *.html` |
 | D6 · Emails | C14 | `C14.md` | `explorations/D6 Emails.html`, `emails/*.html` |
 
 Los `.jsx` de la skill son referencia visual y de copy, no código para copiar tal cual. El repo usa Tailwind y shadcn: traduce las clases `vbx-*` a utilidades con los tokens que ya están en `app/globals.css` (`bg-brand-soft`, `text-warning-ink`, `border-danger-line`…).
 
 ## Decisiones cerradas con producto (23-09-2026)
 
-1. `/precios` se abre en **Anual**. La prueba se explica en una línea bajo el selector, que además cambia a mensual.
+1. `/precios` se abre en **Anual**. ~~La prueba se explica en una línea bajo el selector~~ → desde F1 (13-10), la prueba también existe en el anual y la anuncia una banda verde (ver `F1.md`).
 2. «Más popular» va en **Ilimitado**, en los dos ciclos. Producto confirma que hay datos que lo respaldan. Es la única insignia de la página: la de «Prueba 3 días» desaparece.
 3. Prueba social: **palabras procesadas en total**, `sum(usage_daily.words_in)`. No hay testimonios.
 4. Cabecera en Pro: «Este mes: X / 60.000 palabras» con barra, y «Pasar a Ilimitado» como enlace secundario.

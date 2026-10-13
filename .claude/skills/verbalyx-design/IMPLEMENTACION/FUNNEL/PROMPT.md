@@ -25,6 +25,8 @@ Vas a implementar los tickets C7 a C14 del plan de funnel (`00-plan.md`). C0–C
 - Cada ticket lleva su evento de `lib/analytics/events.ts`, y su test e2e si toca el checkout, el webhook o los entitlements.
 - Verifica con una pasada anónima y otra con sesión, en móvil (390 px) y en escritorio.
 
+**F1 (landing de Ads, /precios y muro):** sigue `IMPLEMENTACION/FUNNEL/F1.md` después de C14, o antes si te lo pido. Todo F1 está validado, salvo los datos de los detectores, y se puede publicar sin ellos.
+
 **Antes de C8, pregúntame** por el detector por encima del límite por petición (rechazar o recortar), porque cambia `app/api/ai/[tool]/route.ts`.
 
 **Antes de C9, pregúntame** por la cláusula «Precios e impuestos» de `legal.terms`: es texto legal.
