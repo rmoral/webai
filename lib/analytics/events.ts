@@ -65,7 +65,10 @@ export interface FunnelEvents {
   /** Turnstile refused. `retry_ok` says whether the silent retry saved it. */
   antibot_error: { tool: string; retry_ok: boolean };
 
-  wall_shown: WallProps;
+  wall_shown: WallProps & {
+    /** Whether the "Probado con" detector row was on it (F1-07). */
+    proof?: boolean;
+  };
   wall_dismissed: WallProps & {
     method: DismissMethod;
     /** Which button, when the method was `cta`. */

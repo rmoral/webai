@@ -12,6 +12,7 @@ import { usePostHog } from "posthog-js/react";
 const CheckoutPanel = dynamic(() =>
   import("@/components/billing/checkout").then((m) => m.CheckoutPanel),
 );
+import { DetectorProof } from "@/components/marketing/detector-proof";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import type { ToolId } from "@/lib/ai/tools";
 import { trialDisclosure } from "@/lib/billing/disclosure";
 import { PLANS, PRICES, TRIAL, type PlanId } from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
+import { DETECTOR_PROOF } from "@/lib/proof/detectors";
 import type { Locale } from "@/lib/i18n/routing";
 import {
   Link,
@@ -64,6 +66,8 @@ interface PaywallContext {
   reason: WallReason;
   plan: PlanId;
   tool?: string;
+  /** Whether the "Probado con" row was on it. Wall B only. */
+  proof?: boolean;
 }
 
 const dismissalKey = (trigger: PaywallTrigger, tool?: string) =>
@@ -138,6 +142,7 @@ export function PaywallDialog({
   onDismiss,
   labelledBy,
   width = "33rem",
+  fullSheet = false,
   children,
 }: {
   context: PaywallContext;
@@ -145,6 +150,12 @@ export function PaywallDialog({
   onDismiss?: (method: DismissMethod) => void;
   labelledBy: string;
   width?: string;
+  /**
+   * Below 640, a sheet that takes the screen bar 24px and scrolls inside,
+   * over a dark veil (F1-05). For a wall with enough in it that a short
+   * sheet would put the primary action below the fold.
+   */
+  fullSheet?: boolean;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -201,7 +212,12 @@ export function PaywallDialog({
       // A light veil, not a dark scrim: the editor stays visible behind it.
       // The wall is an offer about the work in view, so hiding the work
       // makes it read as an eviction.
-      className="bg-background/62 fixed inset-0 z-50 flex items-end justify-center backdrop-blur-[2px] min-[520px]:items-center min-[520px]:p-6"
+      className={cn(
+        "fixed inset-0 z-50 flex items-end justify-center",
+        fullSheet
+          ? "sm:bg-background/62 bg-[#0a0a0a]/42 sm:items-center sm:p-6 sm:backdrop-blur-[2px]"
+          : "bg-background/62 backdrop-blur-[2px] min-[520px]:items-center min-[520px]:p-6",
+      )}
       onMouseDown={(event) => {
         if (onDismiss && event.target === event.currentTarget) onDismiss("x");
       }}
@@ -213,7 +229,12 @@ export function PaywallDialog({
         aria-labelledby={labelledBy}
         tabIndex={-1}
         style={{ maxWidth: width }}
-        className="bg-card relative max-h-[94dvh] w-full overflow-y-auto rounded-t-2xl border p-6 shadow-lg outline-none min-[520px]:rounded-2xl"
+        className={cn(
+          "bg-card relative w-full overflow-y-auto border shadow-lg outline-none",
+          fullSheet
+            ? "h-[calc(100dvh-24px)] overscroll-contain rounded-t-2xl px-5 pt-5 pb-4 shadow-[0_-10px_30px_rgb(0_0_0/0.18)] sm:h-auto sm:max-h-[calc(100vh-80px)] sm:rounded-2xl sm:px-6 sm:pt-6 sm:pb-5 sm:shadow-[0_24px_60px_rgb(0_0_0/0.22)]"
+            : "max-h-[94dvh] rounded-t-2xl p-6 min-[520px]:rounded-2xl",
+        )}
       >
         {/* A cross, because Escape is not a way out that anybody can see.
             The wall was closable only by a key nobody was told about, on a
@@ -223,7 +244,12 @@ export function PaywallDialog({
             type="button"
             onClick={() => onDismiss("x")}
             aria-label={t("close")}
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-brand/30 absolute top-3 right-3 flex size-8 items-center justify-center rounded-full text-lg leading-none focus-visible:ring-[3px] focus-visible:outline-none"
+            className={cn(
+              "text-muted-foreground hover:text-foreground focus-visible:ring-brand/30 absolute top-3 right-3 flex items-center justify-center rounded-full text-lg leading-none focus-visible:ring-[3px] focus-visible:outline-none",
+              fullSheet
+                ? "size-10 max-sm:top-2 max-sm:right-2 sm:size-8"
+                : "size-8",
+            )}
           >
             ×
           </button>
@@ -367,23 +393,47 @@ export function QuotaPaywall({
   // dashboard -- the most avoidable leak in the funnel.
   const here = usePathname();
   const accountState = accountStateOf(plan);
-  const context = {
-    variant: "modal" as const,
-    reason: "quota" as const,
-    plan,
-    tool,
-  };
 
   // The blurred half is filler, generated from a count. See blurFiller.
   const filler = useMemo(
     () => blurFiller(result.withheldWords),
     [result.withheldWords],
   );
+  const words = format.number(PLANS.free.limits.wordsPerDay ?? 0);
+  const proof = DETECTOR_PROOF.results.length > 0;
+  const context = {
+    variant: "modal" as const,
+    reason: "quota" as const,
+    plan,
+    tool,
+    proof,
+  };
+  const secondary = () =>
+    track(posthog, "wall_dismissed", {
+      ...context,
+      method: "cta",
+      action: "secondary",
+    });
+  // The label names the monthly price, and /pricing opens on the yearly
+  // cycle: without the query the reader lands on a different number than
+  // the one they read.
+  const seePro = (
+    <Link
+      href={{ pathname: "/pricing", query: { cycle: "monthly" } }}
+      onClick={secondary}
+    >
+      {t("seePro", { price: formatUSD(PRICES.pro.monthly.amount, locale) })}
+    </Link>
+  );
+  // Outlined in the brand colour, second to the filled trial button.
+  const outline =
+    "border-brand text-brand hover:bg-brand-softer hover:text-brand w-full border-[1.5px]";
 
   return (
     <PaywallDialog
       context={context}
       labelledBy="paywall-quota-title"
+      fullSheet
       onDismiss={(method) => {
         track(posthog, "wall_dismissed", { ...context, method });
         onDismiss();
@@ -410,51 +460,90 @@ export function QuotaPaywall({
           />
         </div>
       ) : (
-        <>
-          <Badge variant="warning">
+        // One list, two orders. On a phone the trial button comes straight
+        // after the lead, above the fragment, so it is in reach without
+        // scrolling the sheet; from 640 it keeps its place after the
+        // benefits and the detector row (F1-05).
+        <div className="flex flex-col">
+          <Badge variant="warning" className="order-1 self-start">
             {t("quotaBadge", {
               used: format.number(result.usedToday),
               limit: format.number(result.limitToday),
             })}
           </Badge>
 
-          <h2 id="paywall-quota-title" className="mt-3 text-xl font-semibold">
+          <h2
+            id="paywall-quota-title"
+            className="order-2 mt-3 mr-10 text-xl leading-[26px] font-semibold tracking-[-0.01em] sm:text-[22px] sm:leading-7"
+          >
             {t("quotaTitle")}
           </h2>
-          <p className="text-muted-foreground mt-2 text-sm leading-normal">
+          <p className="order-3 mt-2 text-[15px] leading-[22px] text-neutral-600">
             {accountState === "anonymous"
-              ? t("quotaLeadAnon", {
-                  words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-                })
+              ? t("quotaLeadAnon", { words })
               : t("quotaLeadUser")}
           </p>
 
-          <div className="bg-muted/40 mt-4 max-h-56 overflow-hidden rounded-xl border p-4 text-sm leading-relaxed whitespace-pre-wrap">
-            {result.visibleText}{" "}
-            <span
-              aria-hidden
-              className="blur-[4.5px] select-none"
-              // The fade is the one place a gradient earns its keep: it says
-              // "there is more" without a word of copy. It masks the text
-              // itself rather than painting a panel over it, so it works on
-              // either theme.
-              style={{
-                maskImage:
-                  "linear-gradient(to bottom, #000 0%, transparent 85%)",
-                WebkitMaskImage:
-                  "linear-gradient(to bottom, #000 0%, transparent 85%)",
-              }}
-            >
-              {filler}
-            </span>
+          <Button
+            size="lg"
+            className="order-4 mt-4 w-full sm:order-9"
+            onClick={() => {
+              track(posthog, "wall_dismissed", {
+                ...context,
+                method: "cta",
+                action: "primary",
+              });
+              // Nobody can be billed without an account to bill. A signed-out
+              // reader goes through the door first and comes back; the editor
+              // still holds their text either way.
+              //
+              // They come back to the card field with this plan already
+              // chosen -- not to the pricing page, and not to a sign-in
+              // screen that drops what they pressed. `/checkout` is an
+              // internal route name, so it is resolved to the path this
+              // language actually serves before it becomes a `next`.
+              if (accountState === "anonymous") {
+                router.push({
+                  pathname: "/signup",
+                  query: { next: trialCheckoutPath(locale) },
+                });
+                return;
+              }
+              setPaying(true);
+            }}
+          >
+            {t("tryUnlimited", { days: TRIAL.days })}
+          </Button>
+
+          <div className="relative order-5 mt-4">
+            <div className="bg-muted/40 h-[150px] overflow-y-auto rounded-xl border px-3.5 py-3 text-[15px] leading-[23px] whitespace-pre-wrap sm:h-56 sm:px-[18px] sm:py-4">
+              {result.visibleText}{" "}
+              <span
+                aria-hidden
+                className="blur-[4.5px] select-none"
+                // The fade is the one place a gradient earns its keep: it
+                // says "there is more" without a word of copy. It masks the
+                // text itself rather than painting a panel over it, so it
+                // works on either theme.
+                style={{
+                  maskImage:
+                    "linear-gradient(to bottom, #000 0%, transparent 85%)",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, #000 0%, transparent 85%)",
+                }}
+              >
+                {filler}
+              </span>
+            </div>
+            <div className="from-card pointer-events-none absolute inset-x-px bottom-px h-10 rounded-b-xl bg-gradient-to-t" />
           </div>
-          <p className="text-muted-foreground mt-2 text-sm">
+          <p className="text-muted-foreground order-6 mt-2 text-sm leading-5">
             {t("quotaWithheld", {
               words: format.number(result.withheldWords),
             })}
           </p>
 
-          <ul className="mt-4 space-y-1.5 text-sm">
+          <ul className="order-7 mt-4 space-y-1.5 text-sm leading-5">
             <li>
               <b className="font-semibold">{t("benefitNoLimitLead")}</b>{" "}
               {t("benefitNoLimit", {
@@ -467,71 +556,39 @@ export function QuotaPaywall({
             </li>
           </ul>
 
-          <div className="mt-5 flex flex-col gap-2">
-            <Button
-              size="lg"
-              onClick={() => {
-                track(posthog, "wall_dismissed", {
-                  ...context,
-                  method: "cta",
-                  action: "primary",
-                });
-                // Nobody can be billed without an account to bill. A signed-out
-                // reader goes through the door first and comes back; the editor
-                // still holds their text either way.
-                //
-                // They come back to the card field with this plan already
-                // chosen -- not to the pricing page, and not to a sign-in
-                // screen that drops what they pressed. `/checkout` is an
-                // internal route name, so it is resolved to the path this
-                // language actually serves before it becomes a `next`.
-                if (accountState === "anonymous") {
-                  router.push({
-                    pathname: "/signup",
-                    query: { next: trialCheckoutPath(locale) },
-                  });
-                  return;
-                }
-                setPaying(true);
-              }}
-            >
-              {t("tryUnlimited", { days: TRIAL.days })}
-            </Button>
-            <Button variant="outline" asChild>
-              <Link
-                href={
-                  accountState === "anonymous"
-                    ? { pathname: "/signup" as const, query: { next: here } }
-                    : // The label names the monthly price, and /pricing now
-                      // opens on the yearly cycle: without this the reader
-                      // lands on a different number than the one they read.
-                      {
-                        pathname: "/pricing" as const,
-                        query: { cycle: "monthly" },
-                      }
-                }
-                onClick={() =>
-                  track(posthog, "wall_dismissed", {
-                    ...context,
-                    method: "cta",
-                    action: "secondary",
-                  })
-                }
-              >
-                {accountState === "anonymous"
-                  ? t("createAccount", {
-                      words: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-                    })
-                  : t("seePro", {
-                      price: formatUSD(PRICES.pro.monthly.amount, locale),
-                    })}
-              </Link>
-            </Button>
+          <DetectorProof variant="row" className="order-8" />
+
+          <div className="order-9 mt-2.5 flex flex-col gap-2.5 sm:order-10">
+            {accountState === "anonymous" ? (
+              <>
+                {/* F1-17: the free account is the likeliest exit for
+                    somebody who came from an ad, so it is a button; Pro
+                    steps back to a link, so three exits do not compete
+                    as three buttons. */}
+                <Button variant="outline" size="lg" className={outline} asChild>
+                  <Link
+                    href={{ pathname: "/signup", query: { next: here } }}
+                    onClick={secondary}
+                  >
+                    {t("createAccountShort", { words })}
+                  </Link>
+                </Button>
+                <span className="text-brand flex h-11 items-center justify-center text-[15px] font-semibold [&_a]:hover:underline">
+                  {seePro}
+                </span>
+              </>
+            ) : (
+              <Button variant="outline" size="lg" className={outline} asChild>
+                {seePro}
+              </Button>
+            )}
           </div>
 
-          <TrialDisclosure className="mt-4" />
-          <p className="text-muted-foreground mt-3 text-xs">{t("trustLine")}</p>
-        </>
+          <TrialDisclosure className="order-10 mt-4 rounded-[10px] px-3.5 py-3 leading-5 sm:order-11" />
+          <p className="text-muted-foreground order-11 mt-3 text-center text-xs leading-[17px] sm:order-12">
+            {t("trustLine")}
+          </p>
+        </div>
       )}
     </PaywallDialog>
   );
