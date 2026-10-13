@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F1 · Landing /humanizador-de-texto-ia · escritorio 1440</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f4f5;color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+a{color:#2b45c4}a:hover{color:#2339a3}
+.doc{max-width:1500px;margin:0 auto;padding:36px 24px 80px}
+.doc>h1{margin:0;font-size:22px;font-weight:600}
+.doc .lede{margin:8px 0 0;color:#525252;max-width:62rem;line-height:1.55;text-wrap:pretty}
+.frames{display:flex;flex-direction:column;gap:40px;margin-top:28px}
+.cap{font:600 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:#525252;margin-bottom:8px}
+.cap span{display:block;font-weight:400;color:#737373;margin-top:2px;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.scale{position:relative;width:calc(1440px * var(--s));height:calc(var(--h) * var(--s));border-radius:12px;box-shadow:0 0 0 1px #e5e5e5,0 8px 28px rgba(0,0,0,.06);overflow:hidden;background:#fff}
+.ph{position:absolute;left:0;top:0;width:1440px;height:var(--h);transform:scale(var(--s));transform-origin:0 0;background:#fff;overflow:hidden}
+.fl{position:absolute;left:0;right:0;border-top:2px dashed #e7000b;z-index:30;pointer-events:none}
+.fl b{position:absolute;right:16px;top:-26px;font:600 14px/1 ui-monospace,monospace;color:#e7000b;background:#fff;padding:4px 7px;border-radius:5px}
+.fl.soft{border-color:#a3a3a3}.fl.soft b{color:#737373}
+/* product */
+.wrap{width:992px;margin:0 auto}
+.hd{height:56px;border-bottom:0}
+.hd .wrap{height:56px;display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:#0a0a0a}
+.mark{width:24px;height:24px;border-radius:6px;background:#2b45c4;color:#fff;display:grid;place-items:center;font:800 15px/1 -apple-system,sans-serif}
+.word{font-size:17px;font-weight:700;letter-spacing:-.01em}.word i{font-style:normal;color:#2b45c4}
+.navl{margin-left:24px;font-size:14px;font-weight:500;color:#525252;text-decoration:none}
+.lang{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#a3a3a3}.lang .on{color:#0a0a0a}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-family:inherit;border:0;cursor:pointer;white-space:nowrap}
+.btn-sm{height:36px;padding:0 14px;font-size:14px;font-weight:600}
+.btn-fill{background:#2b45c4;color:#fff}.btn-fill:hover{background:#2339a3;color:#fff}
+.btn-ghost{background:none;color:#0a0a0a}
+.btn-line{background:#fff;color:#0a0a0a;box-shadow:inset 0 0 0 1px #d4d4d4}
+.tabs{border-bottom:1px solid #e5e5e5}
+.tabs .wrap{height:44px;display:flex;gap:24px}
+.tabs a{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:#525252;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:0 2px}
+.tabs a.on{color:#2b45c4;border-color:#2b45c4}
+.pro{font-size:10px;font-weight:600;line-height:16px;padding:0 5px;border-radius:5px;background:#eef1fd;color:#1b2a76;border:1px solid #c6cef4}
+.main{padding-top:32px}
+.h1{margin:0;font-family:Inter,-apple-system,sans-serif;font-size:44px;line-height:48px;font-weight:700;letter-spacing:-.02em}
+.sub{margin:10px 0 0;max-width:680px;font-size:18px;line-height:28px;color:#737373;text-wrap:pretty}
+.card{margin-top:24px;border:1px solid #e5e5e5;border-radius:14px;overflow:hidden;background:#fff}
+.tones{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid #e5e5e5}
+.tone{height:32px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;display:flex;align-items:center;box-shadow:inset 0 0 0 1px #e5e5e5;color:#404040}
+.tone.on{background:#2b45c4;color:#fff;box-shadow:none}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.inp{display:flex;flex-direction:column;border-right:1px solid #e5e5e5}
+.hint{display:flex;gap:10px;align-items:flex-start;padding:10px 16px;background:#f7f8fe;border-bottom:1px solid #c6cef4;font-size:13px;line-height:18px;color:#262626}
+.hint .x{margin-left:auto;font-size:16px;line-height:18px;color:#525252}
+.warn{padding:10px 16px;background:#fdf3e2;border-bottom:1px solid #edc98a;font-size:13px;line-height:18px;color:#7a4705;display:flex;gap:12px;align-items:center}
+.warn .btn{flex:none;height:32px;padding:0 12px;font-size:13px;font-weight:600;background:#fff;color:#7a4705;box-shadow:inset 0 0 0 1px #edc98a}
+.ta{min-height:168px;padding:16px;font-size:16px;line-height:24px;color:#0a0a0a;flex:1}
+.ta.empty{color:#a3a3a3}.ta .dim{color:#a3a3a3}
+.ta.tall{flex:none;height:168px;overflow:hidden}
+.cut{display:inline-block;width:2px;height:18px;background:#d98b18;vertical-align:-3px;margin:0 2px;border-radius:1px}
+.run{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;border-top:1px solid #e5e5e5}
+.count{font-size:13px;color:#737373;margin-right:auto}
+.count.over{color:#8f2018;font-weight:500}
+.btn-run{height:48px;min-width:168px;padding:0 28px;font-size:16px;font-weight:600;background:#2b45c4;color:#fff}
+.btn-run[disabled]{opacity:.45;cursor:not-allowed}
+.tsz{display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding:0 12px 12px}
+.ts{font-size:12px;line-height:16px;color:#737373}
+.tsw{width:300px;height:65px;border:1px solid #d4d4d4;border-radius:4px;background:#fafafa;display:flex;align-items:center;gap:10px;padding:0 12px;font-size:13px;color:#262626}
+.tsw i{width:24px;height:24px;border:2px solid #a3a3a3;border-radius:3px;background:#fff}
+.tsw small{margin-left:auto;font-size:9px;color:#737373;text-align:right;line-height:1.2}
+.out{padding:16px;font-size:15px;color:#737373}
+.prices{margin:14px 0 0;font-size:14px;line-height:21px;color:#525252}
+.prices a{font-weight:600;text-decoration:none;white-space:nowrap}
+.proof{margin-top:28px;border:1px solid #e5e5e5;border-radius:14px;padding:24px 28px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:32px;align-items:center}
+.proof h2{margin:0;font-size:18px;line-height:24px;font-weight:600}
+.proof .foot{margin:8px 0 0;font-size:13px;line-height:18px;color:#737373}
+.proof .foot a{color:#2b45c4;font-weight:500}
+.meters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.meter{display:flex;align-items:center;gap:12px}
+.ring{position:relative;width:72px;height:72px;flex:none}
+.ring svg{display:block}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:16px;font-weight:600}
+.meter .n{font-size:14px;line-height:18px;font-weight:600;color:#262626}
+.meter .u{font-size:12px;line-height:16px;color:#737373}
+.rest{margin:28px 0 0;padding:40px;border:1.5px dashed #d4d4d4;border-radius:12px;text-align:center;color:#737373;font-size:15px}
+.ck{position:absolute;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid #e5e5e5;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+.ck .wrap{display:flex;align-items:center;gap:24px;padding:14px 0}
+.ck p{margin:0;flex:1;max-width:640px;font-size:13px;line-height:18px;color:#262626}
+.ck p a{font-weight:500}
+.ck .row{margin-left:auto;display:grid;grid-template-columns:120px 120px;gap:8px}
+.ck .btn{height:40px;font-size:14px;font-weight:600}
+/* spec */
+.spec{margin-top:48px;background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:24px 24px 8px}
+.spec h2{margin:0 0 4px;font-size:18px;font-weight:600}
+.spec>p{margin:0 0 16px;color:#525252;line-height:1.55}
+.spec table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.45}
+.spec th{text-align:left;font-weight:600;color:#525252;padding:8px 10px;border-bottom:1px solid #e5e5e5;background:#fafafa}
+.spec td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.spec td:first-child{font-weight:600;white-space:nowrap}
+.spec code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.spec tr.g td{background:#f7f8fe;font-weight:600;color:#1b2a76}
+.notes{margin-top:28px;background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:20px 22px}
+.notes h3{margin:0 0 10px;font-size:15px;font-weight:600}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;line-height:1.55}
+</style></head>
+<body><div class="doc">
+<h1>F1 · Landing /humanizador-de-texto-ia · escritorio 1440</h1>
+<p class="lede">Mismos cambios que en móvil (validado el 13-10). En escritorio la cabecera no cambia (F1-04 es solo móvil) y el subtítulo largo se queda. La línea roja marca el límite del brief: el botón tiene que verse por encima de 640 px. La gris, un portátil de 1440 × 800. Los recuadros están al 62 %.</p>
+<div class="frames" id="frames"></div>
+<div class="spec">
+<h2>Ficha de valores · landing escritorio (≥ 1024)</h2>
+<p>Solo lo que cambia respecto a main o a la ficha de móvil. Contenedor de 992 centrado, igual que hoy.</p>
+<table>
+<tr><th>Elemento</th><th>Valores</th><th>Cambio</th></tr>
+<tr class="g"><td colspan="3">Cabecera y pestañas</td></tr>
+<tr><td>Cabecera</td><td>alto 56 · logo · «Precios» 14/500 #525252 a 24 del logo · a la derecha: ES / EN 13/600 (activo #0a0a0a, el otro #a3a3a3) · «Entrar» ghost 36 · «Crear cuenta gratis» relleno 36, 14/600, radio 8</td><td>sin cambio (F1-04 solo aplica por debajo de <code>sm</code>)</td></tr>
+<tr><td>Pestañas</td><td>alto 44 · gap 24 · 14/500 · activa #2b45c4 con subrayado de 2 · borde inferior 1 #e5e5e5</td><td>sin cambio</td></tr>
+<tr class="g"><td colspan="3">Titular (F1-18, F1-22)</td></tr>
+<tr><td>Padding superior</td><td>32 (antes ≈ 48)</td><td>reducido para F1-03</td></tr>
+<tr><td>H1</td><td><b>Inter 700 · 44 / 48</b> · tracking -0,02 em · #0a0a0a · 1 línea</td><td>antes: sistema 36/700</td></tr>
+<tr><td>Subtítulo</td><td>18 / 28 · #737373 · ancho máx. 680 · margen superior 10 · 2 líneas · <code>intro</code> actual</td><td>sin cambio de copy</td></tr>
+<tr class="g"><td colspan="3">Editor (F1-03, F1-11, F1-08, F1-12)</td></tr>
+<tr><td>Tarjeta</td><td>margen superior 24 · borde 1 #e5e5e5 · radio 14 · tonos a todo el ancho (padding 12 16, borde inferior 1) · 2 columnas <code>minmax(0,1fr)</code>, separadas por un borde 1</td><td>sin cambio de estructura</td></tr>
+<tr><td>Área de texto</td><td><b>alto mínimo 168</b> · crece con el contenido hasta 480 y después desplaza · padding 16 · 16 / 24</td><td>antes, alto fijo ≈ 250</td></tr>
+<tr><td>Fila de ejecución</td><td><b>una sola fila</b> al pie de la columna izquierda: contador a la izquierda (13 #737373; al pasarse, 13/500 #8f2018) y botón a la derecha · padding 12 12 12 16 · borde superior 1 #e5e5e5</td><td>el contador y el botón se juntan en una fila (ahorra 36 px)</td></tr>
+<tr><td>Botón «Humanizar»</td><td><b>alto 48 · 16/600</b> · padding 0 28 · ancho mínimo 168 · radio 8 · #2b45c4 / #2339a3 / #1d2f88 · desactivado solo con el editor vacío (opacidad 0,45)</td><td>antes 148×40, 14/500</td></tr>
+<tr><td>Coste junto al botón</td><td>se elimina (<code>RunCost</code> no se pinta en las landings)</td><td>F1-12</td></tr>
+<tr><td>Turnstile</td><td><code>appearance: "interaction-only"</code>. Si pide interacción: bajo la fila de ejecución, alineado a la derecha, padding 0 12 12 · línea de 12 / 16 #737373 «Cloudflare necesita comprobar que no eres un robot.» · widget de 300×65</td><td>fuera del editor</td></tr>
+<tr><td>Aviso de límite</td><td>texto a la izquierda (2 líneas a 1440) y «Ver planes» a la derecha, centrado en vertical (32, 13/600, borde #edc98a) · padding 10 16 · mismos colores que en móvil</td><td>copy de C8</td></tr>
+<tr class="g"><td colspan="3">Bajo el editor (F1-06, F1-07)</td></tr>
+<tr><td>Línea de precios</td><td>margen superior 14 · 14 / 21 · #525252 · 1 línea · «Ver planes» 14/600 #2b45c4</td><td>nuevo</td></tr>
+<tr><td>Bloque de detectores</td><td>margen superior 28 · borde 1 · radio 14 · padding 24 28 · rejilla <code>260px 1fr</code>, gap 32 · izquierda: título 18/600 y pie 13 / 18 #737373 · derecha: 4 medidores en fila, gap 16, cada uno anillo de 72 (trazo 6, pista #e5e5e5, arco #2b45c4) + nombre 14/600 #262626 + «humano» 12 #737373 · cifra 16/600 dentro del anillo</td><td>nuevo · a menos de 768 pasa al formato móvil</td></tr>
+<tr class="g"><td colspan="3">Cookies (F1-14)</td></tr>
+<tr><td>Banner</td><td>fijo abajo, a todo el ancho · contenido en el contenedor de 992 · padding 14 0 · texto 13 / 18, ancho máx. 640, 2 líneas máx. · botones de 120×40 iguales, contorno, 14/600, gap 8 · alto total 70</td><td>mismo copy propuesto que en móvil</td></tr>
+<tr class="g"><td colspan="3">Pliegue</td></tr>
+<tr><td>Medido</td><td>Medido a 1440: cabecera 0–56 · pestañas 56–100 · H1 132–180 · <b>botón «Humanizar» 567–615</b> (con el aviso de límite, 585–633) · línea de precios 642–663 · bloque de detectores 691–813 · banner de cookies 731–800 (70 de alto)</td><td>antes, el botón quedaba a 730</td></tr>
+</table>
+</div>
+<div class="notes"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>A 1440, el contenedor de 992 deja 224 px de margen a cada lado. El área de texto podría crecer en ancho en lugar de en alto.</li>
+<li>Sin sesión, la cabecera de escritorio tiene un botón relleno («Crear cuenta gratis») que compite con «Humanizar», igual que en móvil.</li>
+<li>El panel de resultado vacío ocupa media tarjeta en el pliegue. Un ejemplo de antes y después (F1-19) cabría ahí sin añadir altura.</li>
+</ul></div>
+</div>
+<script>
+const S = 0.62;
+const LONG = 'La inteligencia artificial ha transformado la forma en que trabajamos, aprendemos y nos comunicamos. En el ámbito educativo, por ejemplo, los estudiantes pueden acceder a explicaciones personalizadas en cuestión de segundos, mientras que los docentes disponen de herramientas que les permiten adaptar los contenidos al ritmo de cada alumno. Sin embargo, es importante señalar que este avance también plantea desafíos significativos.';
+const DIM = ' Además, resulta fundamental considerar las implicaciones éticas de su uso, ya que la dependencia excesiva puede afectar al desarrollo del pensamiento crítico y a la capacidad de redactar con voz propia, algo que ninguna herramienta debería sustituir.';
+const ring = '<div class="ring"><svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="33" fill="none" stroke="#e5e5e5" stroke-width="6"/></svg><b>{%}</b></div>';
+const meter = (n) => `<div class="meter">${ring}<div><div class="n">${n}</div><div class="u">humano</div></div></div>`;
+const header = `<header class="hd"><div class="wrap"><a class="logo" href="#"><span class="mark">X</span><span class="word">Verbaly<i>x</i></span></a><a class="navl" href="#">Precios</a><span class="lang"><span class="on">ES</span>/<span>EN</span></span><a class="btn btn-sm btn-ghost" href="#">Entrar</a><a class="btn btn-sm btn-fill" href="#">Crear cuenta gratis</a></div></header>`;
+const tabs = `<nav class="tabs"><div class="wrap"><a class="on" href="#">Humanizador</a><a href="#">Detector de IA</a><a href="#">Parafraseador <span class="pro">Pro</span></a><a href="#">Corrector <span class="pro">Pro</span></a></div></nav>`;
+const intro = `<div class="wrap main"><h1 class="h1">Humanizador de texto IA</h1><p class="sub">Pega un texto generado y recupéralo con ritmo humano: frases de longitud variada, sin las muletillas de siempre y con el significado intacto. Gratis y sin registro.</p>`;
+const card = ({ s = 'empty', ts = false } = {}) => `<div class="card"><div class="tones"><span class="tone">Académico</span><span class="tone on">Neutro</span><span class="tone">Informal</span></div><div class="cols"><div class="inp">
+${s === 'over' ? '<div class="warn"><span><b>Procesaremos las primeras 300 palabras</b> de las 831 que has pegado. El resto queda atenuado y sigue en el editor. Pro amplía el límite a 3000 por petición; Ilimitado, a 8000.</span><a class="btn" href="#">Ver planes</a></div>' : '<div class="hint"><span>Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.</span><span class="x">×</span></div>'}
+<div class="ta ${s === 'empty' ? 'empty' : 'tall'}">${s === 'empty' ? 'Pega aquí tu texto…' : LONG + (s === 'over' ? '<span class="cut"></span><span class="dim">' + DIM + '</span>' : '')}</div>
+<div class="run"><span class="count ${s === 'over' ? 'over' : ''}">${s === 'over' ? '831 palabras · máx. 300 en esta petición' : s === 'ok' ? '64 palabras' : '0 palabras'}</span><button class="btn btn-run"${s === 'empty' ? ' disabled' : ''}>Humanizar</button></div>
+${ts ? '<div class="tsz"><div class="ts">Cloudflare necesita comprobar que no eres un robot.</div><div class="tsw"><i></i>Verifica que eres humano<small>CLOUDFLARE<br>Privacidad · Términos</small></div></div>' : ''}
+</div><div class="out">El resultado aparecerá aquí</div></div></div>`;
+const below = `<p class="prices">Gratis: 500 palabras/día con cuenta · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba → <a href="#">Ver planes</a></p>
+<section class="proof"><div><h2>Probado con los detectores</h2><p class="foot">Prueba del {fecha} · <a href="#">ver metodología</a></p></div><div class="meters">${['GPTZero', 'Originality', 'Copyleaks', 'ZeroGPT'].map(meter).join('')}</div></section>`;
+const cookies = `<div class="ck"><div class="wrap"><p>Cookies técnicas, siempre. Las de analítica y publicidad, solo si aceptas; rechazarlas no cambia nada. <a href="#">Política</a></p><div class="row"><button class="btn btn-line">Rechazar</button><button class="btn btn-line">Aceptar</button></div></div></div>`;
+const lines = '<div class="fl" style="top:640px"><b>640 · límite del brief</b></div><div class="fl soft" style="top:800px"><b>800 · portátil 1440 × 800</b></div>';
+const F = [
+ ['1 · Pliegue, primera visita (1440 × 800)', 'Con el banner de cookies. El botón queda por encima de la línea de 640.', 800, header + tabs + intro + card() + below + '</div>' + cookies + lines.split('<div class="fl soft"')[0]],
+ ['2 · Al pegar 831 palabras', 'El aviso ámbar con «Ver planes» a la derecha (2 líneas a 1440), y el contador en rojo. Sin coste junto al botón. Aun con el aviso, el botón acaba por encima de 640.', 800, header + tabs + intro + card({ s: 'over' }) + below + '</div>' + lines.split('<div class="fl soft"')[0]],
+ ['3 · Turnstile pide interacción', 'Bajo la fila de ejecución, alineado a la derecha. Si Cloudflare no lo pide, no se ve.', 800, header + tabs + intro + card({ s: 'ok', ts: true }) + below + '</div>' + lines.split('<div class="fl soft"')[0]],
+ ['4 · Página hasta el bloque de detectores', 'Línea de precios y bloque «Probado con los detectores». El resto de la landing sigue igual.', 1060, header + tabs + intro + card() + below + '<div class="rest">Resto de la landing sin cambios (cómo funciona · FAQ · pie)</div></div>' + lines],
+];
+document.getElementById('frames').innerHTML = F.map(([t, d, h, html], i) => `<div data-screen-label="F1 landing escritorio ${i + 1}"><div class="cap">${t}<span>${d}</span></div><div class="scale" style="--s:${S};--h:${h}px"><div class="ph">${html}</div></div></div>`).join('');
+
+</script>
+</body></html>
