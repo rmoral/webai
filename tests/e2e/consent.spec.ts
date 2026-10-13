@@ -21,9 +21,10 @@ test("asks once, and makes refusing exactly as easy as accepting", async ({
   expect(Math.abs((a?.y ?? 0) - (r?.y ?? 0))).toBeLessThan(2);
 
   // And it says where the detail is.
-  await expect(
-    banner.getByRole("link", { name: /Política de cookies/ }),
-  ).toHaveAttribute("href", /\/legal\/cookies/);
+  await expect(banner.getByRole("link", { name: "Política" })).toHaveAttribute(
+    "href",
+    /\/legal\/cookies/,
+  );
 
   await reject.click();
   await expect(banner).toHaveCount(0);
@@ -37,8 +38,11 @@ test("asks once, and makes refusing exactly as easy as accepting", async ({
 test("lets the two purposes be answered apart", async ({ page }) => {
   await page.goto("/");
   const banner = page.getByTestId("consent-banner");
-  await banner.getByRole("button", { name: "Elegir" }).click();
+  await banner.getByRole("button", { name: "Rechazar" }).click();
 
+  // The first banner is two buttons; the choice by purpose is behind the
+  // footer's "Cookies", which is where the policy sends anyone who wants it.
+  await page.getByRole("button", { name: "Cookies" }).click();
   // Analytics yes, advertising no, which is a thing the cookie policy
   // says can be said.
   await banner.getByRole("button", { name: "Analítica" }).click();

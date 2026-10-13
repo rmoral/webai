@@ -11,7 +11,8 @@ import {
 // embedded flow here only creates subscriptions.
 import { CheckoutButton } from "@/components/marketing/checkout-button";
 import { PricingPlans } from "@/components/marketing/pricing-plans";
-import { PLANS, TOPUP, TRIAL, formatUsd } from "@/lib/billing/plans";
+import { PLANS, TOPUP, TRIAL } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { alternatesFor } from "@/lib/i18n/metadata";
 import { Link } from "@/lib/i18n/navigation";
 import { LEGAL_SLUGS } from "@/lib/i18n/legal";
@@ -97,11 +98,11 @@ export default async function PricingPage({ params }: Params) {
       values: [
         t("valueTopupNeedsPlan"),
         t("valueTopup", {
-          amount: formatUsd(TOPUP.amount, locale),
+          amount: formatUSD(TOPUP.amount, locale),
           words: n(TOPUP.words),
         }),
         t("valueTopup", {
-          amount: formatUsd(TOPUP.amount, locale),
+          amount: formatUSD(TOPUP.amount, locale),
           words: n(TOPUP.words),
         }),
       ],
@@ -183,7 +184,7 @@ export default async function PricingPage({ params }: Params) {
         <h2 className="font-semibold">{t("topupTitle")}</h2>
         <p className="text-muted-foreground mt-1 text-sm">
           {t("topupBody", {
-            amount: formatUsd(TOPUP.amount, locale),
+            amount: formatUSD(TOPUP.amount, locale),
             words: n(TOPUP.words),
           })}
         </p>

@@ -8,7 +8,8 @@ import { PaywallDialog } from "@/components/billing/paywall";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics/events";
-import { PLANS, PRICES, TRIAL, formatUsd } from "@/lib/billing/plans";
+import { PLANS, PRICES, TRIAL } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { useRouter } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
 
@@ -102,7 +103,7 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
           <div>
             <p className="font-semibold">{plans("unlimited")}</p>
             <p className="text-sm">
-              {formatUsd(PRICES.unlimited.monthly.amount, locale)}
+              {formatUSD(PRICES.unlimited.monthly.amount, locale)}
               {t("perMonth")}
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-normal">
@@ -128,7 +129,7 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
           <div>
             <p className="font-semibold">{plans("pro")}</p>
             <p className="text-sm">
-              {formatUsd(PRICES.pro.monthly.amount, locale)}
+              {formatUSD(PRICES.pro.monthly.amount, locale)}
               {t("perMonth")}
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-normal">
@@ -151,7 +152,7 @@ export function TrialEndWall({ onSettled }: { onSettled: () => void }) {
 
       <p className="border-brand-line bg-brand-softer text-brand-ink mt-5 rounded-xl border p-4 text-sm leading-normal">
         {t("disclosure", {
-          unlimited: formatUsd(PRICES.unlimited.monthly.amount, locale),
+          unlimited: formatUSD(PRICES.unlimited.monthly.amount, locale),
         })}
       </p>
 

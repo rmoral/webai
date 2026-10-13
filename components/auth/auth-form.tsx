@@ -12,10 +12,10 @@ import { planRows } from "@/lib/billing/disclosure";
 import {
   PLANS,
   PRICES,
-  formatUsd,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { createClient } from "@/lib/auth/client";
 import { Link, getPathname } from "@/lib/i18n/navigation";
 import { LEGAL_SLUGS } from "@/lib/i18n/legal";
@@ -396,7 +396,7 @@ function ChosenPlan({
   const format = useFormatter();
   const locale = useLocale() as Locale;
 
-  const money = (amount: number) => formatUsd(amount, locale);
+  const money = (amount: number) => formatUSD(amount, locale);
   const day = (date: Date) =>
     format.dateTime(date, { day: "numeric", month: "long", year: "numeric" });
 

@@ -15,10 +15,10 @@ import {
   PLANS,
   PRICES,
   TRIAL,
-  formatUsd,
   sharedYearlyDiscount,
   type BillingInterval,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { Link } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
 
@@ -163,7 +163,7 @@ export function PricingPlans() {
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
         <Card
           title={plans("free")}
-          price={formatUsd(0, locale)}
+          price={formatUSD(0, locale)}
           billing={t("billingFree")}
           features={[
             t("wordsPerDay", { words: n(PLANS.free.limits.wordsPerDay ?? 0) }),
@@ -194,22 +194,22 @@ export function PricingPlans() {
 
         <Card
           title={plans("pro")}
-          price={formatUsd(PRICES.pro[interval].monthlyEquivalent, locale)}
+          price={formatUSD(PRICES.pro[interval].monthlyEquivalent, locale)}
           suffix={t("perMonth")}
           total={
             yearly
               ? t("yearlyTotal", {
-                  amount: formatUsd(PRICES.pro.yearly.amount, locale),
+                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
                 })
               : undefined
           }
           billing={
             yearly
               ? t("billingProYearly", {
-                  amount: formatUsd(PRICES.pro.yearly.amount, locale),
+                  amount: formatUSD(PRICES.pro.yearly.amount, locale),
                 })
               : t("billingProMonthly", {
-                  amount: formatUsd(PRICES.pro.monthly.amount, locale),
+                  amount: formatUSD(PRICES.pro.monthly.amount, locale),
                 })
           }
           features={[
@@ -247,7 +247,7 @@ export function PricingPlans() {
           // rather than an offer that half the cycles do not have.
           badge={t("mostPopular")}
           title={plans("unlimited")}
-          price={formatUsd(
+          price={formatUSD(
             PRICES.unlimited[interval].monthlyEquivalent,
             locale,
           )}
@@ -255,18 +255,18 @@ export function PricingPlans() {
           total={
             yearly
               ? t("yearlyTotal", {
-                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                  amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
                 })
               : undefined
           }
           billing={
             yearly
               ? t("billingUnlimitedYearly", {
-                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                  amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
                 })
               : t("billingUnlimitedMonthly", {
                   days: TRIAL.days,
-                  amount: formatUsd(PRICES.unlimited.monthly.amount, locale),
+                  amount: formatUSD(PRICES.unlimited.monthly.amount, locale),
                 })
           }
           features={[
@@ -317,7 +317,7 @@ export function PricingPlans() {
                 data-testid="trial-disclosure"
               >
                 {t("annualNoTrial", {
-                  amount: formatUsd(PRICES.unlimited.yearly.amount, locale),
+                  amount: formatUSD(PRICES.unlimited.yearly.amount, locale),
                   days: TRIAL.days,
                 })}
               </p>

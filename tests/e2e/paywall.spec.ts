@@ -184,7 +184,7 @@ test("states the date and the amount before asking for a card", async ({
   // It is the single thing that keeps this out of a chargeback.
   await expect(dialog.getByText(/Hoy no se te cobra nada/)).toBeVisible();
   // \s, because Intl puts a non-breaking space before the symbol.
-  await expect(dialog.getByText(/29,99\s*US\$\/mes/)).toBeVisible();
+  await expect(dialog.getByText(/US\$29,99\/mes/)).toBeVisible();
   await expect(dialog.getByText(/dos clics/).first()).toBeVisible();
 });
 

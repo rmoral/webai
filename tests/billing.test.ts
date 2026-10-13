@@ -12,11 +12,11 @@ import {
   PRICES,
   TOPUP,
   TRIAL,
-  formatUsd,
   meterKind,
   trialDaysFor,
   yearlySaving,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import {
   paymentDisclosure,
   planRows,
@@ -26,6 +26,19 @@ import {
 import { subscribeRequestSchema } from "@/lib/security/validation";
 import { subscriptionParams } from "@/lib/billing/subscribe";
 import { auditStripe, describeCheckoutRejection } from "@/lib/billing/stripe";
+
+describe("formatUSD", () => {
+  it("leads with US$ and follows the locale's punctuation", () => {
+    expect(formatUSD(14.99)).toBe("US$14,99");
+    expect(formatUSD(0)).toBe("US$0,00");
+    expect(formatUSD(179.88, "en")).toBe("US$179.88");
+  });
+
+  it("groups four-digit amounts, which es-ES leaves alone by default", () => {
+    expect(formatUSD(1234.56)).toBe("US$1.234,56");
+    expect(formatUSD(1234.56, "en")).toBe("US$1,234.56");
+  });
+});
 
 describe("plan catalogue", () => {
   it("matches the prices of the pricing study", () => {
@@ -332,9 +345,9 @@ describe("paymentDisclosure", () => {
   it("agrees with the figure the button will show", () => {
     // The acceptance criterion from 08-QA: the number on the button and the
     // number in the disclosure match, in both cycles. The button renders
-    // formatUsd of the same PRICES entry, so this pins them together.
+    // formatUSD of the same PRICES entry, so this pins them together.
     for (const interval of ["monthly", "yearly"] as const) {
-      const shown = formatUsd(PRICES.unlimited[interval].amount, "es");
+      const shown = formatUSD(PRICES.unlimited[interval].amount, "es");
       expect(render("es", "unlimited", interval)).toContain(shown);
     }
   });

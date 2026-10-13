@@ -101,32 +101,60 @@ function Banner({
 }) {
   const t = useTranslations("consent");
   const locale = useLocale() as Locale;
-  const [choosing, setChoosing] = useState(false);
   const [draft, setDraft] = useState<Consent>(current ?? DENIED);
+  // The first time, two answers and nothing else: the banner sits over the
+  // fold of an ad landing, so it is two lines and two equal buttons (F1).
+  // Reopened from the footer's "Cookies" -- where the policy sends anyone
+  // who wants to change their mind -- it keeps both answers, so withdrawing
+  // is still one click, and adds the choice purpose by purpose.
+  const reopened = onClose !== undefined;
+  const outline =
+    "h-10 border-neutral-300 text-sm font-semibold md:h-10 sm:w-[120px]";
 
   return (
     <div
       role="dialog"
       aria-label={t("title")}
       data-testid="consent-banner"
-      className="bg-popover fixed inset-x-3 bottom-3 z-50 rounded-xl border p-4 shadow-lg sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[28rem]"
+      className="bg-popover fixed inset-x-0 bottom-0 z-50 border-t px-4 pt-3 pb-[calc(14px+env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgb(0_0_0/0.08)] sm:py-3.5"
     >
-      <p className="font-semibold">{t("title")}</p>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-normal">
-        {t("body")}{" "}
-        <Link
-          href={{
-            pathname: "/legal/[slug]",
-            params: { slug: LEGAL_SLUGS[locale].cookies },
-          }}
-          className="text-brand underline underline-offset-[3px]"
-        >
-          {t("policy")}
-        </Link>
-      </p>
+      <div className="mx-auto flex max-w-[62rem] flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <p className="text-muted-foreground max-w-[40rem] text-[13px] leading-[18px]">
+          {t("body")}{" "}
+          <Link
+            href={{
+              pathname: "/legal/[slug]",
+              params: { slug: LEGAL_SLUGS[locale].cookies },
+            }}
+            className="text-brand underline underline-offset-[3px]"
+          >
+            {t("policy")}
+          </Link>
+        </p>
 
-      {choosing && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        {/* Same size, same row, one click, same weight. A banner where
+            refusing costs more than consenting -- or merely looks like the
+            lesser option -- is the one the AEPD fines. */}
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
+          <Button
+            variant="outline"
+            className={outline}
+            onClick={() => onSave(DENIED)}
+          >
+            {t("reject")}
+          </Button>
+          <Button
+            variant="outline"
+            className={outline}
+            onClick={() => onSave(GRANTED)}
+          >
+            {t("accept")}
+          </Button>
+        </div>
+      </div>
+
+      {reopened && (
+        <div className="mx-auto mt-2.5 flex max-w-[62rem] flex-wrap items-center gap-2">
           {/* Two purposes, because the policy names two. Whoever wants the
               product measured but not the ads can say exactly that. */}
           <Chip
@@ -141,44 +169,19 @@ function Banner({
           >
             {t("ads")}
           </Chip>
-        </div>
-      )}
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {choosing ? (
           <Button size="sm" onClick={() => onSave(draft)}>
             {t("save")}
           </Button>
-        ) : (
-          <>
-            <Button size="sm" onClick={() => onSave(GRANTED)}>
-              {t("accept")}
-            </Button>
-            {/* Same size, same row, one click. */}
-            <Button size="sm" variant="outline" onClick={() => onSave(DENIED)}>
-              {t("reject")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setChoosing(true)}
-              className="ml-auto"
-            >
-              {t("choose")}
-            </Button>
-          </>
-        )}
-        {onClose && (
           <Button
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className={choosing ? "ml-auto" : undefined}
+            className="ml-auto"
           >
             {t("close")}
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

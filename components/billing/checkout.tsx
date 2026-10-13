@@ -14,11 +14,11 @@ import { Chip } from "@/components/ui/chip";
 import { track } from "@/lib/analytics/events";
 import {
   PRICES,
-  formatUsd,
   trialDaysFor,
   type BillingInterval,
   type PaidTier,
 } from "@/lib/billing/plans";
+import { formatUSD } from "@/lib/format";
 import { Link } from "@/lib/i18n/navigation";
 import type { Locale } from "@/lib/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -59,13 +59,13 @@ export function OrderSummary({
     <div className={cn("flex flex-col gap-3", className)}>
       <div className="flex items-baseline justify-between gap-4 text-sm">
         <span className="font-medium">{plans(target.tier)}</span>
-        <span>{formatUsd(price, locale)}</span>
+        <span>{formatUSD(price, locale)}</span>
       </div>
 
       {trialDays !== null && (
         <div className="text-success-ink flex items-baseline justify-between gap-4 text-sm">
           <span>{t("trialLine", { days: trialDays })}</span>
-          <span>−{formatUsd(price, locale)}</span>
+          <span>−{formatUSD(price, locale)}</span>
         </div>
       )}
 
@@ -76,7 +76,7 @@ export function OrderSummary({
 
       <div className="flex items-baseline justify-between gap-4 border-t pt-3 font-semibold">
         <span>{t("dueToday")}</span>
-        <span>{formatUsd(dueToday, locale)}</span>
+        <span>{formatUSD(dueToday, locale)}</span>
       </div>
 
       {/* Answered before the card is asked for, not after. A cancellation
@@ -129,7 +129,7 @@ export function PaymentSuccess({
   const trialDays = trialDaysFor(target.tier, target.interval);
   const trial = trialDays !== null;
   const charged = paid.amountTodayCents / 100;
-  const recurring = formatUsd(
+  const recurring = formatUSD(
     PRICES[target.tier][target.interval].amount,
     locale,
   );
@@ -179,7 +179,7 @@ export function PaymentSuccess({
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-muted-foreground">{t("rowPaidToday")}</dt>
-          <dd>{formatUsd(charged, locale)}</dd>
+          <dd>{formatUSD(charged, locale)}</dd>
         </div>
       </dl>
 

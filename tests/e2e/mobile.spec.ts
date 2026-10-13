@@ -41,7 +41,9 @@ test.describe("at 390px", () => {
 
   test("every button you press is at least 44px tall", async ({ page }) => {
     await page.goto("/precios");
-    const buttons = page.getByRole("link", {
+    // The page's own calls to action. The header's "Crear cuenta" is the
+    // design's 36px button beside a 40px menu, in a 56px bar (F1-04).
+    const buttons = page.locator("main").getByRole("link", {
       name: /Crear cuenta|Elegir|Probar/,
     });
     const count = await buttons.count();
@@ -50,6 +52,37 @@ test.describe("at 390px", () => {
       const box = await buttons.nth(i).boundingBox();
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  test("the header is logo, one button and a menu", async ({ page }) => {
+    await page.goto("/humanizador-de-texto-ia");
+    const header = page.locator("header");
+    const signup = header.getByRole("link", {
+      name: "Crear cuenta",
+      exact: true,
+    });
+    await expect(signup).toBeVisible();
+    await expect(signup).toHaveAttribute("href", /next=/);
+    // Language and sign-in moved into the menu.
+    await expect(header.getByRole("link", { name: "Entrar" })).toBeHidden();
+    await expect(
+      header.getByRole("link", { name: "en", exact: true }),
+    ).toBeHidden();
+
+    const menu = header.getByRole("button", { name: "Menú", exact: true });
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await menu.click();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    const sheet = page.locator("#marketing-menu");
+    await expect(sheet.getByRole("link", { name: "Entrar" })).toBeVisible();
+    await expect(sheet.getByRole("link", { name: "Precios" })).toBeVisible();
+    await expect(
+      sheet.getByRole("link", { name: "en", exact: true }),
+    ).toBeVisible();
+
+    await sheet.getByRole("link", { name: "Precios" }).click();
+    await page.waitForURL(/\/precios$/);
+    await expect(sheet).toHaveCount(0);
   });
 
   test("the paywall becomes a bottom sheet, not a centred box", async ({
