@@ -198,6 +198,47 @@ test("offers an anonymous reader the free account, not only the card", async ({
   ).toBeVisible();
 });
 
+test("signed out: one filled button, one outlined, one link (F1-17)", async ({
+  page,
+}) => {
+  await partialAnswer(page);
+  const dialog = await hitTheWall(page);
+
+  // The free account is the likeliest exit from an ad, so it is the
+  // outlined button and comes back here; Pro steps back to a link.
+  const account = dialog.getByRole("link", {
+    name: "Crear cuenta gratis · 500 palabras/día",
+  });
+  await expect(account).toHaveAttribute("href", /\/registro\?next=/);
+  const pro = dialog.getByRole("link", { name: "Ver Pro — US$14,99/mes" });
+  await expect(pro).toHaveAttribute("href", /cycle=monthly/);
+  const [trialBox, accountBox, proBox] = await Promise.all([
+    dialog
+      .getByRole("button", { name: /Probar Ilimitado 3 días gratis/ })
+      .boundingBox(),
+    account.boundingBox(),
+    pro.boundingBox(),
+  ]);
+  expect(trialBox!.height).toBe(48);
+  expect(accountBox!.height).toBe(48);
+  // A link, not a third button: no box of its own around it.
+  expect(await pro.evaluate((a) => getComputedStyle(a).borderTopWidth)).toBe(
+    "0px",
+  );
+  expect(proBox!.y).toBeGreaterThan(accountBox!.y);
+});
+
+test("on a desktop the trial button follows the benefits", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await partialAnswer(page);
+  const dialog = await hitTheWall(page);
+  const benefits = await dialog.getByText("Sin límite diario").boundingBox();
+  const trial = await dialog
+    .getByRole("button", { name: /Probar Ilimitado 3 días gratis/ })
+    .boundingBox();
+  expect(trial!.y).toBeGreaterThan(benefits!.y);
+});
+
 test("closing it keeps the result, and keeps offering the way out", async ({
   page,
 }) => {

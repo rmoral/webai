@@ -506,6 +506,7 @@
     "benefitTools": "encrypted history and the passage breakdown.",
     "tryUnlimited": "Try Unlimited free for {days} days",
     "createAccount": "Create a free account — {words} words a day",
+    "createAccountShort": "Create a free account · {words} words/day",
     "seePro": "See Pro — {price}/month",
     "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count",
     "paidPlanBadge": "Paid plan",

@@ -133,6 +133,17 @@ test.describe("at 390px", () => {
     expect(box!.width).toBeCloseTo(viewport.width, -1);
     // And it never grows past the screen.
     expect(box!.height).toBeLessThanOrEqual(viewport.height);
+
+    // F1-05: the trial button sits under the lead, above the fragment, in
+    // reach without scrolling the sheet.
+    const trial = await dialog
+      .getByRole("button", { name: /Probar Ilimitado/ })
+      .boundingBox();
+    const fragment = await dialog
+      .getByText("Un resultado cualquiera")
+      .boundingBox();
+    expect(trial!.y).toBeLessThan(fragment!.y);
+    expect(trial!.y + trial!.height).toBeLessThan(viewport.height / 2);
   });
 });
 

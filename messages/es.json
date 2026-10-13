@@ -506,6 +506,7 @@
     "benefitTools": "historial cifrado y desglose por pasajes.",
     "tryUnlimited": "Probar Ilimitado {days} días gratis",
     "createAccount": "Crear cuenta gratis — {words} palabras al día",
+    "createAccountShort": "Crear cuenta gratis · {words} palabras/día",
     "seePro": "Ver Pro — {price}/mes",
     "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento",
     "paidPlanBadge": "Plan de pago",
