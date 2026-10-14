@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-// Three hints for a first visit to the editor, one at a time.
+// Two hints for a first visit to the editor, one at a time. There used to
+// be three; the first is the box's placeholder now.
 //
 // Not a modal and not an overlay. CLAUDE.md forbids a new modal, and it is
 // right to: a carousel of three panels over the editor covers exactly what
@@ -20,7 +21,7 @@ import { useTranslations } from "next-intl";
 // editor passes none -- the rule that a hint must never eat what somebody
 // wrote is enforced by there being nothing to eat it with.
 
-export type TourStep = 1 | 2 | 3;
+export type TourStep = 2 | 3;
 
 export const TOUR_KEY = "vbx:tour";
 
@@ -44,7 +45,9 @@ export function tourStep(state: {
   if (state.dismissed) return null;
   if (state.hasResult) return 3;
   if (state.hasText) return state.hasModes ? 2 : null;
-  return 1;
+  // The first hint is the box's placeholder now (F2): a strip above an
+  // empty box said what the placeholder inside it already said.
+  return null;
 }
 
 function readDismissed(): boolean {

@@ -95,7 +95,7 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
   };
 
   return (
-    <main className="mx-auto max-w-[65rem] px-4 pt-5 pb-12 sm:px-6 md:pt-8">
+    <main className="mx-auto max-w-[65rem] px-4 pt-5 pb-12 sm:px-6 md:pt-6">
       {/* Our own serialised object, never user input. */}
       <script
         type="application/ld+json"
@@ -110,44 +110,44 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
       >
         {t("h1")}
       </h1>
-      {/* One line on a phone, where the editor has to reach the fold; the
-          full sentence above it. Only the humanizer has the short form so
-          far, so the others keep their sentence everywhere. */}
-      {t.has("introShort") ? (
-        <>
-          <p className="text-muted-foreground mt-2 text-[15px] leading-[22px] sm:hidden">
-            {t("introShort")}
-          </p>
-          <p className="text-muted-foreground mt-2.5 hidden max-w-[680px] text-lg leading-7 sm:block">
-            {t("intro")}
-          </p>
-        </>
-      ) : (
-        <p className="text-muted-foreground mt-2 max-w-[680px] text-[15px] leading-[22px] sm:mt-2.5 sm:text-lg sm:leading-7">
-          {t("intro")}
-        </p>
-      )}
+      {/* The one line every tool shares (F2-11). The long intro is for a
+          desktop: on a phone, under two lines of H1, it pushed the button
+          under the cookie banner. */}
+      <p className="text-muted-foreground mt-2 text-sm leading-5">
+        {shared("landing.languageLine")}
+      </p>
+      <p className="text-muted-foreground mt-2 hidden max-w-[720px] text-base leading-6 sm:block">
+        {t("intro")}
+      </p>
 
-      <div className="mt-4 md:mt-6">
+      <div className="mt-4">
         <ToolEditor tool={tool} />
       </div>
 
       {/* Every figure from the catalogue: Pro "from" is its yearly price
-          per month, the free figure is the account's daily allowance. */}
-      <p className="mt-3 text-sm leading-[21px] text-neutral-600 md:mt-3.5">
-        {shared.rich("landing.priceLine", {
-          free: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-          pro: formatUSD(PRICES.pro.yearly.monthlyEquivalent, locale),
-          days: TRIAL.days,
-          link: (chunks) => (
-            <Link
-              href="/pricing"
-              className="text-brand font-semibold whitespace-nowrap hover:underline"
-            >
-              {chunks}
-            </Link>
-          ),
-        })}
+          per month, the free figures are the plans' daily allowances.
+          Each tool says what is free on that tool; the paraphraser and the
+          corrector still read the shared line until they have a free tier. */}
+      <p className="mt-3 text-sm leading-[21px] text-neutral-600">
+        {shared.rich(
+          t.has("priceLine")
+            ? `landing.${tool}.priceLine`
+            : "landing.humanize.priceLine",
+          {
+            anon: format.number(PLANS.anonymous.limits.wordsPerDay ?? 0),
+            free: format.number(PLANS.free.limits.wordsPerDay ?? 0),
+            pro: formatUSD(PRICES.pro.yearly.monthlyEquivalent, locale),
+            days: TRIAL.days,
+            link: (chunks) => (
+              <Link
+                href="/pricing"
+                className="text-brand font-semibold whitespace-nowrap hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          },
+        )}
       </p>
       <DetectorProof variant="block" />
 

@@ -25,6 +25,13 @@ import {
 //   money moving is a fact about Stripe, not about a page that happened to
 //   stay open.
 
+/**
+ * Which build of the tool pages an event came from. Registered once as a
+ * PostHog super property by the editor, so every event after it carries
+ * it and a redesign can be compared with what it replaced.
+ */
+export const UI_VERSION = "2026-10-F2";
+
 /** Which shape the wall took, which is what A/B decisions are made on. */
 export type WallVariant = "modal" | "inline" | "popover";
 

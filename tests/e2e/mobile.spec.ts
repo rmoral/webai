@@ -163,19 +163,21 @@ test.describe("at 480px", () => {
 });
 
 test.describe("on a desktop", () => {
-  test("the run button and the counter share the foot of the text column", async ({
+  test("the counter sits inside the box, the button right under it", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 800 });
     await page.goto("/humanizador-de-texto-ia");
+    const box = await page.getByLabel("Texto de entrada").boundingBox();
     const run = await page.getByTestId("run").boundingBox();
     const count = await page.getByTestId("word-count").boundingBox();
-    // One row: the counter's middle is within the button's height.
-    const middle = count!.y + count!.height / 2;
-    expect(middle).toBeGreaterThan(run!.y);
-    expect(middle).toBeLessThan(run!.y + run!.height);
-    // Starts above the 640 the brief sets for a laptop fold.
-    expect(run!.y).toBeLessThan(640);
+    // In the box's bottom-right corner (F2-02).
+    expect(count!.y + count!.height).toBeLessThanOrEqual(box!.y + box!.height);
+    expect(count!.x + count!.width).toBeLessThanOrEqual(box!.x + box!.width);
+    expect(count!.y).toBeGreaterThan(box!.y + box!.height / 2);
+    // The button below it, and above the 640 the brief sets for a laptop.
+    expect(run!.y).toBeGreaterThan(box!.y + box!.height);
+    expect(run!.y + run!.height).toBeLessThan(640);
   });
 
   test("keyboard focus is visible on the things you press", async ({

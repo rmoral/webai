@@ -74,15 +74,28 @@ test("the button waits for the token instead of failing on the first click", asy
     "This build carries no Turnstile site key",
   );
 
-  // Disabled, and saying why. Not a live button that fails.
-  const waiting = page.getByRole("button", { name: "Verificando…" });
-  await expect(waiting).toBeVisible();
-  await expect(waiting).toBeDisabled();
-
-  // And once the token lands, the button becomes the tool again.
-  await expect(page.getByRole("button", { name: "Humanizar" })).toBeEnabled({
+  // Pressed before the token: the verb stays, with a spinner, and the
+  // request goes out once the token lands (F2). Not a refusal, and not a
+  // button greyed out with "Verificando…".
+  let sent = "";
+  await page.route("**/api/ai/humanize", async (route) => {
+    sent =
+      (route.request().postDataJSON() as { turnstileToken?: string })
+        .turnstileToken ?? "";
+    await route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      body: "Un resultado corriente.",
+    });
+  });
+  const run = page.getByRole("button", { name: "Humanizar" });
+  await expect(run).toBeEnabled();
+  await run.click();
+  await expect(run).toHaveAttribute("aria-busy", "true");
+  await expect(page.getByText("Un resultado corriente.")).toBeVisible({
     timeout: 20_000,
   });
+  expect(sent).toMatch(/^stub-token-/);
   await expect(page.getByText(ERROR)).toHaveCount(0);
 });
 
@@ -133,12 +146,12 @@ test("a failed check recovers on its own, without the reader doing anything", as
   await expect(page.getByText(ERROR)).toHaveCount(0);
 });
 
-test("when Cloudflare wants a click, the widget says so under the button", async ({
+test("when Cloudflare wants a click, the widget shows in the result panel", async ({
   page,
 }) => {
-  // F1: the widget is `interaction-only`, so nothing shows unless
-  // Cloudflare asks. When it does, it appears below the run button with a
-  // line saying what it is, instead of an unexplained box in the editor.
+  // The widget is `interaction-only`, so nothing shows unless Cloudflare
+  // asks. When it does, it appears in the empty result panel, and never
+  // as a row inserted under the button (F2-12).
   const state = { requested: false };
   await page.route("**/challenges.cloudflare.com/**", async (route) => {
     state.requested = true;
@@ -165,10 +178,12 @@ test("when Cloudflare wants a click, the widget says so under the button", async
     "This build carries no Turnstile site key",
   );
 
-  await expect(
-    page.getByText("Cloudflare necesita comprobar que no eres un robot."),
-  ).toBeVisible();
+  const before = await page.getByTestId("run").boundingBox();
+  await expect(page.getByTestId("antibot")).toBeVisible();
   const run = await page.getByTestId("run").boundingBox();
+  // The button did not move: nothing was inserted above or beside it.
+  expect(run!.y).toBe(before!.y);
+  // And the widget is in the result column, to the right on a desktop.
   const widget = await page.getByTestId("antibot").boundingBox();
-  expect(widget!.y).toBeGreaterThan(run!.y + run!.height);
+  expect(widget!.x).toBeGreaterThan(run!.x + run!.width);
 });

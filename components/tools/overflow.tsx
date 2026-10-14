@@ -23,8 +23,10 @@ import { cn } from "@/lib/utils";
 // 16px at every width -- below that iOS zooms into the box on focus -- and
 // it grows with the text up to 480 before it scrolls (F1-11). Browsers
 // without `field-sizing` keep the minimum height and the resize handle.
+// The bottom padding leaves room for the quota counter, which sits inside
+// the box (F2-02).
 const TEXTAREA_CLASS =
-  "w-full resize-y bg-transparent p-3 text-base leading-6 outline-none [field-sizing:content] max-h-[480px] md:p-4";
+  "w-full resize-y bg-transparent p-3 pb-8 text-base leading-6 outline-none [field-sizing:content] max-h-[480px] md:p-4 md:pb-[34px]";
 
 /**
  * The editor's input box, with everything past the cut dimmed.
@@ -48,6 +50,7 @@ export function EditorInput({
   dimmed,
   className,
   onReach,
+  children,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -58,8 +61,10 @@ export function EditorInput({
   /** Whether there is anything to dim at all. */
   dimmed: boolean;
   className?: string;
-  /** Called the first time the box is reached for, for wall C. */
+  /** Called when the box is reached for: wall C, and the allowance. */
   onReach?: () => void;
+  /** Laid over the box, in its corner: the quota counter. */
+  children?: React.ReactNode;
 }) {
   const mirror = useRef<HTMLDivElement>(null);
 
@@ -99,6 +104,7 @@ export function EditorInput({
           dimmed ? "caret-foreground text-transparent" : ""
         }`}
       />
+      {children}
     </div>
   );
 }
@@ -230,7 +236,7 @@ export function LimitNotice({
       role="status"
       data-kind={kind}
       data-testid="limit-notice"
-      className="border-warning-line bg-warning-soft flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-3 py-2.5 md:flex-nowrap md:px-4"
+      className="border-warning-line bg-warning-soft flex flex-wrap items-center gap-x-4 gap-y-2 border-y px-3 py-2.5 md:flex-nowrap md:px-4 md:py-2"
     >
       <p className="text-warning-ink flex-1 basis-60 text-[13px] leading-[18px]">
         <b className="font-semibold">{lead}</b>
