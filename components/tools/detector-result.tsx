@@ -85,8 +85,11 @@ export function DetectorResultView({
   result,
   text,
   plan,
+  actions,
 }: {
   result: DetectorAnalysis;
+  /** What to do next with this text, under the verdict (F2-04). */
+  actions?: React.ReactNode;
   /** The text that was analysed, for locating the windows. */
   text: string;
   /** Decides the passage breakdown, and names the wall when it is locked. */
@@ -156,6 +159,25 @@ export function DetectorResultView({
         <p className="text-muted-foreground text-sm">
           {t("over", { words: format.number(result.words) })}
         </p>
+        {/* For the reader who comes from a detector that said "100 % IA"
+            and reads the opposite here, without a word about why (F2-06). */}
+        <p className="mt-1.5 text-sm leading-5 text-neutral-800">
+          {t.rich("whyLine", {
+            link: (chunks) => (
+              <a
+                href="#por-que-no-porcentaje"
+                className="text-brand font-semibold hover:underline"
+              >
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
+        {actions && (
+          <div className="mt-3.5 flex flex-col gap-2 md:flex-row md:items-center">
+            {actions}
+          </div>
+        )}
       </div>
 
       {result.band === "verde" && (

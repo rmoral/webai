@@ -21,13 +21,15 @@ import { cn } from "@/lib/utils";
 // nothing at all would be processed -- and showed "300 / 300" in red
 // without saying what either number meant.
 
-// 16px at every width -- below that iOS zooms into the box on focus -- and
-// it grows with the text up to 480 before it scrolls (F1-11). Browsers
-// without `field-sizing` keep the minimum height and the resize handle.
+// 16px at every width -- below that iOS zooms into the box on focus. A
+// fixed height that scrolls inside (F2): a box that grew with the text up
+// to 480 pushed the button below the fold on exactly the long pastes that
+// need it, and "Recortar yo mismo" scrolls the box, not the page, to the
+// cut. The resize handle stays for whoever wants more.
 // The bottom padding leaves room for the quota counter, which sits inside
 // the box (F2-02).
 const TEXTAREA_CLASS =
-  "w-full resize-y bg-transparent p-3 pb-8 text-base leading-6 outline-none [field-sizing:content] max-h-[480px] md:p-4 md:pb-[34px]";
+  "w-full resize-y bg-transparent p-3 pb-8 text-base leading-6 outline-none md:p-4 md:pb-[34px]";
 
 /**
  * The editor's input box, with everything past the cut dimmed.
@@ -52,6 +54,7 @@ export function EditorInput({
   className,
   onReach,
   children,
+  inputRef,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -66,6 +69,8 @@ export function EditorInput({
   onReach?: () => void;
   /** Laid over the box, in its corner: the quota counter. */
   children?: React.ReactNode;
+  /** The textarea, for the callers that move the caret or the focus. */
+  inputRef?: React.Ref<HTMLTextAreaElement>;
 }) {
   const mirror = useRef<HTMLDivElement>(null);
 
@@ -91,6 +96,7 @@ export function EditorInput({
         </div>
       )}
       <textarea
+        ref={inputRef}
         value={value}
         onChange={handleChange}
         onFocus={onReach}
@@ -189,6 +195,7 @@ export function LimitNotice({
   action: React.ReactNode;
 }) {
   const t = useTranslations("paywall");
+  const detector = useTranslations("detector");
   const format = useFormatter();
   const locale = useLocale() as Locale;
   const n = (value: number) => format.number(value);
@@ -222,21 +229,14 @@ export function LimitNotice({
       submitted: n(words),
       time: resetsIn,
     });
-  } else if (kind === "detectorTooLong") {
-    lead = t("detectorLead");
-    body = t("detectorTooLongBody", {
-      words: n(words),
-      ceiling: n(ceiling),
-      pro: n(PLANS.pro.limits.maxWordsPerRequest),
-      unlimited: n(PLANS.unlimited.limits.maxWordsPerRequest),
+  } else if (kind === "detectorTooLong" || kind === "detector") {
+    // One notice for both (F2-03): what this run can analyse, and that the
+    // whole text is better. The button below offers the cut; nothing is
+    // refused and nothing is cut in silence.
+    lead = detector("limitLead", {
+      n: n(Math.min(ceiling, remaining ?? ceiling)),
     });
-  } else if (kind === "detector") {
-    lead = t("detectorLead");
-    body = t("detectorBody", {
-      words: n(Math.min(words, ceiling)),
-      left: n(left),
-      time: resetsIn,
-    });
+    body = detector("limitBody");
   } else if (monthly) {
     lead = t("spentProLead");
     body = t("spentProBody", {

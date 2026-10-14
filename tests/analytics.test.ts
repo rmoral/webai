@@ -182,6 +182,7 @@ describe("what reaches Google", () => {
         logged_in: false,
         words_in: 120,
         quota_left: 380,
+        truncated: false,
       });
       track(undefined, "wall_shown", {
         variant: "inline",

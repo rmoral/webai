@@ -67,7 +67,11 @@ export interface FunnelEvents {
     logged_in: boolean;
     words_in: number;
     quota_left: number | null;
+    /** Whether the run takes only the first part of the text (F2-03). */
+    truncated: boolean;
   };
+  /** From one tool's result to another tool, with the same text (F2-04). */
+  cross_tool: { from: string; to: string };
   /** The result landed. `ms` is measured from the click, not the response. */
   tool_result: { tool: string; ms: number; truncated: boolean };
   /** Turnstile refused. `retry_ok` says whether the silent retry saved it. */
