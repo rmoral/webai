@@ -22,6 +22,12 @@ export interface PlanLimits {
   maxWordsPerRequest: number;
   /** Tools the plan may use at all. */
   tools: readonly ToolId[];
+  /**
+   * Tools this plan meters by uses instead of words (F2-01): so many words
+   * a run and so many runs a day, counted apart from the word allowance.
+   * A tool absent here spends words, like everything on a paid plan.
+   */
+  uses: Partial<Record<ToolId, ToolUses>>;
   /** Whether documents are persisted. */
   history: boolean;
   /** Detector returns per-sentence scores, not just the global one. */
@@ -35,14 +41,27 @@ export interface PlanLimits {
   softCap: boolean;
 }
 
+export interface ToolUses {
+  /** Words one run takes; the rest of a longer text stays in the editor. */
+  perUse: number;
+  /** Runs a day, per tool. */
+  usesPerDay: number;
+}
+
 export interface Plan {
   id: PlanId;
   name: string;
   limits: PlanLimits;
 }
 
-const FREE_TOOLS = ["humanize", "detect"] as const;
 const ALL_TOOLS = ["humanize", "detect", "paraphrase", "correct"] as const;
+
+/**
+ * The paraphraser and the corrector on the free tiers, with or without an
+ * account (decision of 14-10-2026): enough to try them on a real text.
+ */
+const FREE_USES: ToolUses = { perUse: 100, usesPerDay: 2 };
+const FREE_METERED = { paraphrase: FREE_USES, correct: FREE_USES };
 
 export const PLANS: Record<PlanId, Plan> = {
   anonymous: {
@@ -52,7 +71,8 @@ export const PLANS: Record<PlanId, Plan> = {
       wordsPerDay: 300,
       wordsPerMonth: null,
       maxWordsPerRequest: 300,
-      tools: FREE_TOOLS,
+      tools: ALL_TOOLS,
+      uses: FREE_METERED,
       history: false,
       sentenceHighlight: false,
       priorityQueue: false,
@@ -66,7 +86,8 @@ export const PLANS: Record<PlanId, Plan> = {
       wordsPerDay: 500,
       wordsPerMonth: null,
       maxWordsPerRequest: 300,
-      tools: FREE_TOOLS,
+      tools: ALL_TOOLS,
+      uses: FREE_METERED,
       history: false,
       sentenceHighlight: false,
       priorityQueue: false,
@@ -81,6 +102,7 @@ export const PLANS: Record<PlanId, Plan> = {
       wordsPerMonth: 60_000,
       maxWordsPerRequest: 3_000,
       tools: ALL_TOOLS,
+      uses: {},
       history: true,
       sentenceHighlight: true,
       priorityQueue: false,
@@ -95,6 +117,7 @@ export const PLANS: Record<PlanId, Plan> = {
       wordsPerMonth: 500_000,
       maxWordsPerRequest: 8_000,
       tools: ALL_TOOLS,
+      uses: {},
       history: true,
       sentenceHighlight: true,
       priorityQueue: true,

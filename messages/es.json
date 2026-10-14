@@ -259,7 +259,7 @@
         },
         {
           "q": "¿Está incluido en el plan gratuito?",
-          "a": "No. El parafraseador está en los planes de pago. El humanizador y el detector sí funcionan sin cuenta, con {anonWords} palabras al día."
+          "a": "Sí. Sin cuenta y con la cuenta gratuita puedes parafrasear {perUse} palabras por uso, {uses} veces al día, con los seis registros. Para textos más largos o sin límite de usos, Pro o Ilimitado."
         },
         {
           "q": "¿Puedo ver qué ha cambiado?",
@@ -270,7 +270,8 @@
         "lead": "¿Prefieres corregir en lugar de reescribir?",
         "tool": "Usa el corrector",
         "pricing": "consulta los planes"
-      }
+      },
+      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
     },
     "correct": {
       "metaTitle": "Corrector ortográfico y gramatical en español",
@@ -317,7 +318,7 @@
         },
         {
           "q": "¿Está incluido en el plan gratuito?",
-          "a": "No. El corrector está en los planes de pago. El humanizador y el detector funcionan sin cuenta."
+          "a": "Sí. Sin cuenta y con la cuenta gratuita puedes corregir {perUse} palabras por uso, {uses} veces al día, en los dos modos. Para textos más largos o sin límite de usos, Pro o Ilimitado."
         },
         {
           "q": "¿Me cambia el estilo?",
@@ -328,7 +329,8 @@
         "lead": "¿Lo que necesitas es reformular, no corregir?",
         "tool": "Usa el parafraseador",
         "pricing": "consulta los planes"
-      }
+      },
+      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
     },
     "languageLine": "Entiende el español de España y de América. No traduce ni pasa por el inglés."
   },
@@ -347,7 +349,7 @@
     "wordsPerDay": "{words} palabras al día",
     "wordsPerMonth": "{words} palabras al mes",
     "perRequest": "Hasta {words} por petición",
-    "freeTools": "Humanizador y detector (banda y evidencia)",
+    "freeTools": "Las cuatro herramientas; el parafraseador y el corrector, con {perUse} palabras y {uses} usos al día",
     "proTools": "Todas las herramientas, historial y desglose por pasajes",
     "priority": "Prioridad de cola",
     "signup": "Crear cuenta gratis",
@@ -387,7 +389,7 @@
     "valueNone": "—",
     "valueYes": "Sí",
     "valueNo": "No",
-    "valueFreeTools": "Humanizador y detector",
+    "valueFreeTools": "Las cuatro · parafraseador y corrector: {perUse} palabras, {uses} usos al día",
     "valueAllTools": "Las cuatro",
     "valueTopup": "{amount} por {words}, sin caducidad",
     "valueTopupNeedsPlan": "Requiere un plan de pago",
@@ -438,7 +440,6 @@
   "editor": {
     "inputLabel": "Texto de entrada",
     "placeholder": "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",
-    "words": "{words} palabras",
     "resultHere": "El resultado aparecerá aquí",
     "analysisHere": "El análisis aparecerá aquí",
     "writing": "Escribiendo…",
@@ -455,10 +456,8 @@
       "correct": "Corregir"
     },
     "quota": {
-      "humanize": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
-      "detect": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
-      "paraphrase": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
-      "correct": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}"
+      "words": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
+      "uses": "{words}/{perUse} palabras · {used}/{uses} usos hoy"
     }
   },
   "tour": {
@@ -511,14 +510,18 @@
     "createAccountShort": "Crear cuenta gratis · {words} palabras/día",
     "seePro": "Ver Pro — {price}/mes",
     "trustLine": "Cancela online en dos clics · En los planes gratuitos no guardamos tu texto, solo el recuento",
-    "paidPlanBadge": "Plan de pago",
-    "toolTitle": "El {tool} está en los planes de pago",
-    "toolBody": "El humanizador y el detector siguen siendo gratis, con o sin cuenta. El resto de herramientas entran con Pro o Ilimitado.",
     "historyLockTitle": "El historial es de los planes de pago",
     "historyLockBody": "Pro guarda tus textos cifrados y te deja volver a cualquier resultado. En los planes gratuitos no se almacena el texto, solo el recuento.",
     "unlockWithPro": "Desbloquear con Pro",
     "close": "Cerrar",
-    "breakdownLock": "Ver el desglose por pasajes"
+    "breakdownLock": "Ver el desglose por pasajes",
+    "usesTitle": "Has usado los {uses} usos de hoy",
+    "usesBody": "Mañana tienes otros {uses}, de {words} palabras cada uno. Con Ilimitado no hay límite de usos.",
+    "perUseLead": "Gratis: {n} palabras por uso.",
+    "perUseBody": {
+      "paraphrase": " Procesaremos las primeras {n}; el resto se queda en el editor.",
+      "correct": " Corregiremos las primeras {n}; el resto se queda en el editor."
+    }
   },
   "trialEnd": {
     "badge": "Tu prueba termina hoy",
@@ -580,7 +583,8 @@
     "quota_monthly": "Has agotado las palabras de tu plan este mes. Puedes comprar una recarga.",
     "notFoundTitle": "Esta página no existe",
     "notFoundBody": "El enlace que has seguido no lleva a ninguna parte. Puede que la página haya cambiado de dirección.",
-    "notFoundCta": "Ir al inicio"
+    "notFoundCta": "Ir al inicio",
+    "uses_exhausted": "Has usado los {uses} usos de hoy de esta herramienta. Se recargan mañana."
   },
   "app": {
     "history": "Historial",

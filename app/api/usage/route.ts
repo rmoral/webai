@@ -5,7 +5,8 @@ import { getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
 import { hashIp } from "@/lib/security/crypto";
 import { QUOTA_TIMEZONE } from "@/lib/usage/day";
-import { checkBurstLimit, peekWords } from "@/lib/usage/quotas";
+import type { ToolId } from "@/lib/ai/tools";
+import { checkBurstLimit, peekUses, peekWords } from "@/lib/usage/quotas";
 
 // What is left, for a surface that has no server render to read it from.
 //
@@ -35,17 +36,25 @@ export async function GET(request: NextRequest) {
   const subscriber = user
     ? await getSubscriber(user.id).catch(() => null)
     : null;
-  const allowance = await peekWords(
-    subject,
-    subscriber ?? {
-      plan: PLANS.anonymous,
-      topupWords: 0,
-      periodStart: null,
-      periodEnd: null,
-      interval: null,
-      subscriptionId: null,
-      trialEnd: null,
-    },
+  const who = subscriber ?? {
+    plan: PLANS.anonymous,
+    topupWords: 0,
+    periodStart: null,
+    periodEnd: null,
+    interval: null,
+    subscriptionId: null,
+    trialEnd: null,
+  };
+  const allowance = await peekWords(subject, who);
+  // The runs left on the tools this plan meters by uses (F2-01), so the
+  // counter can say "0/2 usos hoy" before the first one is spent.
+  const uses = Object.fromEntries(
+    await Promise.all(
+      Object.entries(who.plan.limits.uses).map(async ([tool, metered]) => [
+        tool,
+        await peekUses(subject, tool as ToolId, metered.usesPerDay),
+      ]),
+    ),
   );
 
   return NextResponse.json(
@@ -54,6 +63,7 @@ export async function GET(request: NextRequest) {
     // /pricing to mark the card the reader is already paying for.
     {
       ...allowance,
+      uses,
       plan: subscriber?.plan.id ?? PLANS.anonymous.id,
       timezone: QUOTA_TIMEZONE,
     },

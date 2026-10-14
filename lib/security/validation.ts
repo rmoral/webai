@@ -26,6 +26,13 @@ export const aiToolRequestSchema = z
     // default rather than being trusted into a message lookup.
     locale: z.enum(routing.locales).optional(),
     turnstileToken: z.string().max(2048).optional(),
+    // The detector analyses the first words of an over-long text only when
+    // asked to, by a button that says so (F2-03). Never in silence.
+    truncate: z.boolean().optional(),
+    // The cut the editor announced ("procesaremos las primeras 42"). The
+    // server never goes past it, so the notice cannot promise less than
+    // what comes back (F2-13).
+    maxWords: z.number().int().positive().optional(),
   })
   .refine(
     (req) =>

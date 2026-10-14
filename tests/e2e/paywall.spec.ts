@@ -333,49 +333,96 @@ test("closes on Escape, on a click outside, and stays closed", async ({
   await expect(page.getByText(/Faltan \d+ palabras de tu texto/)).toBeVisible();
 });
 
-// Wall C — a paid tool opened by somebody who cannot run it.
+// Wall C — the day's runs of the paraphraser or the corrector are spent.
 
-test("names what is still free before it names the price", async ({ page }) => {
-  await page.goto("/parafrasear-texto");
+/** Answers the paraphraser with a result, counting the runs as it goes. */
+async function paraphraseRuns(page: Page) {
+  const bodies: Record<string, unknown>[] = [];
+  await page.route("**/api/ai/paraphrase", (route) => {
+    bodies.push(route.request().postDataJSON());
+    const used = bodies.length;
+    return route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "3",
+        "x-uses-used": String(used),
+        "x-uses-limit": "2",
+        "x-uses-remaining": String(Math.max(0, 2 - used)),
+      },
+      body: `Resultado número ${used}.`,
+    });
+  });
+  return bodies;
+}
 
-  // Not on arrival: these pages are the SEO asset and a modal over content
-  // reached from a search result is an intrusive interstitial.
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-
-  await expect(dialog.getByText("Plan de pago")).toBeVisible();
-  await expect(
-    dialog.getByText("El parafraseador está en los planes de pago"),
-  ).toBeVisible();
-  // The line that keeps this an offer instead of a shut door.
-  await expect(
-    dialog.getByText(/El humanizador y el detector siguen siendo gratis/),
-  ).toBeVisible();
-  // A CTA that starts a trial carries the disclosure, wherever it appears.
-  await expect(dialog.getByText(/Hoy no se te cobra nada/)).toBeVisible();
-});
-
-test("leaves the tool page usable after the tool wall is closed", async ({
+test("two runs a day without an account, then the wall, never a third request", async ({
   page,
 }) => {
+  const bodies = await paraphraseRuns(page);
   await page.goto("/parafrasear-texto");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-  await expect(page.getByRole("dialog")).toBeVisible();
+  const box = await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  // The limit is on screen before the first run (F2-02).
+  await expect(page.getByTestId("word-count")).toHaveText(
+    "3/100 palabras · 0/2 usos hoy",
+  );
+
+  const run = page.getByRole("button", { name: "Parafrasear" });
+  await run.click();
+  await expect(page.getByText("Resultado número 1.")).toBeVisible();
+  await run.click();
+  await expect(page.getByText("Resultado número 2.")).toBeVisible();
+  await expect(page.getByTestId("word-count")).toHaveText(
+    "3/100 palabras · 2/2 usos hoy",
+  );
+
+  // The third press: the button keeps its verb and opens wall C.
+  await expect(run).toBeEnabled();
+  await run.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("Has usado los 2 usos de hoy")).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: /Probar Ilimitado 3 días gratis/ }),
+  ).toBeVisible();
+  await expect(dialog.getByRole("link", { name: "Ver planes" })).toBeVisible();
+  // A CTA that starts a trial carries the disclosure, wherever it appears.
+  await expect(dialog.getByText(/Hoy no se te cobra nada/)).toBeVisible();
+  expect(bodies).toHaveLength(2);
+
+  // Closed, the page and the text are as they were; pressed again, the
+  // wall answers again rather than a dead button.
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(dialog).toHaveCount(0);
+  await expect(box).toHaveValue("Un texto cualquiera.");
+  await run.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(bodies).toHaveLength(2);
+});
 
-  // Dismissing must not leave a blank page: the landing copy and the editor
-  // are still there, and the button still names what it does (F2).
-  await expect(page.getByLabel("Texto de entrada")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Parafrasear" })).toBeVisible();
+test("over a run's hundred words it says so, and the button still runs", async ({
+  page,
+}) => {
+  const bodies = await paraphraseRuns(page);
+  await page.goto("/parafrasear-texto");
+  await typeInto(
+    page,
+    "Texto de entrada",
+    Array.from({ length: 128 }, (_, i) => `p${i}`).join(" "),
+  );
 
-  // Same session, same trigger: it does not come back.
-  await page.reload();
-  await typeInto(page, "Texto de entrada", "Otro texto cualquiera.");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByTestId("word-count")).toHaveText(
+    "128/100 palabras · 0/2 usos hoy",
+  );
+  const strip = page.getByTestId("limit-notice");
+  await expect(strip).toHaveAttribute("data-kind", "perUse");
+  await expect(strip).toContainText("Gratis: 100 palabras por uso.");
+  await expect(strip).toContainText("Procesaremos las primeras 100");
+
+  await page.getByRole("button", { name: "Parafrasear" }).click();
+  await expect(page.getByText("Resultado número 1.")).toBeVisible();
+  // The cut the notice announced travels with the request.
+  expect(bodies[0]).toMatchObject({ maxWords: 100 });
 });
 
 // Wall D — a locked feature, answered where it sits.
@@ -491,36 +538,6 @@ test("the words left come from the response, and move without a reload", async (
   await expect(strip).toContainText("Te quedan 296 palabras hoy.");
 });
 
-test("the locked tool button keeps answering after the wall is closed", async ({
-  page,
-}) => {
-  // C11. The modal shows once per tool per session; after that the button
-  // whose only job was to open it did nothing at all -- a dead control on
-  // the one screen where the reader is asking to buy.
-  await page.goto("/parafrasear-texto");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-
-  const modal = page.getByRole("dialog");
-  await expect(modal).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(modal).toHaveCount(0);
-
-  // Pressed again, it answers with the compact form instead of nothing.
-  await page.getByRole("button", { name: "Parafrasear" }).click();
-  const popover = page.getByRole("dialog");
-  await expect(popover).toBeVisible();
-  await expect(
-    popover.getByText("El parafraseador está en los planes de pago"),
-  ).toBeVisible();
-
-  // And it is still an offer, with a way out of it.
-  await expect(
-    popover.getByRole("button", { name: /Probar Ilimitado 3 días gratis/ }),
-  ).toBeVisible();
-  await popover.getByRole("button", { name: "Cerrar" }).click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-});
-
 // D3 · the states the reader meets before pressing anything.
 //
 // One strip at a time, and the one that binds. The balance is served from
@@ -564,6 +581,41 @@ test("with a partial balance it promises what it can do, and no more", async ({
 
   // The text is untouched, before and after.
   await expect(page.getByLabel("Texto de entrada")).toHaveValue(LONG_TEXT);
+});
+
+test("never processes more than the notice promised", async ({ page }) => {
+  // F2-13. The notice said "procesaremos las primeras 42 de las 163" and
+  // 163 came back: its figure came from /api/usage, the request went out
+  // from another address with a fresh allowance. The cut it announces now
+  // travels with the request, and the server stops there.
+  await balance(page, 42);
+  let sent: Record<string, unknown> = {};
+  await page.route("**/api/ai/humanize", (route) => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      headers: {
+        "x-words-processed": "42",
+        "x-words-limit": "300",
+        "x-words-used": "300",
+        "x-words-remaining": "0",
+      },
+      body: "Las cuarenta y dos primeras, y nada más.",
+    });
+  });
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(
+    page,
+    "Texto de entrada",
+    Array.from({ length: 163 }, (_, i) => `p${i}`).join(" "),
+  );
+  await expect(page.getByTestId("limit-notice")).toContainText(
+    "Procesaremos las primeras 42 de las 163",
+  );
+  await page.getByRole("button", { name: "Humanizar" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(sent).toMatchObject({ maxWords: 42 });
 });
 
 test("the detector refuses a partial run instead of scoring a fragment", async ({
@@ -644,24 +696,6 @@ test("the tool tabs are filled, with the current one marked", async ({
   await expect(
     tabs.getByRole("link", { name: /Parafraseador/ }),
   ).toHaveAttribute("href", /parafrasear/);
-});
-
-test("a locked tool never spends a request to be told no", async ({ page }) => {
-  // C11's other half: no button is left live if it leads to a 403 we can
-  // already predict. The run button on a tool outside the plan opens the
-  // wall instead of asking the server a question whose answer we know.
-  const asked: string[] = [];
-  page.on("request", (request) => {
-    if (request.url().includes("/api/ai/")) asked.push(request.url());
-  });
-
-  await page.goto("/parafrasear-texto");
-  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-  await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Parafrasear" }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-
-  expect(asked).toEqual([]);
 });
 
 // D5 · the one offer that answers a result instead of a refusal.

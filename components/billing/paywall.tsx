@@ -43,8 +43,7 @@ import { cn } from "@/lib/utils";
 // This file carries the shell and trigger `quota` (wall B). The other four
 // compose the same shell.
 
-export type PaywallTrigger =
-  "overflow" | "quota" | "tool" | "feature" | "trialEnd";
+export type PaywallTrigger = "overflow" | "quota" | "feature" | "trialEnd";
 
 /** Who is looking, which decides the cheapest next step we can offer. */
 export type AccountState = "anonymous" | "free" | "paid";
@@ -598,14 +597,13 @@ export function QuotaPaywall({
 }
 
 /**
- * Wall C — a paid tool, opened by somebody on a free plan.
+ * Wall C — the day's runs of a tool metered by uses are spent (F2-01).
  *
- * Narrow, over a light veil, and it opens by saying what is still free.
- * A wall that only lists what is locked reads as a shut door; naming the
- * two tools that stay free, with or without an account, is what keeps it
- * an offer.
+ * Every tool can be tried on the free plans now, so this no longer says a
+ * tool is locked: it says the runs are used, when they come back, and what
+ * removes the limit. It opens from the button, which keeps its verb.
  */
-export function ToolPaywall({
+export function UsesPaywall({
   tool,
   plan,
   onDismiss,
@@ -615,14 +613,15 @@ export function ToolPaywall({
   onDismiss: () => void;
 }) {
   const t = useTranslations("paywall");
-  const names = useTranslations("tools");
   const locale = useLocale() as Locale;
+  const format = useFormatter();
   const posthog = usePostHog();
   const router = useRouter();
   const accountState = accountStateOf(plan);
+  const metered = PLANS[plan].limits.uses[tool];
   const context = {
     variant: "modal" as const,
-    reason: "paid_tool" as const,
+    reason: "uses" as const,
     plan,
     tool,
   };
@@ -630,25 +629,24 @@ export function ToolPaywall({
   return (
     <PaywallDialog
       context={context}
-      labelledBy="paywall-tool-title"
+      labelledBy="paywall-uses-title"
       width="27rem"
       onDismiss={(method) => {
         track(posthog, "wall_dismissed", { ...context, method });
         onDismiss();
       }}
     >
-      <Badge variant="brand">{t("paidPlanBadge")}</Badge>
-
-      <h2 id="paywall-tool-title" className="mt-3 text-lg font-semibold">
-        {t("toolTitle", {
-          tool: names(`${tool}.name`).toLocaleLowerCase(locale),
-        })}
+      <h2 id="paywall-uses-title" className="mr-10 text-lg font-semibold">
+        {t("usesTitle", { uses: metered?.usesPerDay ?? 0 })}
       </h2>
       <p className="text-muted-foreground mt-2 text-sm leading-normal">
-        {t("toolBody")}
+        {t("usesBody", {
+          uses: metered?.usesPerDay ?? 0,
+          words: format.number(metered?.perUse ?? 0),
+        })}
       </p>
 
-      <div className="mt-5 flex flex-col gap-2">
+      <div className="mt-5 flex flex-col gap-2.5">
         <Button
           size="lg"
           onClick={() => {
@@ -671,7 +669,12 @@ export function ToolPaywall({
         >
           {t("tryUnlimited", { days: TRIAL.days })}
         </Button>
-        <Button variant="outline" asChild>
+        <Button
+          variant="outline"
+          size="lg"
+          className="border-brand text-brand hover:bg-brand-softer hover:text-brand border-[1.5px]"
+          asChild
+        >
           <Link
             // This wall opens with the trial, which exists on the monthly
             // cycle and nowhere else.
@@ -783,69 +786,6 @@ function LockPopover({
         </Button>
       </div>
     </div>
-  );
-}
-
-/**
- * Wall C, second time.
- *
- * The modal is shown once per tool per session; after that the button that
- * opens it had nothing left to do, so pressing it did nothing at all --
- * a dead control on the one screen where the reader is asking to buy.
- * The same offer, in a popover under the button.
- */
-export function ToolLockPopover({
-  tool,
-  plan,
-  onClose,
-}: {
-  tool: ToolId;
-  plan: PlanId;
-  onClose: () => void;
-}) {
-  const t = useTranslations("paywall");
-  const names = useTranslations("tools");
-  const locale = useLocale() as Locale;
-  const posthog = usePostHog();
-  const router = useRouter();
-  const accountState = accountStateOf(plan);
-  const context = {
-    variant: "popover" as const,
-    reason: "paid_tool" as const,
-    plan,
-    tool,
-  };
-
-  return (
-    <LockPopover
-      context={context}
-      title={t("toolTitle", {
-        tool: names(`${tool}.name`).toLocaleLowerCase(locale),
-      })}
-      body={t("toolBody")}
-      onClose={onClose}
-      actions={
-        <Button
-          size="sm"
-          onClick={() => {
-            track(posthog, "wall_dismissed", {
-              ...context,
-              method: "cta",
-              action: "primary",
-            });
-            router.push({
-              pathname: accountState === "anonymous" ? "/signup" : "/checkout",
-              query:
-                accountState === "anonymous"
-                  ? { next: trialCheckoutPath(locale) }
-                  : { plan: "unlimited", cycle: "monthly" },
-            });
-          }}
-        >
-          {t("tryUnlimited", { days: TRIAL.days })}
-        </Button>
-      }
-    />
   );
 }
 

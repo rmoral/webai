@@ -3,6 +3,7 @@
 import { useRef, type ChangeEvent } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 
+import type { ToolId } from "@/lib/ai/tools";
 import { PLANS, TOPUP, type PlanId } from "@/lib/billing/plans";
 import { formatUSD } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/routing";
@@ -118,21 +119,32 @@ export function EditorInput({
  * next because they are refusals rather than cuts.
  */
 export type LimitKind =
-  "overflow" | "partial" | "exhausted" | "detector" | "detectorTooLong";
+  | "overflow"
+  | "partial"
+  | "exhausted"
+  | "detector"
+  | "detectorTooLong"
+  /** Over a run's words, on a tool metered by uses (F2-01). */
+  | "perUse";
 
 export function limitKind({
   words,
   ceiling,
   remaining,
   detector,
+  perUse = false,
 }: {
   words: number;
   ceiling: number;
   /** Words left in the window. `null` when unmetered or not yet known. */
   remaining: number | null;
   detector: boolean;
+  /** Whether `ceiling` is a run's words on a tool metered by uses. */
+  perUse?: boolean;
 }): LimitKind | null {
   if (words === 0) return null;
+  // Runs spend no words, so the only limit before pressing is the run's.
+  if (perUse) return words > ceiling ? "perUse" : null;
   if (remaining === 0) return "exhausted";
 
   const wanted = Math.min(words, ceiling);
@@ -157,8 +169,11 @@ export function LimitNotice({
   renewsOn,
   monthly,
   action,
+  tool,
 }: {
   kind: LimitKind;
+  /** Which tool, for the verb of a per-run cut. */
+  tool: ToolId;
   plan: PlanId;
   /** Words in the box. */
   words: number;
@@ -185,7 +200,15 @@ export function LimitNotice({
   let lead: string;
   let body: string;
 
-  if (kind === "overflow") {
+  if (kind === "perUse") {
+    lead = t("perUseLead", { n: n(ceiling) });
+    body = t(
+      tool === "correct" ? "perUseBody.correct" : "perUseBody.paraphrase",
+      {
+        n: n(ceiling),
+      },
+    );
+  } else if (kind === "overflow") {
     lead = t("overflowLead", { words: n(ceiling) });
     body = t("overflowBody", {
       submitted: n(words),

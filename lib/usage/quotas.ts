@@ -3,6 +3,7 @@ import { Redis } from "@upstash/redis";
 import * as Sentry from "@sentry/nextjs";
 import { and, eq, gte, sql } from "drizzle-orm";
 
+import type { ToolId } from "@/lib/ai/tools";
 import type { Subscriber } from "@/lib/billing/entitlements";
 import { getDb } from "@/lib/db/client";
 import { subscriptions } from "@/lib/db/schema";
@@ -60,6 +61,8 @@ export interface Allowance {
   remaining: number | null;
   /** Whether the allowance is a daily one. Monthly otherwise. */
   metered: boolean;
+  /** Runs spent today on the tools the plan meters by uses (F2-01). */
+  uses?: Partial<Record<ToolId, UsesAllowance>>;
 }
 
 export interface QuotaGrant {
@@ -234,6 +237,63 @@ async function reserve(
   }
 
   return { granted, used, remaining, limit };
+}
+
+/** Runs of a tool metered by uses, out of how many a day. */
+export interface UsesAllowance {
+  used: number;
+  limit: number;
+}
+
+/**
+ * Per tool and per day, and apart from the word allowance: a paraphrase
+ * spends one of its two runs, never words the humanizer could use. The day
+ * is the quota day the word allowance rolls over on, so the two refill at
+ * the same moment and "se recargan en 8 h" is true of both.
+ */
+function usesKey(tool: ToolId, subject: string): string {
+  return `uses:${tool}:${subject}:${quotaDay()}`;
+}
+
+/**
+ * Takes one run, before the model is called. `granted: false` means the
+ * day's runs are spent and nothing may be generated.
+ */
+export async function reserveUse(
+  subject: string,
+  tool: ToolId,
+  limit: number,
+): Promise<UsesAllowance & { granted: boolean }> {
+  const client = getRedis();
+  // Dev without Redis: limits are off, as for words.
+  if (!client) return { granted: true, used: 0, limit };
+  const { used, granted } = await consume(
+    client,
+    usesKey(tool, subject),
+    limit,
+    1,
+    25 * 60 * 60,
+  );
+  return { granted: granted === 1, used, limit };
+}
+
+/** The runs left today, without spending one. Fails soft, like peekWords. */
+export async function peekUses(
+  subject: string,
+  tool: ToolId,
+  limit: number,
+): Promise<UsesAllowance> {
+  try {
+    const client = getRedis();
+    if (!client) return { used: 0, limit };
+    const used = Number(
+      (await client.get<number>(usesKey(tool, subject))) ?? 0,
+    );
+    return { used: Math.min(limit, used), limit };
+  } catch (error) {
+    Sentry.captureException(error);
+    return { used: 0, limit };
+  }
 }
 
 /** Gives words back to the allowance they were taken from. */
