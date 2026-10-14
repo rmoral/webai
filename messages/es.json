@@ -170,7 +170,8 @@
       "notes": [
         {
           "title": "Por qué no verás un porcentaje",
-          "body": "Las herramientas que anuncian «92 % generado por IA» no tienen cómo respaldar esa cifra: no existe un modelo calibrado que convierta estas señales en una probabilidad real para el español, y presentarla como tal invita a tomar decisiones graves sobre una medida frágil. Te damos una banda —sin indicios, algunos indicios, indicios claros— y debajo la lista de lo que hemos encontrado, con ejemplos. Es menos vistoso y es más honesto."
+          "body": "Las herramientas que anuncian «92 % generado por IA» no tienen cómo respaldar esa cifra: no existe un modelo calibrado que convierta estas señales en una probabilidad real para el español, y presentarla como tal invita a tomar decisiones graves sobre una medida frágil. Te damos una banda —sin indicios, algunos indicios, indicios claros— y debajo la lista de lo que hemos encontrado, con ejemplos. Es menos vistoso y es más honesto.",
+          "anchor": "por-que-no-porcentaje"
         },
         {
           "title": "El error que no queremos cometer",
@@ -484,9 +485,6 @@
     "spentBodyAnon": " Se recargan en {time}. Tu texto se queda aquí, tal cual. Con una cuenta gratis tienes {free} al día.",
     "spentProLead": "Has usado las palabras de este mes.",
     "spentProBody": " Se renuevan el {date}. Tu texto se queda aquí. Una recarga de {words} palabras cuesta {price} y no caduca.",
-    "detectorLead": "El detector necesita el texto entero.",
-    "detectorBody": " Tiene {words} palabras y hoy te quedan {left}. Analizar solo una parte daría un resultado equivocado sobre el conjunto, así que no lo lanzamos. Se recargan en {time}.",
-    "detectorTooLongBody": " Tiene {words} palabras y tu plan analiza hasta {ceiling} por petición. Pro llega a {pro}; Ilimitado, a {unlimited}.",
     "costWords": "{words} palabras",
     "costProcessed": "se procesarán {words}",
     "costNeeds": "necesita {words}",
@@ -567,7 +565,14 @@
     "windowsTitle": "Dónde se concentran los indicios",
     "sentenceRange": "Frases {from}–{to}",
     "gated": "El desglose por pasajes está disponible en los planes de pago.",
-    "disclaimer": "Esto mide patrones de estilo, no autoría. Un texto humano muy formal puede dar indicios y un texto generado con buen estilo puede no dar ninguno. Ningún detector, el nuestro incluido, sirve como prueba para acusar a nadie."
+    "disclaimer": "Esto mide patrones de estilo, no autoría. Un texto humano muy formal puede dar indicios y un texto generado con buen estilo puede no dar ninguno. Ningún detector, el nuestro incluido, sirve como prueba para acusar a nadie.",
+    "limitLead": "Tu plan analiza hasta {n} palabras.",
+    "limitBody": " El detector funciona mejor con el texto entero.",
+    "analyzeFirst": "Analizar las primeras {n}",
+    "trimMyself": "Recortar yo mismo",
+    "whyLine": "Otros detectores dan un porcentaje; nosotros no. <link>Por qué →</link>",
+    "humanizeThis": "Humanizar este texto",
+    "analyzeAnother": "Analizar otro texto"
   },
   "errors": {
     "server_error": "No hemos podido procesar tu texto. Vuelve a intentarlo en unos minutos.",
@@ -645,7 +650,7 @@
     "signinTitle": "Vuelve a tu cuenta",
     "signinLede": "Entra con Google o pídenos un enlace de acceso. Nunca hubo contraseña que recordar.",
     "benefitWords": "De {from} a {to} palabras al día, hoy mismo.",
-    "benefitTools": "Humanizador y detector completos, sin coste.",
+    "benefitTools": "Las cuatro herramientas, sin coste.",
     "google": "Continuar con Google",
     "or": "o con tu correo",
     "emailPlaceholder": "tu@correo.com",
@@ -970,7 +975,7 @@
     "welcomeRowRequest": "Por petición",
     "welcomeValueRequest": "Hasta {words} palabras",
     "welcomeRowTools": "Herramientas",
-    "welcomeValueTools": "Humanizador y detector",
+    "welcomeValueTools": "Las cuatro",
     "welcomeRowReset": "Se recargan",
     "welcomeValueReset": "Cada día, a las 00:00 (hora peninsular española)",
     "welcomeRowTexts": "Tus textos",

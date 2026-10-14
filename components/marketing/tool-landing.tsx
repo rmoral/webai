@@ -55,7 +55,12 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
   const format = await getFormatter();
 
   const signals = t.raw("signals") as { term: string; description: string }[];
-  const notes = t.raw("notes") as { title: string; body: string }[];
+  // `anchor` is the id a result links to, where one does (F2-06).
+  const notes = t.raw("notes") as {
+    title: string;
+    body: string;
+    anchor?: string;
+  }[];
   // t.raw returns the string unformatted, so the FAQ is read back through
   // t() by index: that is what substitutes {anonWords} and friends.
   //
@@ -167,8 +172,8 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
           ))}
         </dl>
 
-        {notes.map(({ title, body }) => (
-          <div key={title} className="mt-8">
+        {notes.map(({ title, body, anchor }) => (
+          <div key={title} id={anchor} className="mt-8 scroll-mt-28">
             <h2 className="text-2xl font-semibold">{title}</h2>
             <p className="text-muted-foreground mt-3 leading-relaxed">{body}</p>
           </div>

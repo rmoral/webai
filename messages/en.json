@@ -170,7 +170,8 @@
       "notes": [
         {
           "title": "Why you will not see a percentage",
-          "body": "Tools advertising \"92% AI-generated\" have no way to stand behind that figure: there is no calibrated model that turns these signals into a real probability, and presenting one as though there were invites serious decisions on a fragile measurement. You get a band — no indications, some indications, clear indications — and underneath it the list of what we found, with examples. It is less impressive and it is more honest."
+          "body": "Tools advertising \"92% AI-generated\" have no way to stand behind that figure: there is no calibrated model that turns these signals into a real probability, and presenting one as though there were invites serious decisions on a fragile measurement. You get a band — no indications, some indications, clear indications — and underneath it the list of what we found, with examples. It is less impressive and it is more honest.",
+          "anchor": "por-que-no-porcentaje"
         },
         {
           "title": "The mistake we refuse to make",
@@ -484,9 +485,6 @@
     "spentBodyAnon": " They refill in {time}. Your text stays here, as it is. A free account gives you {free} a day.",
     "spentProLead": "You have used this month's words.",
     "spentProBody": " They renew on {date}. Your text stays here. A top-up of {words} words costs {price} and does not expire.",
-    "detectorLead": "The detector needs the whole text.",
-    "detectorBody": " It has {words} words and you have {left} left today. Scoring only part of it would be a wrong answer about the whole, so we do not run it. They refill in {time}.",
-    "detectorTooLongBody": " It has {words} words and your plan analyses up to {ceiling} per request. Pro reaches {pro}; Unlimited, {unlimited}.",
     "costWords": "{words} words",
     "costProcessed": "{words} will be processed",
     "costNeeds": "needs {words}",
@@ -567,7 +565,14 @@
     "windowsTitle": "Where the indications concentrate",
     "sentenceRange": "Sentences {from}–{to}",
     "gated": "The passage breakdown is available on the paid plans.",
-    "disclaimer": "This measures patterns of style, not authorship. Careful formal writing by a person can show indications, and well-written generated text may show none. No detector, ours included, works as evidence to accuse anyone."
+    "disclaimer": "This measures patterns of style, not authorship. Careful formal writing by a person can show indications, and well-written generated text may show none. No detector, ours included, works as evidence to accuse anyone.",
+    "limitLead": "Your plan analyses up to {n} words.",
+    "limitBody": " The detector works best with the whole text.",
+    "analyzeFirst": "Analyse the first {n}",
+    "trimMyself": "Trim it myself",
+    "whyLine": "Other detectors give a percentage; we do not. <link>Why →</link>",
+    "humanizeThis": "Humanize this text",
+    "analyzeAnother": "Analyse another text"
   },
   "errors": {
     "server_error": "We could not process your text. Try again in a few minutes.",
@@ -645,7 +650,7 @@
     "signinTitle": "Back to your account",
     "signinLede": "Sign in with Google, or ask us for a link. There was never a password to remember.",
     "benefitWords": "From {from} to {to} words a day, starting now.",
-    "benefitTools": "The humanizer and the detector in full, at no cost.",
+    "benefitTools": "All four tools, at no cost.",
     "google": "Continue with Google",
     "or": "or with your email",
     "emailPlaceholder": "you@email.com",
@@ -970,7 +975,7 @@
     "welcomeRowRequest": "Per request",
     "welcomeValueRequest": "Up to {words} words",
     "welcomeRowTools": "Tools",
-    "welcomeValueTools": "Humanizer and detector",
+    "welcomeValueTools": "All four",
     "welcomeRowReset": "They refill",
     "welcomeValueReset": "Every day, at 00:00 (mainland Spain time)",
     "welcomeRowTexts": "Your texts",

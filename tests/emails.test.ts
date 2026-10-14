@@ -296,7 +296,7 @@ describe("welcome", () => {
     const body = await html("es");
     expect(body).toContain("500");
     expect(body).toContain("300");
-    expect(body).toContain("Humanizador y detector");
+    expect(body).toContain("Las cuatro");
   });
 
   it("promises not to email about the plans, and keeps it here", async () => {
