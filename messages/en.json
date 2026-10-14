@@ -84,13 +84,11 @@
   },
   "landing": {
     "faqTitle": "Frequently asked questions",
-    "priceLine": "Free: {free} words/day with an account · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
     "humanize": {
       "metaTitle": "Free AI humanizer — rewrite AI text to sound human",
       "metaDescription": "Rewrite generated text so it reads like a person wrote it, with the meaning intact. Three registers, free, no sign-up.",
       "h1": "AI humanizer",
       "intro": "Paste generated text and get its rhythm back: sentences of varied length, none of the usual filler, and the meaning untouched. Free, no account needed.",
-      "introShort": "Human rhythm, same meaning. No sign-up.",
       "signalsTitle": "What it changes",
       "signals": [
         {
@@ -142,7 +140,8 @@
         "lead": "Want to check how much it reads as AI first?",
         "tool": "Run the detector",
         "pricing": "see the plans"
-      }
+      },
+      "priceLine": "Free: {free} words/day with an account · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
     },
     "detect": {
       "metaTitle": "Free AI detector — evidence, not a percentage",
@@ -212,7 +211,8 @@
         "lead": "Reads as AI and you want to fix it?",
         "tool": "Try the humanizer",
         "pricing": "see the plans"
-      }
+      },
+      "priceLine": "Free: {anon} words/day without an account, {free} with one · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
     },
     "paraphrase": {
       "metaTitle": "Paraphrasing tool — rewrite text in six registers",
@@ -329,7 +329,8 @@
         "tool": "Use the paraphraser",
         "pricing": "see the plans"
       }
-    }
+    },
+    "languageLine": "Understands the Spanish of Spain and of the Americas. It does not translate or go through English."
   },
   "proof": {
     "title": "Tested against the detectors",
@@ -436,27 +437,31 @@
   },
   "editor": {
     "inputLabel": "Text to process",
-    "placeholder": "Paste your text here…",
+    "placeholder": "Paste the text you want to work on. The counter below tells you how much fits.",
     "words": "{words} words",
     "resultHere": "The result will appear here",
     "analysisHere": "The analysis will appear here",
     "writing": "Writing…",
     "analyzing": "Analysing…",
-    "paywallCta": "Requires a paid plan",
     "genericError": "Something went wrong. Try again.",
-    "processing": "Working…",
-    "verifying": "Verifying…",
-    "turnstileNeeded": "Cloudflare needs to check that you are not a robot.",
     "retry": "Try again",
     "copyResult": "Copy result",
     "connectionError": "Connection error. Try again.",
     "seePlans": "See plans",
     "run": {
-      "humanize": "Humanize"
+      "humanize": "Humanize",
+      "detect": "Analyse text",
+      "paraphrase": "Paraphrase",
+      "correct": "Correct"
+    },
+    "quota": {
+      "humanize": "{words}/{left} words {window, select, month {this month} other {today}}",
+      "detect": "{words}/{left} words {window, select, month {this month} other {today}}",
+      "paraphrase": "{words}/{left} words {window, select, month {this month} other {today}}",
+      "correct": "{words}/{left} words {window, select, month {this month} other {today}}"
     }
   },
   "tour": {
-    "step1": "Paste the text you want to work on. The counter below tells you how much fits.",
     "step2": "Pick the register before you run it: academic keeps the terminology, informal allows more.",
     "step3": "Compare the result with your original. If it is not right, change the register and run it again.",
     "dismiss": "Close the hints"
@@ -491,9 +496,6 @@
     "costNone": "no words left {window}",
     "windowDay": "today",
     "windowMonth": "this month",
-    "maxThisRequest": " · max. {words} in this request",
-    "noWordsDay": "No words today",
-    "noWordsMonth": "No words this month",
     "quotaBadge": "{used} / {limit} words today",
     "quotaTitle": "We processed the words you had left",
     "quotaWithheld": "{words} words of your text are still to do.",

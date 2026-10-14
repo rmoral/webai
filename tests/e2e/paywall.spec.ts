@@ -64,12 +64,12 @@ test("names both figures and both paid ceilings, without interrupting", async ({
     strip.getByRole("link", { name: /Crear cuenta gratis/ }),
   ).toHaveCount(0);
 
-  // The landings carry no cost line beside the button (F1-12): the strip
-  // above and the counter below already say it, and the line pushed the
-  // button below the fold. The counter names the cut, not only the total.
+  // The landings carry no cost line beside the button (F1-12). The
+  // counter in the box says it instead, against what is left today, and
+  // in amber because the text is over it (F2-02).
   await expect(page.getByTestId("run-cost")).toHaveCount(0);
-  await expect(page.getByTestId("word-count")).toContainText(
-    `máx. ${CEILING} en esta petición`,
+  await expect(page.getByTestId("word-count")).toHaveText(
+    `${PASTED}/300 palabras hoy`,
   );
 });
 
@@ -81,7 +81,9 @@ test("dims the overflow without hiding it from the textarea", async ({
   // The whole paste stays in the field. The dimming marks what will not be
   // processed; it must never silently delete the reader's words.
   await expect(box).toHaveValue(LONG_TEXT);
-  await expect(page.getByText(`${PASTED} palabras`).first()).toBeVisible();
+  await expect(page.getByTestId("word-count")).toHaveText(
+    `${PASTED}/300 palabras hoy`,
+  );
 });
 
 test("says the same thing in English", async ({ page }) => {
@@ -294,10 +296,12 @@ test("a spent allowance is answered by the strip, not by a red banner", async ({
     strip.getByRole("link", { name: /Crear cuenta gratis/ }),
   ).toBeVisible();
 
-  // And the run button stops offering a click that ends in a refusal.
-  await expect(
-    page.getByRole("button", { name: "Sin palabras hoy" }),
-  ).toBeDisabled();
+  // The button keeps its verb (F2): pressed again, it opens the wall
+  // instead of sending a request that can only be refused.
+  const run = page.getByRole("button", { name: "Humanizar" });
+  await expect(run).toBeEnabled();
+  await run.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
 });
 
 test("closes on Escape, on a click outside, and stays closed", async ({
@@ -315,15 +319,18 @@ test("closes on Escape, on a click outside, and stays closed", async ({
   // flow says what happened.
   await expect(page.getByText(/Faltan 28 palabras de tu texto/)).toBeVisible();
 
-  // And there is no second run to make: the answer left the balance at
-  // zero, so the button says so instead of offering a click that ends in
-  // a refusal.
-  await expect(page.getByTestId("run")).toBeDisabled();
-  await expect(page.getByTestId("run")).toHaveText("Sin palabras hoy");
+  // The answer left the balance at zero. The button keeps its verb and
+  // stays live (F2); with the wall closed for the session, pressing it
+  // brings the offer back into the flow rather than over the page.
   await expect(page.getByTestId("limit-notice")).toHaveAttribute(
     "data-kind",
     "exhausted",
   );
+  await expect(page.getByTestId("run")).toBeEnabled();
+  await expect(page.getByTestId("run")).toHaveText("Humanizar");
+  await page.getByTestId("run").click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText(/Faltan \d+ palabras de tu texto/)).toBeVisible();
 });
 
 // Wall C — a paid tool opened by somebody who cannot run it.
@@ -361,11 +368,9 @@ test("leaves the tool page usable after the tool wall is closed", async ({
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
   // Dismissing must not leave a blank page: the landing copy and the editor
-  // are still there, and the button still says why it cannot run.
+  // are still there, and the button still names what it does (F2).
   await expect(page.getByLabel("Texto de entrada")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Requiere un plan de pago" }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Parafrasear" })).toBeVisible();
 
   // Same session, same trigger: it does not come back.
   await page.reload();
@@ -400,7 +405,7 @@ test("answers the locked breakdown in place, with no charge behind it", async ({
 
   await page.goto("/detector-de-ia");
   await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-  await page.getByRole("button", { name: "Detector de IA" }).click();
+  await page.getByRole("button", { name: "Analizar texto" }).click();
 
   const lock = page.getByRole("button", {
     name: "Ver el desglose por pasajes",
@@ -501,7 +506,7 @@ test("the locked tool button keeps answering after the wall is closed", async ({
   await expect(modal).toHaveCount(0);
 
   // Pressed again, it answers with the compact form instead of nothing.
-  await page.getByRole("button", { name: "Requiere un plan de pago" }).click();
+  await page.getByRole("button", { name: "Parafrasear" }).click();
   const popover = page.getByRole("dialog");
   await expect(popover).toBeVisible();
   await expect(
@@ -565,7 +570,11 @@ test("the detector refuses a partial run instead of scoring a fragment", async (
   page,
 }) => {
   // A score over part of a text is a wrong answer about the whole of it,
-  // so the button does not offer a run that would produce one.
+  // so the button opens the wall instead of a run that would produce one.
+  const asked: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/ai/")) asked.push(request.url());
+  });
   await balance(page, 200);
   await page.goto("/detector-de-ia");
   await typeInto(
@@ -579,7 +588,9 @@ test("the detector refuses a partial run instead of scoring a fragment", async (
   await expect(strip).toContainText("El detector necesita el texto entero.");
   await expect(strip).toContainText("daría un resultado equivocado");
 
-  await expect(page.getByTestId("run")).toBeDisabled();
+  await page.getByTestId("run").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(asked).toEqual([]);
 });
 
 test("the detector says so when the text is longer than one request", async ({
@@ -595,7 +606,6 @@ test("the detector says so when the text is longer than one request", async ({
   await expect(strip).toHaveAttribute("data-kind", "detectorTooLong");
   await expect(strip).toContainText(`Tiene ${PASTED} palabras`);
   await expect(strip).toContainText(`tu plan analiza hasta ${CEILING}`);
-  await expect(page.getByTestId("run")).toBeDisabled();
 });
 
 test("nothing is dimmed when nothing will be processed", async ({ page }) => {
@@ -607,38 +617,33 @@ test("nothing is dimmed when nothing will be processed", async ({ page }) => {
   await expect(strip).toHaveAttribute("data-kind", "exhausted");
   // The whole text is legible: dimming marks a cut, and there is no cut.
   await expect(page.getByLabel("Texto de entrada")).toHaveValue(LONG_TEXT);
-  // Nothing will run, and the button says so rather than failing.
-  await expect(page.getByTestId("run")).toBeDisabled();
-  await expect(page.getByTestId("run")).toHaveText("Sin palabras hoy");
+  // Nothing will run. The button keeps its verb and opens the wall (F2);
+  // it no longer says "Sin palabras hoy" greyed out.
+  await expect(page.getByTestId("run")).toBeEnabled();
+  await expect(page.getByTestId("run")).toHaveText("Humanizar");
+  await page.getByTestId("run").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByLabel("Texto de entrada")).toHaveValue(LONG_TEXT);
 });
 
-test("the paid tools say so in the tab strip, before the wall does", async ({
+test("the tool tabs are filled, with the current one marked", async ({
   page,
 }) => {
-  // C11. Wall C opened on the first attempt to use one of these, with
-  // nothing beforehand to suggest it was coming: the reader picked a tool,
-  // wrote, pressed, and only then found out it was not theirs.
+  // F2-15. Four grey words did not read as a way to switch tool. And no
+  // "Pro" marks: every tool can be tried on the free plans (F2-01).
   await page.goto("/humanizador-de-texto-ia");
-  const tabs = page.getByRole("tablist");
+  const tabs = page.getByRole("navigation", { name: "Herramientas" }).first();
 
-  const paraphrase = tabs.getByRole("tab", { name: /Parafraseador/ });
-  await expect(paraphrase).toContainText("Pro");
-  await expect(tabs.getByRole("tab", { name: /Corrector/ })).toContainText(
-    "Pro",
-  );
-
-  // And nothing on the two that are free: a mark on every tab is a mark on
-  // none of them.
+  const current = tabs.getByRole("link", { name: "Humanizador" });
+  await expect(current).toHaveAttribute("aria-current", "page");
+  for (const name of ["Detector", "Parafraseador", "Corrector"]) {
+    const tab = tabs.getByRole("link", { name: new RegExp(name) });
+    await expect(tab).not.toHaveAttribute("aria-current", "page");
+    await expect(tab).not.toContainText("Pro");
+  }
   await expect(
-    tabs.getByRole("tab", { name: /Humanizador/ }),
-  ).not.toContainText("Pro");
-  await expect(tabs.getByRole("tab", { name: /Detector/ })).not.toContainText(
-    "Pro",
-  );
-
-  // Still a link. The wall is a better argument with the tool in front of
-  // the reader than with a dead tab.
-  await expect(paraphrase).toHaveAttribute("href", /parafrasear/);
+    tabs.getByRole("link", { name: /Parafraseador/ }),
+  ).toHaveAttribute("href", /parafrasear/);
 });
 
 test("a locked tool never spends a request to be told no", async ({ page }) => {
@@ -653,7 +658,7 @@ test("a locked tool never spends a request to be told no", async ({ page }) => {
   await page.goto("/parafrasear-texto");
   await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Requiere un plan de pago" }).click();
+  await page.getByRole("button", { name: "Parafrasear" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
 
   expect(asked).toEqual([]);

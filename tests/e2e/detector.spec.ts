@@ -79,7 +79,7 @@ hacerlo con menos confianza de la que suele exhibirse en los manuales al uso.`;
 async function analyse(page: Page, text: string) {
   await page.goto("/detector-de-ia");
   await typeInto(page, "Texto de entrada", text);
-  await page.getByRole("button", { name: "Detector de IA" }).click();
+  await page.getByRole("button", { name: "Analizar texto" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
   return result;
@@ -89,7 +89,7 @@ async function analyse(page: Page, text: string) {
 async function analyseEnglish(page: Page, text: string) {
   await page.goto("/en/ai-detector");
   await typeInto(page, "Text to process", text);
-  await page.getByRole("button", { name: "AI detector" }).click();
+  await page.getByRole("button", { name: "Analyse text" }).click();
   const result = page.getByTestId("detector-result");
   await expect(result).toBeVisible({ timeout: 15_000 });
   return result;
@@ -208,7 +208,8 @@ for (const { path, name } of [
     // reached from a search result is an intrusive interstitial.
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    const run = page.getByRole("button", { name: "Requiere un plan de pago" });
+    // The button names what the tool does (F2), whoever is reading.
+    const run = page.getByTestId("run");
     await expect(run).toBeVisible();
 
     // Reaching for the box is the action the wall answers, and the wall
@@ -234,9 +235,8 @@ for (const { path, name } of [
 test("the free tools stay usable without a plan", async ({ page }) => {
   for (const path of ["/humanizador-de-texto-ia", "/detector-de-ia"]) {
     await page.goto(path);
-    await expect(
-      page.getByRole("button", { name: "Requiere un plan de pago" }),
-    ).toHaveCount(0);
+    await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   }
 });
 

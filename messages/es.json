@@ -84,13 +84,11 @@
   },
   "landing": {
     "faqTitle": "Preguntas frecuentes",
-    "priceLine": "Gratis: {free} palabras/día con cuenta · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>",
     "humanize": {
       "metaTitle": "Humanizador de texto IA gratis en español",
       "metaDescription": "Reescribe texto generado por IA para que suene escrito por una persona, conservando el significado. Tres registros, gratis y en español.",
       "h1": "Humanizador de texto IA",
       "intro": "Pega un texto generado y recupéralo con ritmo humano: frases de longitud variada, sin las muletillas de siempre y con el significado intacto. Gratis y sin registro.",
-      "introShort": "Ritmo humano, mismo significado. Sin registro.",
       "signalsTitle": "Qué cambia el humanizador",
       "signals": [
         {
@@ -142,7 +140,8 @@
         "lead": "¿Quieres comprobar antes cuánto suena a IA?",
         "tool": "Pasa el detector",
         "pricing": "consulta los planes"
-      }
+      },
+      "priceLine": "Gratis: {free} palabras/día con cuenta · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
     },
     "detect": {
       "metaTitle": "Detector de IA gratis en español",
@@ -212,7 +211,8 @@
         "lead": "¿Tu texto suena a IA y quieres arreglarlo?",
         "tool": "Prueba el humanizador",
         "pricing": "consulta los planes"
-      }
+      },
+      "priceLine": "Gratis: {anon} palabras/día sin cuenta, {free} con cuenta · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
     },
     "paraphrase": {
       "metaTitle": "Parafrasear texto online en español",
@@ -329,7 +329,8 @@
         "tool": "Usa el parafraseador",
         "pricing": "consulta los planes"
       }
-    }
+    },
+    "languageLine": "Entiende el español de España y de América. No traduce ni pasa por el inglés."
   },
   "proof": {
     "title": "Probado con los detectores",
@@ -436,27 +437,31 @@
   },
   "editor": {
     "inputLabel": "Texto de entrada",
-    "placeholder": "Pega aquí tu texto…",
+    "placeholder": "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",
     "words": "{words} palabras",
     "resultHere": "El resultado aparecerá aquí",
     "analysisHere": "El análisis aparecerá aquí",
     "writing": "Escribiendo…",
     "analyzing": "Analizando…",
-    "paywallCta": "Requiere un plan de pago",
     "genericError": "Algo ha salido mal. Inténtalo de nuevo.",
-    "processing": "Procesando…",
-    "verifying": "Verificando…",
-    "turnstileNeeded": "Cloudflare necesita comprobar que no eres un robot.",
     "retry": "Reintentar",
     "copyResult": "Copiar resultado",
     "connectionError": "Error de conexión. Inténtalo de nuevo.",
     "seePlans": "Ver planes",
     "run": {
-      "humanize": "Humanizar"
+      "humanize": "Humanizar",
+      "detect": "Analizar texto",
+      "paraphrase": "Parafrasear",
+      "correct": "Corregir"
+    },
+    "quota": {
+      "humanize": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
+      "detect": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
+      "paraphrase": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
+      "correct": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}"
     }
   },
   "tour": {
-    "step1": "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",
     "step2": "Elige el registro antes de darle: académico conserva la terminología, informal se permite más.",
     "step3": "Compara el resultado con tu original. Si no te convence, cambia el registro y vuelve a darle.",
     "dismiss": "Cerrar las pistas"
@@ -491,9 +496,6 @@
     "costNone": "no te quedan palabras {window}",
     "windowDay": "hoy",
     "windowMonth": "este mes",
-    "maxThisRequest": " · máx. {words} en esta petición",
-    "noWordsDay": "Sin palabras hoy",
-    "noWordsMonth": "Sin palabras este mes",
     "quotaBadge": "{used} / {limit} palabras de hoy",
     "quotaTitle": "Hemos procesado las palabras que te quedaban",
     "quotaWithheld": "Faltan {words} palabras de tu texto.",

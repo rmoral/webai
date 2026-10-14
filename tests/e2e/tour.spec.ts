@@ -4,7 +4,7 @@ import { CONSENT_KEY, CONSENT_VERSION } from "@/lib/analytics/consent";
 
 import { typeInto } from "./helpers";
 
-// The three first-visit hints. Deliberately the bare Playwright `test`
+// The two first-visit hints. Deliberately the bare Playwright `test`
 // rather than the fixture, which seeds them as already seen (see
 // fixtures.ts) -- a first visit is the whole subject here.
 //
@@ -35,26 +35,32 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("comes one at a time, in order", async ({ page }) => {
-  await page.goto("/parafrasear-texto");
+test("the empty box speaks through its placeholder, then one hint at a time", async ({
+  page,
+}) => {
+  await page.goto("/humanizador-de-texto-ia");
 
-  // Empty box: the first hint, and only the first.
-  await expect(page.getByTestId("tour-1")).toBeVisible();
+  // Empty box: no strip above it. What the first hint said is the
+  // placeholder now (F2), so it cannot cover anything or need closing.
+  const box = page.getByLabel("Texto de entrada");
+  await expect(box).toHaveAttribute(
+    "placeholder",
+    "Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.",
+  );
+  await expect(page.getByTestId("tour-1")).toHaveCount(0);
   await expect(page.getByTestId("tour-2")).toHaveCount(0);
-  await expect(page.getByTestId("tour-3")).toHaveCount(0);
 
   await typeInto(page, "Texto de entrada", LONG);
 
-  // Text in the box: the register, and the first one is gone.
+  // Text in the box: the register, and nothing else.
   await expect(page.getByTestId("tour-2")).toBeVisible();
-  await expect(page.getByTestId("tour-1")).toHaveCount(0);
+  await expect(page.getByTestId("tour-3")).toHaveCount(0);
 });
 
 test("never touches what somebody wrote", async ({ page }) => {
   // The rule this exists to keep. The detector has no registers, so it goes
-  // from the first hint to the third, and it runs without an AI key.
+  // straight to the third hint, and it runs without an AI key.
   await page.goto("/detector-de-ia");
-  await expect(page.getByTestId("tour-1")).toBeVisible();
 
   const box = await typeInto(page, "Texto de entrada", LONG);
   // No register row on this tool, so no hint about one.
@@ -75,22 +81,23 @@ test("never touches what somebody wrote", async ({ page }) => {
 });
 
 test("closing one closes the lot, for good", async ({ page }) => {
-  await page.goto("/parafrasear-texto");
-  await page.getByRole("button", { name: "Cerrar las pistas" }).click();
-  await expect(page.getByTestId("tour-1")).toHaveCount(0);
-
-  // Not on the next tool, and not on the next visit.
   await page.goto("/humanizador-de-texto-ia");
-  await expect(page.getByTestId("tour-1")).toHaveCount(0);
+  await typeInto(page, "Texto de entrada", LONG);
+  await page.getByRole("button", { name: "Cerrar las pistas" }).click();
+  await expect(page.getByTestId("tour-2")).toHaveCount(0);
+
+  // Not on the next visit.
   await page.reload();
-  await expect(page.getByTestId("tour-1")).toHaveCount(0);
+  await typeInto(page, "Texto de entrada", LONG);
+  await expect(page.getByTestId("tour-2")).toHaveCount(0);
 });
 
 test("fits a phone without covering the box", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/parafrasear-texto");
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", LONG);
 
-  const hint = page.getByTestId("tour-1");
+  const hint = page.getByTestId("tour-2");
   await expect(hint).toBeVisible();
 
   // In the flow, not over the editor: the box has to be fully clickable

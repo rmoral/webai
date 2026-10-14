@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import Script from "next/script";
+import { Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
 
@@ -34,7 +35,7 @@ import {
 import { CheckoutButton } from "@/components/marketing/checkout-button";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { track } from "@/lib/analytics/events";
+import { UI_VERSION, track } from "@/lib/analytics/events";
 import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
 import { useViewer } from "@/components/marketing/viewer";
@@ -95,7 +96,6 @@ export function ToolEditor({
   showCost?: boolean;
 }) {
   const t = useTranslations("editor");
-  const names = useTranslations("tools");
   const modeLabel = useTranslations("modes");
   const wall = useTranslations("paywall");
   const time = useTranslations("app");
@@ -142,6 +142,9 @@ export function ToolEditor({
   const [toolWallDismissed, setToolWallDismissed] = useState(true);
   // Whether they have reached for the tool yet. See wall C below.
   const [wantedTool, setWantedTool] = useState(false);
+  // Whether they have reached for the box at all, which is when the
+  // counter asks what is left. See the allowance below.
+  const [reached, setReached] = useState(false);
   // Wall C, second time: the compact form, under the button.
   const [toolPopover, setToolPopover] = useState(false);
   // The allowance, shared with the header. `report` is what makes every
@@ -157,6 +160,7 @@ export function ToolEditor({
   const tokenRef = useRef<string>("");
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const posthog = usePostHog();
 
   // Who is reading, on a page whose server render could not know.
@@ -183,32 +187,21 @@ export function ToolEditor({
   // would load, hold a connection open and hand out a token nothing spends.
   const needsToken =
     Boolean(TURNSTILE_KEY) && serverPlan === "anonymous" && included;
-  // Whether a usable token is in hand. Held in state and not only in a ref
-  // because the run button waits on it: the button used to be live before
-  // Turnstile had resolved, so the first click of the visit -- the first
-  // thing anyone does with the product -- answered "anti-bot check failed".
-  const [hasToken, setHasToken] = useState(false);
-  // Callers waiting for the next token, so a silent retry can ask for one
-  // and wait for the widget instead of guessing at a delay.
+  // Callers waiting for the next token: a click that came before the
+  // widget had answered, and the silent retry. Both wait for the widget
+  // instead of guessing at a delay.
   const waiting = useRef<((token: string) => void)[]>([]);
-  // The escape hatch. If the widget never resolves -- the script blocked,
-  // Cloudflare unreachable -- the button must not stay disabled forever:
-  // after ten seconds the visitor goes through and the server decides.
-  // An ad blocker should cost a round trip, not the product.
-  const [waived, setWaived] = useState(false);
   // Cloudflare asked for a click. The widget is invisible until then
-  // (`interaction-only`), and when it appears it needs a line saying why.
+  // (`interaction-only`), and then it shows in the empty result panel.
   const [interactive, setInteractive] = useState(false);
 
   const receiveToken = useCallback((token: string) => {
     tokenRef.current = token;
-    setHasToken(true);
     waiting.current.splice(0).forEach((resolve) => resolve(token));
   }, []);
 
   const loseToken = useCallback(() => {
     tokenRef.current = "";
-    setHasToken(false);
   }, []);
 
   // What was typed survives leaving the page and coming back -- which is
@@ -270,11 +263,11 @@ export function ToolEditor({
     });
   }, [receiveToken, loseToken]);
 
+  // Which build of the landing a funnel event came from (F2), so the
+  // before and after of a redesign can be told apart in PostHog.
   useEffect(() => {
-    if (!needsToken || hasToken || waived) return;
-    const timer = setTimeout(() => setWaived(true), 10_000);
-    return () => clearTimeout(timer);
-  }, [needsToken, hasToken, waived]);
+    posthog?.register({ ui_version: UI_VERSION });
+  }, [posthog]);
 
   // Whichever is fresher: the shared figure, or the last response this
   // editor saw. They are the same number from the same source.
@@ -303,12 +296,31 @@ export function ToolEditor({
   });
   // A daily allowance for the free tiers, a monthly one for the paid.
   const monthly = PLANS[plan].limits.wordsPerDay === null;
-  // Nothing will run: the strip says why and the button says so too.
+  // Nothing will run as asked: the strip says why, and the button opens
+  // the wall instead of sending a request that can only be refused.
   const blocked =
     kind === "exhausted" || kind === "detector" || kind === "detectorTooLong";
   // Dimming marks the cut, so it only exists when something is cut and
   // something else is kept.
   const dimmed = !blocked && processable > 0 && words > processable;
+
+  // The counter in the box (F2-02): what is in it over what is left, so
+  // the limit is on screen before anything is pasted. Until the server has
+  // said, a first visit's whole allowance -- which is what it has.
+  const allowanceLeft =
+    left ??
+    (monthly
+      ? PLANS[plan].limits.wordsPerMonth
+      : PLANS[plan].limits.wordsPerDay) ??
+    ceiling;
+  const counterOver = words > Math.min(ceiling, allowanceLeft);
+  const counter = included
+    ? t(`quota.${tool}`, {
+        words: format.number(words),
+        left: format.number(allowanceLeft),
+        window: monthly ? "month" : "day",
+      })
+    : t("words", { words });
 
   // How long until the allowance refills, in the timezone the quota
   // actually rolls over in (lib/usage/day.ts). Computed at render rather
@@ -371,14 +383,14 @@ export function ToolEditor({
 
   // What is left, for a page that has no server render to read it from.
   //
-  // Asked for when the reader starts writing rather than on load: the tool
-  // landings are the SEO asset, and a request per visit to tell a crawler
-  // how many words it has left is paid on every visit and read on almost
-  // none. By the time there are words in the box the number matters, and
-  // it is there before the button is pressed.
+  // Asked for when the reader reaches for the box rather than on load: the
+  // tool landings are the SEO asset, and a request per visit to tell a
+  // crawler how many words it has left is paid on every visit and read on
+  // almost none. Focus comes before any paste, so the counter in the box is
+  // true before there is anything in it (F2-02). Until then it shows the
+  // plan's full allowance, which is what a first visit has.
   const askedAllowance = useRef(false);
   useEffect(() => {
-    if (askedAllowance.current || words === 0) return;
     if (remaining !== null || allowance) return;
     // A signed-in reader on a landing already has one: the viewer asked
     // for it on mount, and asking twice would spend a second read of the
@@ -386,9 +398,9 @@ export function ToolEditor({
     if (viewer?.allowance) {
       setRemaining(viewer.allowance.remaining);
       reportAllowance(viewer.allowance);
-      askedAllowance.current = true;
       return;
     }
+    if (askedAllowance.current || (!reached && words === 0)) return;
     askedAllowance.current = true;
     fetch("/api/usage", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -400,10 +412,33 @@ export function ToolEditor({
       .catch(() => {
         // A number we could not read is a number we do not show.
       });
-  }, [words, remaining, allowance, reportAllowance, viewer]);
+  }, [reached, words, remaining, allowance, reportAllowance, viewer]);
 
-  // Waiting on the anti-bot check, and not yet waived.
-  const verifying = needsToken && !hasToken && !waived;
+  /**
+   * The token in hand, or the next one the widget hands out.
+   *
+   * The button no longer waits on Turnstile (F2): a click that comes first
+   * shows the spinner and goes out the moment the token arrives. If the
+   * widget never answers -- the script blocked, Cloudflare unreachable --
+   * the request goes without one after `ms` and the server decides. An ad
+   * blocker should cost a round trip, not the product.
+   */
+  function currentToken(ms: number): Promise<string> {
+    if (tokenRef.current || !needsToken) {
+      return Promise.resolve(tokenRef.current);
+    }
+    return new Promise((resolve) => {
+      const waiter = (token: string) => {
+        clearTimeout(timer);
+        resolve(token);
+      };
+      const timer = setTimeout(() => {
+        waiting.current = waiting.current.filter((w) => w !== waiter);
+        resolve("");
+      }, ms);
+      waiting.current.push(waiter);
+    });
+  }
 
   /**
    * Asks the widget for a new token and waits for it.
@@ -420,17 +455,7 @@ export function ToolEditor({
     if (!widget || !window.turnstile) return Promise.resolve("");
     loseToken();
     window.turnstile.reset(widget);
-    return new Promise((resolve) => {
-      const waiter = (token: string) => {
-        clearTimeout(timer);
-        resolve(token);
-      };
-      const timer = setTimeout(() => {
-        waiting.current = waiting.current.filter((w) => w !== waiter);
-        resolve("");
-      }, 8_000);
-      waiting.current.push(waiter);
-    });
+    return currentToken(8_000);
   }
 
   /**
@@ -463,6 +488,40 @@ export function ToolEditor({
         <Link href="/pricing">{t("seePlans")}</Link>
       </Button>
     );
+
+  /**
+   * The button. Never disabled by a limit (F2): it does what it says, or
+   * opens the wall that explains why it cannot.
+   */
+  function press() {
+    // The verb stays on the button while it works, so a second press is
+    // possible; it must not start a second request.
+    if (status === "loading") return;
+    if (!included) {
+      setWantedTool(true);
+      // The modal is shown once per tool per session. After that this
+      // button had nothing left to open, so it did nothing at all -- a
+      // dead control on the one screen where the reader is asking to buy.
+      if (toolWallDismissed) setToolPopover(true);
+      return;
+    }
+    // A daily allowance that cannot cover the run: wall B, without a
+    // request the server could only refuse. A paid plan's month goes to
+    // the server, whose answer names the renewal and the top-up.
+    if (!monthly && (kind === "exhausted" || kind === "detector")) {
+      const limitToday = PLANS[plan].limits.wordsPerDay ?? 0;
+      const spent = {
+        visibleText: "",
+        withheldWords: Math.min(words, ceiling),
+        usedToday: limitToday - (left ?? 0),
+        limitToday,
+      };
+      if (paywallDismissed("quota", tool)) setQuotaNotice(spent);
+      else setWithheld(spent);
+      return;
+    }
+    void run();
+  }
 
   async function run() {
     setStatus("loading");
@@ -498,7 +557,7 @@ export function ToolEditor({
       });
 
     try {
-      let res = await send(tokenRef.current);
+      let res = await send(await currentToken(10_000));
 
       // One silent retry with a fresh token. The first thing a visitor
       // ever sees from us must not be "anti-bot check failed", and an
@@ -635,10 +694,18 @@ export function ToolEditor({
     }
   }
 
-  // A verb on the button ("Humanizar"); the tool's own name stays on the
-  // tab and the page. Only the humanizer has its verb so far.
-  const runLabel =
-    tool === "humanize" ? t("run.humanize") : names(`${tool}.name`);
+  // On a phone the result is below the button, and below the fold: take
+  // the reader to its first line once it is there, with the header's
+  // height to spare. Not scrollIntoView, which would also move the page
+  // sideways on a narrow screen and ignores the margin.
+  useEffect(() => {
+    if (status !== "done" || !resultRef.current) return;
+    if (!window.matchMedia("(max-width: 639px)").matches) return;
+    window.scrollTo({
+      top: resultRef.current.getBoundingClientRect().top + window.scrollY - 64,
+      behavior: "smooth",
+    });
+  }, [status]);
 
   const hint = tourStep({
     dismissed: tour.dismissed,
@@ -696,12 +763,43 @@ export function ToolEditor({
         {hint === 2 && <Hint step={2} onDismiss={tour.dismiss} />}
 
         <div className="grid md:grid-cols-2 md:divide-x">
-          {/* The working column, in the order a phone reads it: what is
-              wrong or worth knowing, the text, how much of it, and the
+          {/* The working column, in the order a phone reads it: the text
+              with its counter, what is worth knowing about it, and the
               button -- above the result, so it is on screen before there
-              is anything to scroll to (F1-03). */}
+              is anything to scroll to (F1-03, F2). */}
           <div className="flex min-w-0 flex-col">
-            {kind ? (
+            <EditorInput
+              value={input}
+              onChange={setInput}
+              onReach={() => {
+                setReached(true);
+                if (!included) setWantedTool(true);
+              }}
+              placeholder={t("placeholder")}
+              label={t("inputLabel")}
+              processable={processable}
+              dimmed={dimmed}
+              className="min-h-[200px] md:min-h-[140px]"
+            >
+              {/* Inside the box, so it takes no room and moves nothing
+                  when the real figure arrives (F2-02, F2-12). Rendered
+                  from state, so it is also the signal that the client has
+                  taken over: before hydration the box can hold text while
+                  React still believes it is empty. */}
+              <p
+                data-testid="word-count"
+                aria-live="polite"
+                className={cn(
+                  "pointer-events-none absolute right-2 bottom-2 h-5 rounded-[5px] bg-white/95 px-1.5 text-xs leading-5 text-neutral-500 tabular-nums",
+                  counterOver &&
+                    "bg-warning-soft text-warning-ink font-semibold",
+                )}
+              >
+                {counter}
+              </p>
+            </EditorInput>
+
+            {kind && (
               <LimitNotice
                 kind={kind}
                 plan={plan}
@@ -719,127 +817,66 @@ export function ToolEditor({
                       : wayOut(noticeButton)
                 }
               />
-            ) : (
-              hint === 1 && <Hint step={1} onDismiss={tour.dismiss} />
             )}
-            <EditorInput
-              value={input}
-              onChange={setInput}
-              onReach={included ? undefined : () => setWantedTool(true)}
-              placeholder={t("placeholder")}
-              label={t("inputLabel")}
-              processable={processable}
-              dimmed={dimmed}
-              className="min-h-[200px] md:min-h-[168px]"
-            />
 
-            <div className="flex flex-col border-t md:flex-row md:items-center md:gap-3 md:py-3 md:pr-3 md:pl-4">
-              <p
-                // Rendered from state, so it is also the signal that the
-                // client has taken over: before hydration the box can hold
-                // text while React still believes it is empty.
-                data-testid="word-count"
-                className="text-muted-foreground flex h-9 items-center px-3 text-[13px] md:h-auto md:px-0"
-              >
-                <span
-                  className={cn(
-                    (words > processable || blocked) &&
-                      "text-danger-ink font-medium",
-                  )}
-                >
-                  {t("words", { words })}
-                </span>
-                {dimmed && (
-                  <>
-                    &nbsp;·{" "}
-                    {wall("maxThisRequest", {
-                      words: format.number(processable),
-                    })}
-                  </>
-                )}
-              </p>
-              {/* What the next run costs, before the click rather than
-                  after. In the app only; see `showCost`. */}
-              {showCost && (
-                <div className="px-3 pb-2 md:px-0 md:pb-0">
-                  <RunCost
-                    words={words}
-                    ceiling={ceiling}
-                    remaining={left}
-                    monthly={monthly}
-                    detector={measures}
-                  />
-                </div>
+            {/* What the next run costs, before the click rather than
+                after. In the app only; see `showCost`. */}
+            {showCost && (
+              <div className={cn("px-3 py-2 md:px-4", !kind && "border-t")}>
+                <RunCost
+                  words={words}
+                  ceiling={ceiling}
+                  remaining={left}
+                  monthly={monthly}
+                  detector={measures}
+                />
+              </div>
+            )}
+
+            <div
+              className={cn(
+                "relative p-3 md:flex md:items-center md:gap-3 md:px-4",
+                !kind && !showCost && "border-t",
               )}
-              <div className="relative border-t p-3 md:ml-auto md:border-t-0 md:p-0">
-                <Button
-                  onClick={
-                    included
-                      ? run
-                      : () => {
-                          setWantedTool(true);
-                          // The modal is shown once per tool per session.
-                          // After that this button had nothing left to
-                          // open, so it did nothing at all -- a dead
-                          // control on the one screen where the reader is
-                          // asking to buy.
-                          if (toolWallDismissed) setToolPopover(true);
-                        }
-                  }
-                  disabled={
-                    included &&
-                    (status === "loading" ||
-                      words === 0 ||
-                      verifying ||
-                      blocked)
-                  }
-                  size="lg"
-                  className="w-full disabled:opacity-45 md:w-auto md:min-w-[168px]"
-                  // The label legitimately changes -- the tool, "Verificando…",
-                  // "Sin palabras hoy" -- so the tests need something that
-                  // does not.
-                  data-testid="run"
-                >
-                  {!included
-                    ? t("paywallCta")
-                    : status === "loading"
-                      ? t("processing")
-                      : kind === "exhausted"
-                        ? wall(monthly ? "noWordsMonth" : "noWordsDay")
-                        : verifying
-                          ? t("verifying")
-                          : runLabel}
-                </Button>
-                {toolPopover && !included && (
-                  <ToolLockPopover
-                    tool={tool}
-                    plan={plan}
-                    onClose={() => setToolPopover(false)}
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Invisible unless Cloudflare wants a click; then it sits under
-                the button with a line saying what it is. */}
-            {needsToken && (
-              <div
-                className={cn(
-                  "flex flex-col items-center gap-1.5 px-3 md:items-end",
-                  interactive && "pb-3",
-                )}
+            >
+              <Button
+                onClick={press}
+                // Only an empty box: a spent allowance opens the wall, and
+                // a click before Turnstile answers waits for it (F2).
+                disabled={words === 0}
+                aria-busy={status === "loading"}
+                size="lg"
+                className="w-full disabled:cursor-not-allowed disabled:opacity-45 md:w-auto md:min-w-[220px]"
+                data-testid="run"
               >
-                {interactive && (
-                  <p className="text-muted-foreground text-xs leading-4">
-                    {t("turnstileNeeded")}
-                  </p>
+                {status === "loading" && (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
                 )}
-                <div ref={widgetRef} />
-              </div>
-            )}
+                {t(`run.${tool}`)}
+              </Button>
+              {toolPopover && !included && (
+                <ToolLockPopover
+                  tool={tool}
+                  plan={plan}
+                  onClose={() => setToolPopover(false)}
+                />
+              )}
+            </div>
           </div>
 
-          <div className="flex min-h-[120px] min-w-0 flex-col border-t md:min-h-64 md:border-t-0">
+          <div
+            ref={resultRef}
+            className="flex min-h-[120px] min-w-0 flex-col border-t md:min-h-64 md:border-t-0"
+          >
+            {/* Invisible unless Cloudflare wants a click, and then here, in
+                the empty result panel: it never inserts a row under the
+                button (F2-12). */}
+            {needsToken && (
+              <div
+                ref={widgetRef}
+                className={cn(interactive && "flex justify-center p-3")}
+              />
+            )}
             {hint === 3 && <Hint step={3} onDismiss={tour.dismiss} />}
             {measures && report ? (
               <DetectorResultView

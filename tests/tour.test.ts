@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { tourStep } from "@/components/tools/tour";
 
-// The order of the three hints. What this guards against is two of them on
+// The order of the two hints. What this guards against is two of them on
 // screen at once, which does not read as help -- it reads as a broken page.
 
 const state = {
@@ -13,8 +13,10 @@ const state = {
 };
 
 describe("which hint is on screen", () => {
-  it("starts at the empty box", () => {
-    expect(tourStep(state)).toBe(1);
+  it("leaves the empty box to its placeholder", () => {
+    // The first hint was the placeholder's sentence in a strip above the
+    // box (F2): the box says it now, so nothing is shown.
+    expect(tourStep(state)).toBeNull();
   });
 
   it("moves to the register once there is text", () => {
@@ -29,9 +31,7 @@ describe("which hint is on screen", () => {
     // The detector has no registers. A hint telling somebody to choose one
     // would point at a row that is not there.
     expect(tourStep({ ...state, hasModes: false, hasText: true })).toBeNull();
-    // And the first hint still applies: the box is the box.
-    expect(tourStep({ ...state, hasModes: false })).toBe(1);
-    // As does the third, which is about the result and not the register.
+    // The third still applies: it is about the result, not the register.
     expect(
       tourStep({ ...state, hasModes: false, hasText: true, hasResult: true }),
     ).toBe(3);
@@ -59,7 +59,7 @@ describe("which hint is on screen", () => {
             hasText,
             hasResult,
           });
-          expect(step === null || [1, 2, 3].includes(step)).toBe(true);
+          expect(step === null || [2, 3].includes(step)).toBe(true);
         }
       }
     }
