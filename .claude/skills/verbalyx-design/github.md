@@ -3,17 +3,17 @@ branch: main
 
 ## Last sync
 
-date: 2026-09-23T13:47:38Z
+date: 2026-10-13T09:58:00Z
 
 ### Updated in this project
 
-- D1–D6 del funnel diseñados sobre `main` (C0–C6 ya en el repo): `UsageMeter`, `LimitNotice`, `RunCost`, `SignupInvite`, `PricingPage` y `AuthPage` rehechos, y siete correos.
-- Guía por ticket C7–C14 en `IMPLEMENTACION/FUNNEL/`, con claves de `messages/es.json`, fuentes de datos y eventos.
-- La copia de `.claude/skills/verbalyx-design/` en el repo está desfasada (anterior al 19-09, con `ScoreGauge`): sustituirla por este proyecto (ver `IMPLEMENTACION/FUNNEL/PROMPT.md`, paso 0).
-- Incoherencias de `main` señaladas: términos legales frente a impuestos incluidos, el detector recortado a 300, «Dos meses gratis» y «historial de sesión».
+- F1 (landing de Ads, /precios y muro) diseñado a 390 y 1440 y validado con producto el 13-10. Guía en `IMPLEMENTACION/FUNNEL/F1.md`.
+- La prueba de 3 días pasa también al plan anual; nuevos correos `03c` y `04b`; cifras en el formato «US$14,99».
+- Paquete `export/verbalyx-design-2026-10-13.zip` y `PROMPT-CLAUDE-CODE-F1.md` para sincronizar la skill en el repo.
 
 ## Sync history
 
+- 2026-09-23T13:47:38Z — D1–D6 del funnel y guía C7–C14.
 - 2026-09-19T00:00:00Z — registro/login, muro de pago en cinco variantes, pago integrado, precios con toggle, `ScoreGauge` → `EvidenceBand`.
 - 2026-09-15T06:40:00Z — marca azul #2b45c4 y escala semántica; ToolTabs, Chip, Highlight, ScoreGauge, QuotaBar, UpsellBanner; kits con cabecera y pestañas.
 - 2026-09-15T06:13:07Z — first import: tokens from `app/globals.css`, the four `components/ui` primitives, ToolEditor, three UI kits, `favicon.ico`.
@@ -27,6 +27,9 @@ date: 2026-09-23T13:47:38Z
 | `ui_kits/marketing/PricingPage.jsx` (D2) | `app/[locale]/(marketing)/pricing/page.tsx`, `components/marketing/pricing-plans.tsx`, `lib/billing/plans.ts` |
 | `ui_kits/auth/AuthPage.jsx` (D4) | `components/auth/auth-form.tsx`, `app/[locale]/signup/page.tsx` |
 | `components/feedback/SignupInvite.jsx` (D5) | `components/tools/tool-editor.tsx`, `lib/analytics/events.ts` |
+| `explorations/F1 Landing *.html` | `components/tools/tool-landing.tsx`, `components/tools/tool-editor.tsx`, `app/[locale]/(marketing)/layout.tsx` |
+| `explorations/F1 Precios *.html` | `components/marketing/pricing-plans.tsx`, `lib/billing/plans.ts` |
+| `explorations/F1 Muro.html` | `components/billing/paywall.tsx` |
 | `emails/*.html` (D6) | `emails/layout.tsx`, `emails/subscription-confirmation.tsx`, `emails/trial-reminder.tsx`, `lib/billing/notify.ts`, `lib/email.ts` |
 | `ui_kits/marketing/MarketingHome.jsx` | `app/[locale]/(marketing)/page.tsx`, `lib/ai/tools.ts` |
 | `ui_kits/marketing/MarketingFooter.jsx` | `app/[locale]/(marketing)/layout.tsx` |

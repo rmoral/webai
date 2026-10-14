@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F2 · /detector-de-ia · 390 y 1440</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="f2-kit.css">
+</head><body><div class="doc">
+<div class="nav"><a href="F2 Plantilla compartida.html">Plantilla compartida</a><a class="on" href="F2 Detector.html">Detector</a><a href="F2 Parafraseador.html">Parafraseador</a><a href="F2 Corrector.html">Corrector</a></div>
+<h1>F2 · /detector-de-ia · sin sesión</h1>
+<p class="lede">Parte de la plantilla de F1 y aplica solo el brief F2: F2-02, -03, -04, -05, -06, -11, -12 y -15. También las decisiones del 14-10: el formato «US$14,99», la línea de precios con «sin cuenta / con cuenta» y el botón activo con su verbo cuando se agota el saldo. Las líneas rojas marcan el pliegue: 844 en móvil y 640, el límite del brief, en escritorio.</p>
+<h2>Móvil · 390 × 844</h2>
+<div class="frames" id="mob"></div>
+<h2>Escritorio · 1440 (al 62 %)</h2>
+<div class="frames" id="desk"></div>
+<div class="spec">
+<h2>Ficha · específico del detector</h2>
+<p>Lo compartido (cabecera, pestañas, titular, editor, contador, botón, línea de precios, hueco de prueba social y cookies) está en <a href="F2 Plantilla compartida.html">Plantilla compartida</a>. <span class="k sh">compartido</span> = <code>ToolLanding</code> · <span class="k sp">específico</span> = solo esta página.</p>
+<table>
+<tr><th>Elemento</th><th>Valores</th><th>Origen</th></tr>
+<tr class="g"><td colspan="3">Copy</td></tr>
+<tr><td>Botón</td><td>«Analizar texto» (<code>editor.run.detect</code>)</td><td><span class="k sp">específico</span> F2-07</td></tr>
+<tr><td>Contador</td><td>«{en el editor}/{te quedan hoy} palabras hoy» · vacío: «0/300 palabras hoy»</td><td><span class="k sp">específico</span> F2-02</td></tr>
+<tr><td>Línea de precios</td><td>«Gratis: 300 palabras/día sin cuenta, 500 con cuenta · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba → Ver planes» · cifras de <code>PLANS.anonymous.dailyWords</code>, <code>PLANS.free.dailyWords</code> y <code>formatUSD(PRICES.pro.yearly/12)</code></td><td><span class="k sp">específico</span> decisión 14-10</td></tr>
+<tr class="g"><td colspan="3">Estado (a): más de 300 palabras (F2-03)</td></tr>
+<tr><td>Aviso</td><td>franja ámbar entre el texto y el botón, con la pieza <code>LimitNotice</code> compartida · 13 / 18 · «<b>Tu plan analiza hasta 300 palabras.</b> El detector funciona mejor con el texto entero.» · sin «Ver planes» dentro (la salida a precios ya está en la línea de debajo)</td><td><span class="k sh">compartido</span> pieza · copy <span class="k sp">específico</span></td></tr>
+<tr><td>Texto</td><td>desde la palabra 301, en #a3a3a3, con la marca de corte de 2 × 18 en #d98b18 (la misma de C8)</td><td><span class="k sh">compartido</span></td></tr>
+<tr><td>Primario</td><td>«Analizar las primeras 300» · 48 · 16/600 · ancho 100 % en móvil, ≥ 220 en escritorio · <b>sustituye a «Analizar texto»</b> mientras el texto pasa del límite</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>«Recortar yo mismo»</td><td>botón de texto · 44 · 15/600 #2b45c4 · al pulsarlo: foco en el área de texto, <b>selecciona desde la palabra 301 hasta el final</b> y desplaza el área de texto hasta el corte; con Supr o un corte, se borra de una vez</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Nada desactivado</td><td>los dos botones activos · el aviso se va en cuanto el texto baja de 300</td><td>F2-03</td></tr>
+<tr><td>Servidor</td><td>«Analizar las primeras 300» manda <code>truncate: true</code>; sin él, <code>/api/ai/detect</code> responde <code>request_too_long</code> (lo que en F1 quedó como «rechazar o recortar» ahora es «recortar si el usuario lo pide»). El resultado dice «Sobre 300 palabras», no sobre 831</td><td><span class="k sp">específico</span></td></tr>
+<tr class="g"><td colspan="3">Estado (b): resultado (F2-04, F2-06)</td></tr>
+<tr><td>Veredicto</td><td><code>EvidenceBand</code> sin cambios: titular 17/600 en la tinta del tramo, banda de 3 × 6 con gap 4, etiquetas 12, «Sobre N palabras…» 14 / 20 #525252</td><td><span class="k sh">existente</span></td></tr>
+<tr><td>Línea «Por qué»</td><td>14 / 20 #262626 · margen superior 6 · «Otros detectores dan un porcentaje; nosotros no. <b>Por qué →</b>» · el enlace 14/600 #2b45c4 sin subrayado va a <code>#por-que-no-porcentaje</code> (<code>id</code> nuevo en la nota «Por qué no verás un porcentaje»)</td><td><span class="k sp">específico</span> nuevo</td></tr>
+<tr><td>Acciones</td><td>margen superior 14 · «Humanizar este texto»: contorno 1,5 #2b45c4, 48, 16/600 → <code>/humanizador-de-texto-ia</code> con el texto en <code>sessionStorage</code> (el mismo mecanismo que el borrador) · «Analizar otro texto»: texto 44, 15/600 → vacía el editor y le da el foco · móvil apilados a todo el ancho; escritorio en fila, gap 8</td><td><span class="k sp">específico</span> nuevo</td></tr>
+<tr><td>Después</td><td>«Qué hemos medido» y el resto del resultado, sin cambios</td><td><span class="k sh">existente</span></td></tr>
+<tr><td>Móvil</td><td>el resultado va debajo del botón. Al terminar, <code>window.scrollTo</code> hasta el titular del veredicto, con 64 de margen por la cabecera. Sin <code>scrollIntoView</code></td><td><span class="k sh">compartido</span></td></tr>
+<tr class="g"><td colspan="3">CLS (F2-12)</td></tr>
+<tr><td>Cuota</td><td>el contador va en una posición absoluta dentro del área de texto, así que no ocupa sitio; su valor sale del servidor (<code>peekWords</code>, con <code>ip:</code> en anónimo) y no cambia de tamaño al hidratar · <code>font-variant-numeric: tabular-nums</code></td><td><span class="k sh">compartido</span></td></tr>
+<tr><td>Turnstile</td><td><code>interaction-only</code>: si Cloudflare pide interacción, el widget se pinta <b>dentro del panel de resultado vacío</b> (que ya tiene altura), nunca insertado bajo el botón · ya no hay una fila de Turnstile de 89 px que aparece después de cargar</td><td><span class="k sh">compartido</span></td></tr>
+</table>
+</div>
+<div class="notes">
+<div class="nt"><h3>Para validar</h3><ul>
+<li><b>El contador después de analizar.</b> Sin cuenta hay 300 al día y el detector pide al menos 200 palabras, así que tras un análisis casi no queda nada: el contador pasa a «295/5 palabras hoy», en ámbar. Es verdad, pero hace que «Analizar otro texto» lleve casi siempre al límite. Ver la nota de producto en la columna de al lado.</li>
+<li><b>El aviso no lleva «Ver planes».</b> El brief pide dos botones y la línea de precios ya ofrece «Ver planes» justo debajo. Un tercer botón dentro de la franja competiría con «Analizar las primeras 300».</li>
+<li><b>La pista inicial pasa al placeholder</b> en las tres páginas (está explicado en la plantilla). Con el selector del parafraseador no cabía bajo 640.</li>
+</ul></div>
+<div class="nt"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>Con 300 palabras al día sin cuenta y un mínimo de 200 por análisis, el anónimo solo puede analizar un texto al día. «Analizar otro texto» debería ofrecer la cuenta gratis (500) cuando quedan menos de 200.</li>
+<li>Con «Analizar las primeras 300», el veredicto vale para un fragmento. El titular podría decirlo («…en las primeras 300 palabras») para que nadie lo lea como un veredicto sobre el texto entero.</li>
+<li>«Humanizar este texto» es contorno y «Crear cuenta» de la cabecera, relleno. En el resultado, el siguiente paso más probable tiene menos peso visual que la cabecera.</li>
+</ul></div>
+</div>
+</div>
+<script src="f2-kit.js"></script>
+<script>
+const P1 = 'El impacto de las redes sociales en la atención de los adolescentes. En el mundo actual, las redes sociales se han convertido en una parte fundamental de la vida cotidiana de los adolescentes. Plataformas como Instagram, TikTok y YouTube ofrecen un flujo constante de contenido diseñado para captar la atención de los usuarios y mantenerlos conectados durante el mayor tiempo posible.';
+const P2 = ' Sin embargo, este fenómeno plantea importantes interrogantes sobre sus efectos en la capacidad de concentración de los jóvenes, especialmente en una etapa de desarrollo tan crucial como la adolescencia.';
+const runEmpty = '<button class="btn btn-run" disabled>Analizar texto</button>';
+const runLimit = '<button class="btn btn-run">Analizar las primeras 300</button><button class="btn btn-txt">Recortar yo mismo</button>';
+const verdict = `<div class="verdict"><h3>Hay algunos indicios de escritura automática</h3><div class="band"><i></i><i class="on"></i><i></i></div><div class="bandl"><span>sin indicios</span><span class="on">algunos indicios</span><span>indicios claros</span></div><p class="over">Sobre 295 palabras. No damos un porcentaje porque no existe ninguno que sea de fiar: lo que puedes leer es qué hemos encontrado.</p></div>
+<p class="why">Otros detectores dan un porcentaje; nosotros no. <a href="#">Por qué →</a></p>
+<div class="acts"><a class="btn btn-line" href="#">Humanizar este texto</a><button class="btn btn-txt">Analizar otro texto</button></div>
+<div class="measured"><h4>Qué hemos medido</h4><p>Variación de longitud de frase, extremos, rastros del pegado… (sin cambios)</p></div>`;
+const S = {
+  empty: { q: '0/300 palabras hoy', run: runEmpty },
+  limit: { text: P1 + '<span class="cut"></span><span class="dim">' + P2 + '</span>', q: '831/300 palabras hoy', over: true, warn: '<b>Tu plan analiza hasta 300 palabras.</b> El detector funciona mejor con el texto entero.', run: runLimit },
+  result: { text: P1 + P2, q: '295/5 palabras hoy', over: true, run: '<button class="btn btn-run">Analizar texto</button>', out: verdict },
+};
+F2.render({
+  key: 'detect', short: 'detector', h1: 'Detector de IA en español', restLabel: 'qué medimos · por qué no verás un porcentaje',
+  intro: 'Pega un texto y te decimos qué hemos encontrado: el ritmo de las frases y los rastros que deja un copiar y pegar desde un chat. Sin porcentaje, con la evidencia delante. Gratis y sin registro.',
+  outEmpty: 'El análisis aparecerá aquí',
+  priceLine: 'Gratis: 300 palabras/día sin cuenta, 500 con cuenta · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba',
+  mobile: [
+    { t: '1 · Vacío · primera visita', d: 'Con el banner de cookies. El contador «0/300 palabras hoy» ya se ve antes de pegar nada (F2-02).', s: S.empty, cookies: true },
+    { t: '2 · Más de 300 palabras', d: 'Aviso ámbar sobre el botón y dos salidas, sin desactivar nada (F2-03).', s: S.limit },
+    { t: '3 · Resultado', d: 'El veredicto de siempre, la línea «Por qué →» y dos acciones (F2-04, F2-06). Se muestra entero; al terminar, la página baja hasta el veredicto.', s: S.result, tall: true },
+  ],
+  desktop: [
+    { t: '4 · Vacío', d: 'Pestañas rellenas, la línea nueva bajo el H1 y el contador en la esquina del editor.', s: S.empty },
+    { t: '5 · Más de 300 palabras', d: '«Analizar las primeras 300» y «Recortar yo mismo» en la fila del botón.', s: S.limit },
+    { t: '6 · Resultado', d: 'El resultado ocupa la columna derecha, como hoy.', s: S.result, h: 980 },
+  ],
+});
+</script>
+</body></html>

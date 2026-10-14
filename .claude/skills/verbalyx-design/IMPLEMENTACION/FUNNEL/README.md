@@ -11,6 +11,7 @@ Guía para Claude Code. Parte de `main` con C0–C6 hechos (comprobado el 23-09-
 | — | C11, C12 | `C9-C13.md` | aparecen dentro de D1 y D2 |
 | D5 · Invitación | C13 | `C9-C13.md` | `explorations/D5 Invitacion.html`, `components/feedback/SignupInvite.*` |
 | F1 · Landing, precios, muro | F1 | `F1.md` | `explorations/F1 *.html` |
+| F2 · Landings detector, parafraseador, corrector | F2 | `F2.md` | `explorations/F2 *.html` |
 | D6 · Emails | C14 | `C14.md` | `explorations/D6 Emails.html`, `emails/*.html` |
 
 Los `.jsx` de la skill son referencia visual y de copy, no código para copiar tal cual. El repo usa Tailwind y shadcn: traduce las clases `vbx-*` a utilidades con los tokens que ya están en `app/globals.css` (`bg-brand-soft`, `text-warning-ink`, `border-danger-line`…).

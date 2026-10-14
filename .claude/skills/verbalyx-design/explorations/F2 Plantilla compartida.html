@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F2 · Plantilla compartida de las landings de herramienta</title>
+<link rel="stylesheet" href="f2-kit.css">
+</head><body><div class="doc">
+<div class="nav"><a class="on" href="F2 Plantilla compartida.html">Plantilla compartida</a><a href="F2 Detector.html">Detector</a><a href="F2 Parafraseador.html">Parafraseador</a><a href="F2 Corrector.html">Corrector</a></div>
+<h1>F2 · Plantilla compartida (<code>ToolLanding</code>)</h1>
+<p class="lede">Lo que comparten /detector-de-ia, /parafrasear-texto y /corrector-ortografico-gramatical. También el humanizador de F1, que pasa a heredar los cambios de F2 marcados como <span class="k sh">compartido</span>. <span class="k f1">F1</span> = ya estaba en F1 y no cambia · <span class="k sh">F2</span> = nuevo en la plantilla · lo específico de cada página está en su propia ficha.</p>
+<div class="spec">
+<h2>Ficha · componente compartido</h2>
+<p>Medidas en px CSS. La columna «390» es móvil (&lt; 640) y la columna «1440», escritorio (≥ 1024; contenedor de 992). Los tokens son los de <code>app/globals.css</code>.</p>
+<table>
+<tr><th>Elemento</th><th>390</th><th>1440</th><th>Origen</th></tr>
+<tr class="g"><td colspan="4">Cromo</td></tr>
+<tr><td>Cabecera</td><td>56 · logo · «Crear cuenta» (36, 14/600, relleno) · ☰ 40×40</td><td>56 · logo · Precios · ES/EN · Entrar · «Crear cuenta gratis»</td><td><span class="k f1">F1</span></td></tr>
+<tr><td>Pestañas (F2-15)</td><td>fila de 52 bajo la cabecera, padding 8 16, desplazable en horizontal (<code>overflow-x:auto</code>, sin barra) · al cargar se desplaza hasta la pestaña activa con <code>scrollLeft</code></td><td>fila de 52, padding 8 0, alineada con el contenedor</td><td><span class="k sh">F2</span></td></tr>
+<tr><td>Pestaña</td><td colspan="2">alto <b>36</b> · padding 0 14 · radio 8 · gap 6 · 14/500 #404040 sobre <b>#f4f4f5</b> (<code>--muted</code>) · activa: fondo <b>#2b45c4</b>, texto #ffffff 600 · hover inactiva: #e5e5e5 · <code>aria-current="page"</code> · <b>sin chip «Pro»</b> en Parafraseador y Corrector</td><td><span class="k sh">F2</span> sustituye al subrayado</td></tr>
+<tr><td>Cookies</td><td colspan="2">2 líneas, Rechazar = Aceptar (contorno, 40, 14/600)</td><td><span class="k f1">F1</span></td></tr>
+<tr class="g"><td colspan="4">Titular</td></tr>
+<tr><td>Main</td><td>padding 20 16 0</td><td>padding <b>24</b> 0 0 (F1: 32)</td><td><span class="k sh">F2</span></td></tr>
+<tr><td>H1</td><td>Inter 700 · 32 / 37 · tracking -0,02 em · balance (en las tres, 2 líneas)</td><td>Inter 700 · 44 / 48 · 1 línea</td><td><span class="k f1">F1</span></td></tr>
+<tr><td>Línea F2-11</td><td colspan="2">margen superior 8 · <b>14 / 20</b> · #737373 · «Entiende el español de España y de América. No traduce ni pasa por el inglés.» · clave común <code>landing.languageLine</code> (la misma en las cuatro) · en 390, 2 líneas</td><td><span class="k sh">F2</span></td></tr>
+<tr><td>Intro</td><td><b>no se muestra</b> (ver «Para validar»)</td><td>margen superior 8 · 16 / 24 #737373 · ancho máximo 720 · <code>landing.&lt;tool&gt;.intro</code></td><td><span class="k sh">F2</span> en móvil</td></tr>
+<tr class="g"><td colspan="4">Editor</td></tr>
+<tr><td>Tarjeta</td><td>margen superior 16 · borde 1 #e5e5e5 · radio 14 · una columna: [selector] → texto → [aviso] → botón → resultado</td><td>margen superior <b>16</b> (F1: 20) · [selector a todo el ancho] · dos columnas <code>1fr 1fr</code> con borde 1 entre ellas</td><td><span class="k f1">F1</span></td></tr>
+<tr><td>Franja del selector</td><td>padding 12 · borde inferior 1</td><td>padding 12 16 · borde inferior 1</td><td><span class="k sh">F2</span> contenedor · el contenido es <span class="k sp">específico</span></td></tr>
+<tr><td>Área de texto</td><td>alto 200 · padding 12 12 32 · 16 / 24</td><td>alto <b>140</b> (F1: 168) · padding 16 16 34 · 16 / 24</td><td><span class="k f1">F1</span> · padding inferior <span class="k sh">F2</span></td></tr>
+<tr><td>Placeholder</td><td colspan="2">#a3a3a3 · «Pega aquí el texto que quieras trabajar. El contador de abajo te dice cuánto cabe.» (texto de <code>tour.step1</code>) · <b>se quita la franja azul de la pista</b></td><td><span class="k sh">F2</span> (ver «Para validar»)</td></tr>
+<tr><td>Contador de cuota (F2-02)</td><td colspan="2">absoluto, a la derecha y abajo (right 8, bottom 8) <b>dentro</b> del área de texto · alto 20 · padding 0 6 · radio 5 · fondo #ffffff al 94 % · <b>12</b> / 20 #737373 · <code>tabular-nums</code> · al pasarse: 12/600 <code>--warning-ink #7a4705</code> sobre <code>--warning-soft #fdf3e2</code> · <code>aria-live="polite"</code> · <code>data-testid="word-count"</code> (se mantiene para los e2e) · el valor inicial se pinta en el servidor (<code>peekWords</code>) · <b>sustituye a la fila «N palabras · máx. N»</b></td><td><span class="k sh">F2</span> · el formato es <span class="k sp">específico</span></td></tr>
+<tr><td>Aviso de límite</td><td>padding 10 12 · 13 / 18</td><td>padding <b>8</b> 16 · 13 / 18</td><td><span class="k f1">F1</span> <code>LimitNotice</code> · va <b>entre el texto y el botón</b> (<span class="k sh">F2</span>) · el copy es <span class="k sp">específico</span></td></tr>
+<tr><td>Texto no procesado</td><td colspan="2">desde la palabra N+1 en #a3a3a3, con una marca de corte de 2 × 18 en #d98b18</td><td><span class="k f1">F1</span></td></tr>
+<tr><td>Zona del botón</td><td>padding 12 · columna, gap 4 · borde superior 1 (salvo si va justo tras el aviso)</td><td>padding 12 16 · fila, gap 12, directamente bajo el texto</td><td><span class="k f1">F1</span></td></tr>
+<tr><td>Botón de ejecución (F2-07)</td><td>ancho 100 % · <b>48</b> · <b>16/600</b> · radio 8 · #2b45c4</td><td>ancho mínimo 220 · padding 0 28 · 48 · 16/600</td><td><span class="k f1">F1</span> <code>size="lg"</code></td></tr>
+<tr><td>Etiqueta</td><td colspan="2"><b>siempre el verbo</b> de la herramienta (<code>editor.run.&lt;tool&gt;</code>): Humanizar · Analizar texto · Parafrasear · Corregir · <b>nunca</b> «Requiere un plan de pago» ni «Verificando…» · mientras procesa: el verbo + un spinner de 16 a la izquierda, con <code>aria-busy</code></td><td><span class="k sh">F2</span></td></tr>
+<tr><td>Desactivado</td><td colspan="2"><b>solo con el editor vacío</b> · opacidad 0,45 · <code>cursor:not-allowed</code> · con el saldo agotado, el botón sigue activo y al pulsarlo se abre el muro (decisión 14-10: <b>sustituye a «Sin palabras hoy» de D3/C8</b>)</td><td><span class="k sh">F2</span></td></tr>
+<tr><td>Turnstile (F2-12)</td><td colspan="2"><code>appearance: "interaction-only"</code>. Si pide interacción, el widget se pinta <b>dentro del panel de resultado vacío</b>, sin insertar filas. Si el usuario pulsa el botón antes de que se resuelva, el botón muestra su spinner y la petición sale en cuanto llega el token; el texto del botón no cambia</td><td><span class="k sh">F2</span> sustituye a la línea de F1 bajo el botón</td></tr>
+<tr><td>Panel de resultado</td><td>bajo el botón · padding 12 · alto mínimo 120 · al terminar, <code>window.scrollTo</code> hasta su primera línea, con 64 de margen</td><td>columna derecha · padding 16</td><td><span class="k f1">F1</span></td></tr>
+<tr class="g"><td colspan="4">Bajo el editor</td></tr>
+<tr><td>Línea de precios</td><td colspan="2">margen superior 12 · 14 / 21 #525252 · «Ver planes» 14/600 #2b45c4, sin partir de línea · <code>landing.&lt;tool&gt;.priceLine</code> (antes era una clave común) · cifras con <code>formatUSD</code> y <code>PLANS</code></td><td><span class="k f1">F1</span> · copy <span class="k sp">específico</span></td></tr>
+<tr><td>Hueco de prueba social</td><td colspan="2">margen superior 20 · alto <b>120</b> · borde discontinuo 1,5 #d4d4d4 · radio 12 · «Prueba social: pendiente de decisión» 13 #737373 · <b>solo en el diseño</b>: en producción no se pinta nada mientras F1-07 siga en pausa (<code>DetectorProof</code> devuelve <code>null</code>)</td><td><span class="k sh">F2</span> F2-10</td></tr>
+<tr class="g"><td colspan="4">Medido: botón de ejecución (vacío · límite · resultado)</td></tr>
+<tr><td>Detector</td><td>481–529 · 538–586 · 481–529</td><td>435–483 · 488–536 · 435–483</td><td rowspan="3">Móvil: todo por encima de 731, donde empieza el banner de cookies (pliegue 844). Escritorio: todo por debajo de 640. En móvil, el resultado del parafraseador va primero, así que su botón queda a 995 a propósito</td></tr>
+<tr><td>Parafraseador</td><td>562–610 · 619–667 · (995–1043)</td><td>530–578 · 583–631 · 530–578</td></tr>
+<tr><td>Corrector</td><td>570–618 · 627–675 · (1459–1507)</td><td>535–583 · 588–636 · 583–631</td></tr>
+</table>
+</div>
+<div class="notes">
+<div class="nt"><h3>Para validar (afectan a las tres)</h3><ul>
+<li><b>En móvil, la intro larga desaparece.</b> El brief añade la línea F2-11 «antes del actual». Con las dos, en móvil el botón bajaba a 754 y quedaba tapado por el banner de cookies (731). En F1 se resolvió con una línea corta (<code>introShort</code>), pero estas tres páginas no la tienen. Propuesta: en móvil, solo la línea F2-11; en escritorio, las dos.</li>
+<li><b>La pista azul pasa al placeholder.</b> Con el selector del parafraseador, el botón quedaba a 656 en escritorio, por encima del límite de 640. La pista y el placeholder decían casi lo mismo (ya estaba anotado en F1), así que queda solo el placeholder con el texto de la pista. El humanizador hereda el cambio.</li>
+<li><b>Botón con saldo agotado.</b> Aplicada la decisión del 14-10: el botón se queda activo y abre el muro. Esto contradice D3/C8 («Sin palabras hoy», desactivado), que ya está en <code>main</code>. La guía lo dice para que Claude Code lo revierta.</li>
+<li><b>Escritorio más compacto.</b> Con el selector y el aviso de límite, el botón del corrector bajaba a 680 (límite 640). Para que los tres estados cumplan: el padding superior del main pasa de 32 a 24, el margen de la tarjeta de 20 a 16, el área de texto de 168 a 140 y el aviso a padding 8. El humanizador hereda el cambio y su botón sube unos 40 px.</li><li><b>«US$»</b> en lugar del «$» del brief (decisión 14-10).</li>
+</ul></div>
+<div class="nt"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>Las pestañas rellenas y el botón de ejecución usan el mismo azul a pocos píxeles de distancia. En el pliegue hay tres rellenos: «Crear cuenta», la pestaña activa y el botón. Una pestaña activa en <code>--brand-soft</code> con texto <code>--brand-ink</code> dejaría el relleno solo para la acción.</li>
+<li>La línea F2-11 se repite igual en las cuatro páginas. Si la página de inicio ya dice «Hecho para el español de España y LATAM», hay dos formulaciones de la misma idea.</li>
+<li>En móvil, el contador de cuota tapa la última línea visible del texto. Es legible porque tiene fondo, pero un degradado de 24 en el borde inferior del área de texto lo integraría mejor.</li>
+</ul></div>
+</div>
+</div>
+</body></html>
