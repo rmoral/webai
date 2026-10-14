@@ -38,7 +38,8 @@ export type WallVariant = "modal" | "inline" | "popover";
 /** Why the wall appeared. Mirrors the paywall triggers. */
 export type WallReason =
   | "quota"
-  | "paid_tool"
+  /** The day's runs of a tool metered by uses are spent (F2-01). */
+  | "uses"
   | "overflow"
   | "feature"
   | "trial_end"

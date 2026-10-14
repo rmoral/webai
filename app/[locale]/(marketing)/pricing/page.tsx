@@ -76,7 +76,14 @@ export default async function PricingPage({ params }: Params) {
     },
     {
       label: t("rowTools"),
-      values: [t("valueFreeTools"), t("valueAllTools"), t("valueAllTools")],
+      values: [
+        t("valueFreeTools", {
+          perUse: n(PLANS.free.limits.uses.paraphrase?.perUse ?? 0),
+          uses: PLANS.free.limits.uses.paraphrase?.usesPerDay ?? 0,
+        }),
+        t("valueAllTools"),
+        t("valueAllTools"),
+      ],
     },
     {
       label: t("rowHistory"),

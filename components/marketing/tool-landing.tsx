@@ -43,6 +43,10 @@ const VALUES = {
   anonWords: PLANS.anonymous.limits.wordsPerDay ?? 0,
   anonRequest: PLANS.anonymous.limits.maxWordsPerRequest,
   freeWords: PLANS.free.limits.wordsPerDay ?? 0,
+  // The paraphraser and the corrector on the free tiers (F2-01): the same
+  // figures for both, so either one's will do.
+  perUse: PLANS.free.limits.uses.paraphrase?.perUse ?? 0,
+  uses: PLANS.free.limits.uses.paraphrase?.usesPerDay ?? 0,
 };
 
 export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
@@ -125,29 +129,25 @@ export async function ToolLanding({ tool, locale, related }: ToolLandingProps) {
       </div>
 
       {/* Every figure from the catalogue: Pro "from" is its yearly price
-          per month, the free figures are the plans' daily allowances.
-          Each tool says what is free on that tool; the paraphraser and the
-          corrector still read the shared line until they have a free tier. */}
+          per month, the free figures are the plans' allowances. Each tool
+          says what is free on that tool. */}
       <p className="mt-3 text-sm leading-[21px] text-neutral-600">
-        {shared.rich(
-          t.has("priceLine")
-            ? `landing.${tool}.priceLine`
-            : "landing.humanize.priceLine",
-          {
-            anon: format.number(PLANS.anonymous.limits.wordsPerDay ?? 0),
-            free: format.number(PLANS.free.limits.wordsPerDay ?? 0),
-            pro: formatUSD(PRICES.pro.yearly.monthlyEquivalent, locale),
-            days: TRIAL.days,
-            link: (chunks) => (
-              <Link
-                href="/pricing"
-                className="text-brand font-semibold whitespace-nowrap hover:underline"
-              >
-                {chunks}
-              </Link>
-            ),
-          },
-        )}
+        {t.rich("priceLine", {
+          anon: format.number(VALUES.anonWords),
+          free: format.number(VALUES.freeWords),
+          perUse: format.number(VALUES.perUse),
+          uses: VALUES.uses,
+          pro: formatUSD(PRICES.pro.yearly.monthlyEquivalent, locale),
+          days: TRIAL.days,
+          link: (chunks) => (
+            <Link
+              href="/pricing"
+              className="text-brand font-semibold whitespace-nowrap hover:underline"
+            >
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
       <DetectorProof variant="block" />
 

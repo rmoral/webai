@@ -41,7 +41,8 @@ vi.mock("@upstash/ratelimit", () => ({
 process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
 process.env.UPSTASH_REDIS_REST_TOKEN = "token";
 
-const { peekWords, reserveWords } = await import("@/lib/usage/quotas");
+const { peekUses, peekWords, reserveUse, reserveWords } =
+  await import("@/lib/usage/quotas");
 const { PLANS } = await import("@/lib/billing/plans");
 
 const free = {
@@ -142,5 +143,32 @@ describe("reserveWords", () => {
     const over = await reserveWords("user:g", unlimited, 500);
     // A soft cap alerts instead of blocking: the plan is sold as unlimited.
     expect(over.granted).toBe(500);
+  });
+});
+
+describe("reserveUse", () => {
+  it("gives two runs a day and refuses the third", async () => {
+    expect((await reserveUse("ip:x", "paraphrase", 2)).granted).toBe(true);
+    const second = await reserveUse("ip:x", "paraphrase", 2);
+    expect(second).toMatchObject({ granted: true, used: 2, limit: 2 });
+
+    const third = await reserveUse("ip:x", "paraphrase", 2);
+    expect(third.granted).toBe(false);
+    // Saturates at the limit, like words: "2/2", never "3/2".
+    expect(third.used).toBe(2);
+    expect(await peekUses("ip:x", "paraphrase", 2)).toEqual({
+      used: 2,
+      limit: 2,
+    });
+  });
+
+  it("counts each tool apart, and apart from words", async () => {
+    await reserveUse("ip:y", "paraphrase", 2);
+    await reserveUse("ip:y", "paraphrase", 2);
+    // The corrector's runs are its own.
+    expect((await reserveUse("ip:y", "correct", 2)).granted).toBe(true);
+    // And no word of the daily allowance was spent (decision of 14-10).
+    const anonymous = { ...free, plan: PLANS.anonymous };
+    expect((await peekWords("ip:y", anonymous)).used).toBe(0);
   });
 });

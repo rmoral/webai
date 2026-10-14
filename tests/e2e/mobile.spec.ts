@@ -153,8 +153,24 @@ test.describe("at 480px", () => {
   test("the modal is still a sheet below the 520px threshold", async ({
     page,
   }) => {
+    // Wall C, with the day's two runs already spent.
+    await page.route("**/api/usage", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          used: 0,
+          limit: 300,
+          remaining: 300,
+          metered: true,
+          uses: { paraphrase: { used: 2, limit: 2 } },
+        }),
+      }),
+    );
     await page.goto("/parafrasear-texto");
     await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+    await expect(page.getByTestId("word-count")).toContainText("2/2 usos hoy");
+    await page.getByRole("button", { name: "Parafrasear" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     const box = await page.getByRole("dialog").boundingBox();

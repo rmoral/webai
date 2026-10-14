@@ -259,7 +259,7 @@
         },
         {
           "q": "Is it included in the free plan?",
-          "a": "No. The paraphraser is on the paid plans. The humanizer and the detector do work without an account, at {anonWords} words a day."
+          "a": "Yes. With or without a free account you can paraphrase {perUse} words per run, {uses} times a day, in all six registers. For longer texts or unlimited runs, Pro or Unlimited."
         },
         {
           "q": "Can I see what changed?",
@@ -270,7 +270,8 @@
         "lead": "Would you rather correct than rewrite?",
         "tool": "Use the grammar checker",
         "pricing": "see the plans"
-      }
+      },
+      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
     },
     "correct": {
       "metaTitle": "Grammar checker — spelling, grammar and punctuation",
@@ -317,7 +318,7 @@
         },
         {
           "q": "Is it included in the free plan?",
-          "a": "No. The grammar checker is on the paid plans. The humanizer and the detector work without an account."
+          "a": "Yes. With or without a free account you can correct {perUse} words per run, {uses} times a day, in both modes. For longer texts or unlimited runs, Pro or Unlimited."
         },
         {
           "q": "Will it change my style?",
@@ -328,7 +329,8 @@
         "lead": "Need to rephrase rather than correct?",
         "tool": "Use the paraphraser",
         "pricing": "see the plans"
-      }
+      },
+      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
     },
     "languageLine": "Understands the Spanish of Spain and of the Americas. It does not translate or go through English."
   },
@@ -347,7 +349,7 @@
     "wordsPerDay": "{words} words a day",
     "wordsPerMonth": "{words} words a month",
     "perRequest": "Up to {words} per request",
-    "freeTools": "Humanizer and detector (band and evidence)",
+    "freeTools": "All four tools; the paraphraser and the corrector with {perUse} words and {uses} runs a day",
     "proTools": "Every tool, history and the passage breakdown",
     "priority": "Priority queue",
     "signup": "Create a free account",
@@ -387,7 +389,7 @@
     "valueNone": "—",
     "valueYes": "Yes",
     "valueNo": "No",
-    "valueFreeTools": "Humanizer and detector",
+    "valueFreeTools": "All four · paraphraser and corrector: {perUse} words, {uses} runs a day",
     "valueAllTools": "All four",
     "valueTopup": "{amount} for {words}, no expiry",
     "valueTopupNeedsPlan": "Needs a paid plan",
@@ -438,7 +440,6 @@
   "editor": {
     "inputLabel": "Text to process",
     "placeholder": "Paste the text you want to work on. The counter below tells you how much fits.",
-    "words": "{words} words",
     "resultHere": "The result will appear here",
     "analysisHere": "The analysis will appear here",
     "writing": "Writing…",
@@ -455,10 +456,8 @@
       "correct": "Correct"
     },
     "quota": {
-      "humanize": "{words}/{left} words {window, select, month {this month} other {today}}",
-      "detect": "{words}/{left} words {window, select, month {this month} other {today}}",
-      "paraphrase": "{words}/{left} words {window, select, month {this month} other {today}}",
-      "correct": "{words}/{left} words {window, select, month {this month} other {today}}"
+      "words": "{words}/{left} words {window, select, month {this month} other {today}}",
+      "uses": "{words}/{perUse} words · {used}/{uses} runs today"
     }
   },
   "tour": {
@@ -511,14 +510,18 @@
     "createAccountShort": "Create a free account · {words} words/day",
     "seePro": "See Pro — {price}/month",
     "trustLine": "Cancel online in two clicks · On the free plans we keep no text, only the word count",
-    "paidPlanBadge": "Paid plan",
-    "toolTitle": "The {tool} is on the paid plans",
-    "toolBody": "The humanizer and the detector stay free, with or without an account. The other tools come with Pro or Unlimited.",
     "historyLockTitle": "History is on the paid plans",
     "historyLockBody": "Pro keeps your texts encrypted and lets you go back to any result. On the free plans no text is stored, only the word count.",
     "unlockWithPro": "Unlock with Pro",
     "close": "Close",
-    "breakdownLock": "See the passage breakdown"
+    "breakdownLock": "See the passage breakdown",
+    "usesTitle": "You have used today's {uses} runs",
+    "usesBody": "Tomorrow you get another {uses}, of {words} words each. With Unlimited there is no limit on runs.",
+    "perUseLead": "Free: {n} words per run.",
+    "perUseBody": {
+      "paraphrase": " We will process the first {n}; the rest stays in the editor.",
+      "correct": " We will correct the first {n}; the rest stays in the editor."
+    }
   },
   "trialEnd": {
     "badge": "Your trial ends today",
@@ -580,7 +583,8 @@
     "quota_monthly": "You have used your plan's words this month. You can buy a top-up.",
     "notFoundTitle": "This page does not exist",
     "notFoundBody": "The link you followed does not lead anywhere. The page may have moved.",
-    "notFoundCta": "Go to the home page"
+    "notFoundCta": "Go to the home page",
+    "uses_exhausted": "You have used today's {uses} runs of this tool. They come back tomorrow."
   },
   "app": {
     "history": "History",

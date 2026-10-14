@@ -8,10 +8,10 @@ import { usePostHog } from "posthog-js/react";
 import type { Change } from "diff";
 
 import { useAllowance } from "@/components/billing/allowance";
+import type { Allowance } from "@/lib/usage/quotas";
 import {
   QuotaPaywall,
-  ToolLockPopover,
-  ToolPaywall,
+  UsesPaywall,
   paywallDismissed,
   rememberPaywallDismissal,
   type WithheldResult,
@@ -136,17 +136,15 @@ export function ToolEditor({
   // wall used to take the result with it, which is the one thing the
   // reader was there for.
   const [quotaNotice, setQuotaNotice] = useState<WithheldResult | null>(null);
-  // Wall C, dismissed. Read from session storage on mount rather than
-  // during render, because sessionStorage does not exist on the server and
-  // reading it in the body would make the two renders disagree.
-  const [toolWallDismissed, setToolWallDismissed] = useState(true);
-  // Whether they have reached for the tool yet. See wall C below.
-  const [wantedTool, setWantedTool] = useState(false);
+  // Wall C: the day's runs of a tool metered by uses are spent, and the
+  // button was pressed anyway.
+  const [usesWall, setUsesWall] = useState(false);
+  // Runs of this tool spent today, on a plan that meters it by uses.
+  // Unknown until the server says.
+  const [usesUsed, setUsesUsed] = useState<number | null>(null);
   // Whether they have reached for the box at all, which is when the
   // counter asks what is left. See the allowance below.
   const [reached, setReached] = useState(false);
-  // Wall C, second time: the compact form, under the button.
-  const [toolPopover, setToolPopover] = useState(false);
   // The allowance, shared with the header. `report` is what makes every
   // counter move at the same moment; outside the signed-in shell it is a
   // no-op and the editor keeps its own copy.
@@ -173,20 +171,14 @@ export function ToolEditor({
   const viewer = useViewer();
   const plan = viewer?.plan ?? serverPlan;
 
-  // Whether the plan may use this tool at all. Checked here so a visitor
-  // sees the paywall before writing, not as a 403 after pressing the
-  // button. The server enforces it either way.
-  const included = PLANS[plan].limits.tools.includes(tool);
+  // Whether this plan meters the tool by uses rather than words (F2-01):
+  // so many words a run, so many runs a day, apart from the word allowance.
+  const metered = PLANS[plan].limits.uses[tool];
 
-  // The anti-bot check, though, stays keyed to what the server said. A
-  // browser that claimed a plan could otherwise skip it; claiming to be
-  // anonymous only ever means answering one more challenge.
-  //
-  // And only where something can run. On a paid tool's landing an
-  // anonymous visitor's button opens the paywall, so Cloudflare's script
-  // would load, hold a connection open and hand out a token nothing spends.
-  const needsToken =
-    Boolean(TURNSTILE_KEY) && serverPlan === "anonymous" && included;
+  // The anti-bot check stays keyed to what the server said. A browser that
+  // claimed a plan could otherwise skip it; claiming to be anonymous only
+  // ever means answering one more challenge.
+  const needsToken = Boolean(TURNSTILE_KEY) && serverPlan === "anonymous";
   // Callers waiting for the next token: a click that came before the
   // widget had answered, and the silent retry. Both wait for the widget
   // instead of guessing at a delay.
@@ -240,12 +232,9 @@ export function ToolEditor({
     setWithheld(null);
     setQuotaNotice(null);
     setStatus("idle");
-  }, [tool]);
-
-  useEffect(() => {
-    setToolWallDismissed(paywallDismissed("tool", tool));
-    setWantedTool(false);
-    setToolPopover(false);
+    setUsesWall(false);
+    setUsesUsed(null);
+    askedAllowance.current = false;
   }, [tool]);
 
   // Rendered when the script says it is ready -- on load, and on every
@@ -270,12 +259,19 @@ export function ToolEditor({
   }, [posthog]);
 
   // Whichever is fresher: the shared figure, or the last response this
-  // editor saw. They are the same number from the same source.
-  const left = remaining ?? allowance?.remaining ?? null;
+  // editor saw. They are the same number from the same source. A tool
+  // metered by uses spends no words, so it has none to run out of.
+  const left = metered ? null : (remaining ?? allowance?.remaining ?? null);
 
   const words = countWords(input);
-  // The ceiling is the plan's, never a number written here.
-  const ceiling = PLANS[plan].limits.maxWordsPerRequest;
+  // The ceiling is the plan's, never a number written here: a run's words
+  // on a tool metered by uses, the request size otherwise.
+  const ceiling = metered?.perUse ?? PLANS[plan].limits.maxWordsPerRequest;
+  // The day's runs are spent: the button opens wall C (F2-01).
+  const usesSpent =
+    metered !== undefined &&
+    usesUsed !== null &&
+    usesUsed >= metered.usesPerDay;
   // The detector measures the text instead of rewriting it, so it answers
   // with JSON rather than a stream and renders its own result view.
   const measures = tool === "detect";
@@ -293,6 +289,7 @@ export function ToolEditor({
     ceiling,
     remaining: left,
     detector: measures,
+    perUse: metered !== undefined,
   });
   // A daily allowance for the free tiers, a monthly one for the paid.
   const monthly = PLANS[plan].limits.wordsPerDay === null;
@@ -313,14 +310,21 @@ export function ToolEditor({
       ? PLANS[plan].limits.wordsPerMonth
       : PLANS[plan].limits.wordsPerDay) ??
     ceiling;
-  const counterOver = words > Math.min(ceiling, allowanceLeft);
-  const counter = included
-    ? t(`quota.${tool}`, {
+  const counterOver = metered
+    ? words > ceiling || usesSpent
+    : words > Math.min(ceiling, allowanceLeft);
+  const counter = metered
+    ? t("quota.uses", {
+        words: format.number(words),
+        perUse: format.number(metered.perUse),
+        used: usesUsed ?? 0,
+        uses: metered.usesPerDay,
+      })
+    : t("quota.words", {
         words: format.number(words),
         left: format.number(allowanceLeft),
         window: monthly ? "month" : "day",
-      })
-    : t("words", { words });
+      });
 
   // How long until the allowance refills, in the timezone the quota
   // actually rolls over in (lib/usage/day.ts). Computed at render rather
@@ -350,7 +354,7 @@ export function ToolEditor({
     seenKinds.current.add(kind);
     track(posthog, "wall_shown", {
       variant: "inline",
-      reason: kind === "overflow" ? "overflow" : "quota",
+      reason: kind === "overflow" || kind === "perUse" ? "overflow" : "quota",
       plan,
       tool,
     });
@@ -391,28 +395,45 @@ export function ToolEditor({
   // plan's full allowance, which is what a first visit has.
   const askedAllowance = useRef(false);
   useEffect(() => {
-    if (remaining !== null || allowance) return;
+    const needWords = !metered && remaining === null && !allowance;
+    const needUses = metered !== undefined && usesUsed === null;
+    if (!needWords && !needUses) return;
+    // The two answers in one shape: /api/usage, or the viewer's copy of it.
+    const take = (data: Allowance | null) => {
+      if (!data) return;
+      if (needWords && typeof data.remaining === "number") {
+        setRemaining(data.remaining);
+        reportAllowance(data);
+      }
+      const runs = data.uses?.[tool];
+      if (needUses && runs) setUsesUsed(runs.used);
+    };
     // A signed-in reader on a landing already has one: the viewer asked
     // for it on mount, and asking twice would spend a second read of the
     // same counter to learn the same number.
     if (viewer?.allowance) {
-      setRemaining(viewer.allowance.remaining);
-      reportAllowance(viewer.allowance);
+      take(viewer.allowance);
       return;
     }
     if (askedAllowance.current || (!reached && words === 0)) return;
     askedAllowance.current = true;
     fetch("/api/usage", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data || typeof data.remaining !== "number") return;
-        setRemaining(data.remaining);
-        reportAllowance(data);
-      })
+      .then(take)
       .catch(() => {
         // A number we could not read is a number we do not show.
       });
-  }, [reached, words, remaining, allowance, reportAllowance, viewer]);
+  }, [
+    tool,
+    metered,
+    reached,
+    words,
+    remaining,
+    usesUsed,
+    allowance,
+    reportAllowance,
+    viewer,
+  ]);
 
   /**
    * The token in hand, or the next one the widget hands out.
@@ -497,12 +518,10 @@ export function ToolEditor({
     // The verb stays on the button while it works, so a second press is
     // possible; it must not start a second request.
     if (status === "loading") return;
-    if (!included) {
-      setWantedTool(true);
-      // The modal is shown once per tool per session. After that this
-      // button had nothing left to open, so it did nothing at all -- a
-      // dead control on the one screen where the reader is asking to buy.
-      if (toolWallDismissed) setToolPopover(true);
+    // The day's runs are spent: wall C, every time it is pressed, rather
+    // than a request the server could only refuse.
+    if (usesSpent) {
+      setUsesWall(true);
       return;
     }
     // A daily allowance that cannot cover the run: wall B, without a
@@ -553,6 +572,10 @@ export function ToolEditor({
           mode,
           locale,
           turnstileToken: token || undefined,
+          // The cut the notice announced, so what comes back can never be
+          // more than what the reader was told (F2-13).
+          maxWords:
+            processable > 0 && processable < words ? processable : undefined,
         }),
       });
 
@@ -587,6 +610,14 @@ export function ToolEditor({
         // reserves words before it calls the model, so there is no result
         // to show and nothing was generated. When some words were left,
         // the answer is a normal one with fewer words in it.
+        // The runs were spent elsewhere -- another tab, another device on
+        // the same account: the counter learns it and the wall says it.
+        if (res.status === 429 && data?.error === "uses_exhausted") {
+          setUsesUsed(typeof data.used === "number" ? data.used : null);
+          setUsesWall(true);
+          setStatus("idle");
+          return;
+        }
         if (res.status === 429 && data?.error === "quota_exceeded") {
           if (typeof data.used === "number" && typeof data.limit === "number") {
             setRemaining(Math.max(0, data.limit - data.used));
@@ -614,6 +645,8 @@ export function ToolEditor({
       const limitToday = header("x-words-limit");
       const usedToday = header("x-words-used");
       const stillLeft = header("x-words-remaining");
+      const runsUsed = header("x-uses-used");
+      if (runsUsed !== null) setUsesUsed(runsUsed);
       if (stillLeft !== null) {
         setRemaining(stillLeft);
         // The header bar and the account page read the same figure, and
@@ -724,23 +757,14 @@ export function ToolEditor({
         />
       )}
 
-      {/* Wall C. It opens on the first attempt to use the tool -- a click
-          into the box, or the button -- and not on arrival.
-          
-          The design says "when a free user opens the paraphraser", but
-          these pages are the SEO asset: a modal covering the content of a
-          page someone reached from a search result is an intrusive
-          interstitial, which Google demotes on mobile. Waiting for the
-          first interaction keeps the rule that the wall answers an action
-          while leaving the landing readable and indexable. */}
-      {!included && wantedTool && !toolWallDismissed && (
-        <ToolPaywall
+      {/* Wall C. It answers the button, never arrival: these pages are
+          the SEO asset, and a modal over content reached from a search
+          result is an intrusive interstitial. */}
+      {usesWall && (
+        <UsesPaywall
           tool={tool}
           plan={plan}
-          onDismiss={() => {
-            rememberPaywallDismissal("tool", tool);
-            setToolWallDismissed(true);
-          }}
+          onDismiss={() => setUsesWall(false)}
         />
       )}
 
@@ -771,10 +795,7 @@ export function ToolEditor({
             <EditorInput
               value={input}
               onChange={setInput}
-              onReach={() => {
-                setReached(true);
-                if (!included) setWantedTool(true);
-              }}
+              onReach={() => setReached(true)}
               placeholder={t("placeholder")}
               label={t("inputLabel")}
               processable={processable}
@@ -809,12 +830,17 @@ export function ToolEditor({
                 resetsIn={resetsIn}
                 renewsOn={renewsOn}
                 monthly={monthly}
+                tool={tool}
                 action={
-                  kind === "overflow"
-                    ? seePlans
-                    : kind === "exhausted" && monthly
-                      ? topUp
-                      : wayOut(noticeButton)
+                  // A run's cut says what happens and nothing else: the
+                  // button below still runs (F2-01).
+                  kind === "perUse"
+                    ? null
+                    : kind === "overflow"
+                      ? seePlans
+                      : kind === "exhausted" && monthly
+                        ? topUp
+                        : wayOut(noticeButton)
                 }
               />
             )}
@@ -854,13 +880,6 @@ export function ToolEditor({
                 )}
                 {t(`run.${tool}`)}
               </Button>
-              {toolPopover && !included && (
-                <ToolLockPopover
-                  tool={tool}
-                  plan={plan}
-                  onClose={() => setToolPopover(false)}
-                />
-              )}
             </div>
           </div>
 

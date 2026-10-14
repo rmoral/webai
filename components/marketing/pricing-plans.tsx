@@ -304,7 +304,10 @@ export function PricingPlans() {
           features={[
             t("wordsPerDay", { words: n(PLANS.free.limits.wordsPerDay ?? 0) }),
             t("perRequest", { words: n(PLANS.free.limits.maxWordsPerRequest) }),
-            t("freeTools"),
+            t("freeTools", {
+              perUse: n(PLANS.free.limits.uses.paraphrase?.perUse ?? 0),
+              uses: PLANS.free.limits.uses.paraphrase?.usesPerDay ?? 0,
+            }),
           ]}
           cta={
             // Never propose something already done. With a session this

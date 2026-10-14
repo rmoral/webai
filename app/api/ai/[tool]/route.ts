@@ -20,6 +20,7 @@ import {
 import { routing, splitLocale } from "@/lib/i18n/routing";
 import {
   checkBurstLimit,
+  reserveUse,
   reserveWords,
   type QuotaGrant,
 } from "@/lib/usage/quotas";
@@ -120,7 +121,7 @@ async function handle(
   if (!parsed.success) {
     return error(400, "invalid_request", t("invalid_request"));
   }
-  const { tool, text, mode, turnstileToken } = parsed.data;
+  const { tool, text, mode, turnstileToken, truncate, maxWords } = parsed.data;
 
   // The prompt is chosen by the language the visitor is reading, not by
   // detecting the language of the text (see lib/ai/prompts/types.ts).
@@ -163,7 +164,10 @@ async function handle(
   const plan = subscriber.plan;
 
   const submitted = countWords(text);
-  const ceiling = plan.limits.maxWordsPerRequest;
+  // A tool this plan meters by uses (F2-01) takes `perUse` words a run and
+  // spends a run rather than words.
+  const uses = plan.limits.uses[tool];
+  const ceiling = uses?.perUse ?? plan.limits.maxWordsPerRequest;
   const entitlement = checkEntitlement(plan, tool, submitted);
 
   // An over-long paste is no longer refused, for a rewrite. It is the
@@ -174,13 +178,16 @@ async function handle(
   // -- this is that truncation, and the cut is the only thing the model
   // ever sees.
   //
-  // The detector is the exception, and it is refused. It measures a text
-  // rather than rewriting one, so scoring the first 300 words of a
-  // 900-word paste answers a question nobody asked: the reader is told
-  // something about their text that was never read. Cutting silently is
-  // what this used to do. The editor disables the button and says so
-  // first; this is the same rule, enforced.
-  if (tool === "detect" && entitlement.reason === "request_too_long") {
+  // The detector is the exception, and it is refused unless asked. It
+  // measures a text rather than rewriting one, so scoring the first 300
+  // words of a 900-word paste answers a question nobody asked -- unless the
+  // reader pressed "Analizar las primeras 300", which is what `truncate`
+  // says (F2-03). Cutting silently is what this used to do.
+  if (
+    tool === "detect" &&
+    entitlement.reason === "request_too_long" &&
+    !truncate
+  ) {
     return error(
       413,
       "request_too_long",
@@ -201,8 +208,38 @@ async function handle(
   }
 
   // Wall A: an over-long paste is not refused, it is cut. This is the cut
-  // CLAUDE.md asks for, and the only thing the model can ever see.
-  const wanted = Math.min(submitted, ceiling);
+  // CLAUDE.md asks for, and the only thing the model can ever see. And
+  // never past the cut the editor announced: its figure for what is left
+  // can come from another address than this request's (IPv4 then IPv6, a
+  // carrier NAT), and "procesaremos las primeras 42" must not come back
+  // as 163 (F2-13).
+  const wanted = Math.min(submitted, ceiling, maxWords ?? Infinity);
+
+  // A run, for a tool metered by uses: taken before the model is called,
+  // like words, and apart from them.
+  let usesHeaders: Record<string, string> = {};
+  if (uses) {
+    const run = await reserveUse(subject, tool, uses.usesPerDay);
+    usesHeaders = {
+      "x-uses-used": String(run.used),
+      "x-uses-limit": String(run.limit),
+      "x-uses-remaining": String(Math.max(0, run.limit - run.used)),
+    };
+    if (!run.granted) {
+      return NextResponse.json(
+        {
+          error: "uses_exhausted",
+          message: t("uses_exhausted", { uses: run.limit }),
+          used: run.used,
+          limit: run.limit,
+        },
+        {
+          status: 429,
+          headers: { "cache-control": "no-store", ...usesHeaders },
+        },
+      );
+    }
+  }
 
   // The allowance is spent BEFORE the model is called, and the model only
   // ever sees what was paid for.
@@ -217,12 +254,14 @@ async function handle(
   // The detector asks for all or nothing: a score measured over the first
   // 200 words of a 900-word text is a wrong answer about that text, not a
   // partial one.
-  const grant = await reserveWords(
-    subject,
-    subscriber,
-    wanted,
-    tool !== "detect",
-  );
+  const grant: QuotaGrant = uses
+    ? { granted: wanted, used: null, remaining: null, limit: null }
+    : await reserveWords(
+        subject,
+        subscriber,
+        wanted,
+        tool !== "detect" || truncate === true,
+      );
 
   if (grant.granted === 0) {
     return NextResponse.json(
@@ -332,6 +371,7 @@ async function handle(
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "no-store",
       ...quotaHeaders(grant),
+      ...usesHeaders,
     },
   });
 }

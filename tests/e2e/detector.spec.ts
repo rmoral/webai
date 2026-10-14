@@ -183,52 +183,46 @@ test("gates the passage breakdown behind the paid plans", async ({ page }) => {
   ).toBeVisible();
 });
 
-// Paraphraser and proofreader are paid-only (lib/billing/plans.ts FREE_TOOLS),
-// so an anonymous visitor arriving from search must meet the paywall before
-// writing, not a 403 after pressing the button.
-for (const { path, name } of [
-  { path: "/parafrasear-texto", name: "Parafraseador" },
-  { path: "/corrector-ortografico-gramatical", name: "Corrector" },
+// The paraphraser and the corrector run without an account now (F2-01):
+// a hundred words a run, two runs a day. Arriving from search, the reader
+// meets the tool, not a wall.
+for (const { path, tool, verb, name } of [
+  {
+    path: "/parafrasear-texto",
+    tool: "paraphrase",
+    verb: "Parafrasear",
+    name: "Parafraseador",
+  },
+  {
+    path: "/corrector-ortografico-gramatical",
+    tool: "correct",
+    verb: "Corregir",
+    name: "Corrector",
+  },
 ]) {
-  test(`${name}: meets the paywall on reaching for the tool`, async ({
-    page,
-  }) => {
-    // Nothing on this page can run for an anonymous visitor, so the
-    // anti-bot script has nothing to protect and is not loaded.
-    const antibot: string[] = [];
-    page.on("request", (request) => {
-      if (request.url().includes("challenges.cloudflare.com")) {
-        antibot.push(request.url());
-      }
-    });
-    await page.goto(path, { waitUntil: "networkidle" });
-    expect(antibot).toEqual([]);
-
-    // Not on arrival. The landing is the SEO asset and a modal over content
-    // reached from a search result is an intrusive interstitial.
+  test(`${name}: runs without an account`, async ({ page }) => {
+    await page.route(`**/api/ai/${tool}`, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/plain; charset=utf-8",
+        headers: {
+          "x-words-processed": "3",
+          "x-uses-used": "1",
+          "x-uses-limit": "2",
+          "x-uses-remaining": "1",
+        },
+        body: "Un resultado corriente.",
+      }),
+    );
+    await page.goto(path);
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    // The button names what the tool does (F2), whoever is reading.
-    const run = page.getByTestId("run");
-    await expect(run).toBeVisible();
-
-    // Reaching for the box is the action the wall answers, and the wall
-    // names the tool that was reached for.
-    //
-    // Typing is the reach, and unlike a click it can be retried safely:
-    // a second click would land on the backdrop of the dialog the first
-    // one opened.
-    const dialog = page.getByRole("dialog");
     await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
-    await expect(dialog).toBeVisible();
-    await expect(
-      dialog.getByText(`El ${name.toLowerCase()} está en los planes de pago`),
-    ).toBeVisible();
-
-    // Dismissing never runs it: the plan is the gate, not the input.
-    await page.keyboard.press("Escape");
-    await run.click();
-    await expect(page.getByTestId("detector-result")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.getByRole("button", { name: verb }).click();
+    await expect(page.getByText("Un resultado corriente.")).toBeVisible();
+    // The run is counted where the limit is shown.
+    await expect(page.getByTestId("word-count")).toContainText("1/2 usos hoy");
   });
 }
 
@@ -292,4 +286,25 @@ test("does not flag careful non-native English", async ({ page }) => {
   await expect(
     result.getByText(/does not mean "a person wrote this"/),
   ).toBeVisible();
+});
+
+test("analyses the first words of a long text only when asked to", async ({
+  request,
+}) => {
+  // F2-03, server side. Without `truncate` a text over the ceiling is
+  // refused as before; with it, the first 300 words are analysed and the
+  // result says how many.
+  const text = Array.from({ length: 831 }, (_, i) =>
+    i % 12 === 11 ? `palabra${i}.` : `palabra${i}`,
+  ).join(" ");
+  const refused = await request.post("/api/ai/detect", {
+    data: { text, locale: "es" },
+  });
+  expect(refused.status()).toBe(413);
+
+  const cut = await request.post("/api/ai/detect", {
+    data: { text, locale: "es", truncate: true },
+  });
+  expect(cut.status()).toBe(200);
+  expect(cut.headers()["x-words-processed"]).toBe("300");
 });

@@ -61,9 +61,22 @@ describe("plan catalogue", () => {
     expect(TRIAL.days).toBe(3);
   });
 
-  it("keeps paid tools out of the free tiers", () => {
-    expect(PLANS.free.limits.tools).not.toContain("paraphrase");
-    expect(PLANS.pro.limits.tools).toContain("paraphrase");
+  it("lets the free tiers try every tool, the paraphraser and corrector by uses", () => {
+    // F2-01: with or without an account, 100 words a run and two runs a
+    // day on each, apart from the word allowance.
+    for (const plan of [PLANS.anonymous, PLANS.free]) {
+      expect(plan.limits.tools).toContain("paraphrase");
+      expect(plan.limits.tools).toContain("correct");
+      expect(plan.limits.uses.paraphrase).toEqual({
+        perUse: 100,
+        usesPerDay: 2,
+      });
+      expect(plan.limits.uses.correct).toEqual({ perUse: 100, usesPerDay: 2 });
+      expect(plan.limits.uses.humanize).toBeUndefined();
+    }
+    // The paid plans spend words on everything.
+    expect(PLANS.pro.limits.uses).toEqual({});
+    expect(PLANS.unlimited.limits.uses).toEqual({});
     expect(PLANS.free.limits.sentenceHighlight).toBe(false);
     expect(PLANS.pro.limits.sentenceHighlight).toBe(true);
   });
@@ -113,12 +126,18 @@ describe("resolveEntitlements", () => {
 });
 
 describe("checkEntitlement", () => {
-  it("blocks paid-only tools on the free plan", () => {
-    expect(checkEntitlement(PLANS.free, "paraphrase", 10)).toMatchObject({
+  it("blocks a tool the plan leaves out", () => {
+    // Stripe metadata can narrow a paid plan's tools; nothing in plans.ts
+    // leaves one out any more.
+    const narrowed = {
+      ...PLANS.pro,
+      limits: { ...PLANS.pro.limits, tools: ["humanize"] as const },
+    };
+    expect(checkEntitlement(narrowed, "paraphrase", 10)).toMatchObject({
       allowed: false,
       reason: "tool_not_in_plan",
     });
-    expect(checkEntitlement(PLANS.pro, "paraphrase", 10).allowed).toBe(true);
+    expect(checkEntitlement(PLANS.free, "paraphrase", 10).allowed).toBe(true);
   });
 
   it("enforces the per-request word ceiling of each tier", () => {
