@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F2 · /parafrasear-texto · 390 y 1440</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="f2-kit.css">
+</head><body><div class="doc">
+<div class="nav"><a href="F2 Plantilla compartida.html">Plantilla compartida</a><a href="F2 Detector.html">Detector</a><a class="on" href="F2 Parafraseador.html">Parafraseador</a><a href="F2 Corrector.html">Corrector</a></div>
+<h1>F2 · /parafrasear-texto · sin sesión</h1>
+<p class="lede">Parte de la misma plantilla. Lo específico de esta página es el selector de los seis registros (F2-07), el límite de 100 palabras y 2 usos (F2-01, decidido el 14-10: igual sin cuenta y con cuenta gratis) y el resultado con sus acciones (F2-04).</p>
+<h2>Móvil · 390 × 844</h2>
+<div class="frames" id="mob"></div>
+<h2>Escritorio · 1440 (al 62 %)</h2>
+<div class="frames" id="desk"></div>
+<div class="spec">
+<h2>Ficha · específico del parafraseador</h2>
+<p>Lo compartido está en <a href="F2 Plantilla compartida.html">Plantilla compartida</a>.</p>
+<table>
+<tr><th>Elemento</th><th>Valores</th><th>Origen</th></tr>
+<tr class="g"><td colspan="3">Copy</td></tr>
+<tr><td>Botón</td><td>«Parafrasear» (<code>editor.run.paraphrase</code>) · sustituye a «Requiere un plan de pago»</td><td><span class="k sp">específico</span> F2-07</td></tr>
+<tr><td>Contador</td><td>«{en el editor}/100 palabras · {usados}/2 usos hoy» · vacío: «0/100 palabras · 0/2 usos hoy» · ámbar si el texto pasa de 100</td><td><span class="k sp">específico</span> F2-02</td></tr>
+<tr><td>Línea de precios</td><td>«Gratis: 100 palabras, 2 usos al día · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba → Ver planes» · cifras de <code>PLANS.anonymous.tools.paraphrase</code> (<code>{ perUse: 100, usesPerDay: 2 }</code>, nuevo)</td><td><span class="k sp">específico</span></td></tr>
+<tr class="g"><td colspan="3">Selector de registro (F2-07)</td></tr>
+<tr><td>Escritorio</td><td>franja sobre las dos columnas · padding 12 16 · borde inferior 1 #e5e5e5 · <b>rejilla 3 × 2</b> de chips de 112 × 32, gap 6, 14/500, radio 8 · activo relleno #2b45c4, 600, blanco · a la derecha, gap 20, la descripción del registro activo: nombre 13/600 #0a0a0a + texto 13 / 18 #525252, ancho máximo 520 · <code>role="radiogroup"</code>, flechas para moverse</td><td><span class="k sp">específico</span> · los chips heredan el estilo de los tonos de F1</td></tr>
+<tr><td>Móvil</td><td>desplegable · alto 56 · radio 10 · borde 1 #d4d4d4 (abierto: 2 #2b45c4) · nombre 15/600 + descripción 12 / 16 #737373 en una línea con puntos suspensivos · chevron de 7 · lista: filas de 52 como mínimo, nombre 15/600 + descripción 12 / 16 entera, la activa sobre #f7f8fe con el nombre en #1b2a76 · es un <code>&lt;select&gt;</code> nativo con aspecto propio si eso basta; si no, Radix Select</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Por defecto</td><td>Estándar</td><td>F2-07</td></tr>
+<tr><td>Textos</td><td>Estándar · Fluido · Formal · Simple · Creativo · Académico, con las descripciones de «Los seis registros». La sección agrupa «Formal y académico» y «Simple y creativo», así que he separado sus frases (ver «Para validar»). Claves nuevas: <code>landing.paraphrase.modes.&lt;id&gt;.description</code></td><td><span class="k sp">específico</span></td></tr>
+<tr class="g"><td colspan="3">Estado (a): más de 100 palabras</td></tr>
+<tr><td>Aviso</td><td><code>LimitNotice</code> compartido · «<b>Gratis: 100 palabras por uso.</b> Procesaremos las primeras 100; el resto se queda en el editor.» · desde la palabra 101, el texto en #a3a3a3 con la marca de corte</td><td><span class="k sh">compartido</span> pieza · copy <span class="k sp">específico</span></td></tr>
+<tr><td>Botón</td><td>activo, «Parafrasear»</td><td>F2-01</td></tr>
+<tr class="g"><td colspan="3">Estado (b): resultado (F2-04)</td></tr>
+<tr><td>Escritorio</td><td>dos columnas como hoy: el original a la izquierda y el resultado a la derecha, con los cambios marcados por <code>Highlight</code> (reescrito en ámbar, <code>--warning-soft</code> con un subrayado de 1,5 en #d98b18; añadido en verde, <code>--success-soft</code> con subrayado #2f9e6b)</td><td><span class="k sh">existente</span></td></tr>
+<tr><td>Móvil</td><td><b>el resultado primero</b>, con la etiqueta «RESULTADO» (12/600, versalitas, tracking 0,04 em, #737373), y debajo «TU TEXTO» con el área de texto y el botón · al terminar, la página sube hasta la etiqueta del resultado</td><td><span class="k sp">específico</span> F2-04</td></tr>
+<tr><td>Acciones</td><td>margen superior 14 · gap 8 · «Copiar resultado»: relleno #2b45c4, 40, 14/600 · «Comprobar con el detector»: contorno 1,5 #2b45c4, 40, 14/600 → <code>/detector-de-ia</code> con el resultado en <code>sessionStorage</code> · en móvil, las dos a partes iguales en una fila</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Nota</td><td>margen superior 12 · 14 / 20 #262626 · «Esto son 100 palabras. Con Ilimitado no hay límite → <b>Probar 3 días gratis</b>» · enlace 14/600 → <code>/precios?cycle=monthly#ilimitado</code></td><td><span class="k sp">específico</span> copy tal cual (14-10)</td></tr>
+<tr class="g"><td colspan="3">Al agotar los 2 usos</td></tr>
+<tr><td>Botón</td><td>sigue activo, con «Parafrasear» (decisión 14-10). Al pulsarlo se abre el modal de plan actual (<code>paywall.toolTitle</code>), con el mismo copy y los mismos botones que en F1: «Probar Ilimitado 3 días gratis» en relleno y «Ver planes» en contorno, los dos de 48 · 16/600. El texto se queda en el editor</td><td><span class="k sh">existente</span> · F2-01</td></tr>
+<tr><td>Contador</td><td>«…· 2/2 usos hoy» en ámbar</td><td>—</td></tr>
+</table>
+</div>
+<div class="notes">
+<div class="nt"><h3>Para validar</h3><ul>
+<li><b>Seis descripciones de una línea.</b> La sección agrupa dos pares, así que he separado sus frases. Las de Formal, Simple y Creativo son las del texto original; «Académico» queda como «Como el formal, y además respeta la convención de la cita.», derivada de «El académico además respeta la convención de la cita».</li>
+<li><b>Dos botones rellenos en el resultado.</b> El brief marca «Comprobar con el detector» como secundario, así que «Copiar resultado» queda como primario, y en escritorio convive con «Parafrasear». Si prefieres un solo relleno, «Copiar resultado» pasaría a contorno.</li>
+<li><b>El modal al agotar los 2 usos</b> dice «El parafraseador está en los planes de pago», y ya no es verdad. El brief pide el mismo copy que en F1. Propuesta para la siguiente familia: «Has usado los 2 usos de hoy».</li>
+</ul></div>
+<div class="nt"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>Con 100 palabras por uso, el resultado es más corto que casi cualquier texto real (el ejemplo tiene 831). Por ahora solo la nota del resultado le explica al usuario cómo seguir.</li>
+<li>El FAQ «¿Está incluido en el plan gratuito?» dice «No». Con F2-01 hay que reescribirlo, y es copy fuera del brief.</li>
+<li>En /precios, la fila «Herramientas» dice «Humanizador y detector» para Gratis. También cambia con F2-01.</li>
+</ul></div>
+</div>
+</div>
+<script src="f2-kit.js"></script>
+<script>
+const MODES = [['Estándar', 'Reescritura equilibrada: cambia la formulación sin alejarse del original.'], ['Fluido', 'Prioriza que se lea bien en voz alta.'], ['Formal', 'Trato impersonal, léxico preciso y conectores de un trabajo o un informe.'], ['Simple', 'Baja el registro hasta donde lo entienda cualquiera.'], ['Creativo', 'Se permite imágenes y giros que el original no tenía, con el mismo contenido.'], ['Académico', 'Como el formal, y además respeta la convención de la cita.']];
+const selector = (d, s) => d
+  ? `<div class="selrow"><div class="chips" role="radiogroup">${MODES.map(([n], i) => `<span class="chip${i ? '' : ' on'}">${n}</span>`).join('')}</div><p class="seldesc"><b>Estándar.</b> Reescritura equilibrada: cambia la formulación sin alejarse del original. El punto de partida razonable.</p></div>`
+  : `<div class="dd${s.open ? ' open' : ''}"><b>Estándar</b><span>${MODES[0][1]}</span></div>${s.open ? `<div class="ddl">${MODES.map(([n, t], i) => `<div class="${i ? '' : 'on'}"><b>${n}</b><span>${t}</span></div>`).join('')}</div>` : ''}`;
+const P1 = 'El impacto de las redes sociales en la atención de los adolescentes. En el mundo actual, las redes sociales se han convertido en una parte fundamental de la vida cotidiana de los adolescentes. Plataformas como Instagram, TikTok y YouTube ofrecen un flujo constante de contenido diseñado para captar la atención de los usuarios y mantenerlos conectados durante el mayor tiempo posible. Sin embargo, este fenómeno plantea importantes interrogantes sobre sus efectos en la capacidad de concentración de los jóvenes';
+const P2 = ', especialmente en una etapa de desarrollo tan crucial como la adolescencia, cuando el cerebro todavía está madurando.';
+const RES = 'Las redes sociales y la atención de los adolescentes. <span class="mk-r">Hoy</span>, las redes sociales <span class="mk-r">forman parte del día a día</span> de <span class="mk-r">casi todos</span> los adolescentes. Instagram, TikTok y YouTube <span class="mk-r">les sirven</span> un flujo <span class="mk-r">continuo</span> de contenido pensado para <span class="mk-r">retenerlos</span> el mayor tiempo posible. <span class="mk-a">La pregunta es inevitable:</span> ¿qué efecto tiene todo esto en su capacidad de concentración?';
+const resBlock = `<p class="lbl">Resultado</p><div class="res">${RES}</div><div class="resbar"><button class="btn btn-md fill">Copiar resultado</button><a class="btn btn-md line" href="#">Comprobar con el detector</a></div><p class="rnote">Esto son 100 palabras. Con Ilimitado no hay límite → <a href="#">Probar 3 días gratis</a></p>`;
+const run = (dis) => `<button class="btn btn-run"${dis ? ' disabled' : ''}>Parafrasear</button>`;
+const warn = '<b>Gratis: 100 palabras por uso.</b> Procesaremos las primeras 100; el resto se queda en el editor.';
+const textOver = P1 + '<span class="cut"></span><span class="dim">' + P2 + '</span>';
+const S = {
+  empty: { q: '0/100 palabras · 0/2 usos hoy', run: run(true) },
+  open: { q: '0/100 palabras · 0/2 usos hoy', run: run(true), open: true },
+  limit: { text: textOver, q: '128/100 palabras · 0/2 usos hoy', over: true, warn, run: run() },
+  result: { text: textOver, q: '128/100 palabras · 1/2 usos hoy', over: true, run: run(), out: resBlock,
+    mobile: `<div class="out" style="border-top:0;color:#0a0a0a">${resBlock}</div><div class="orig"><p class="lbl">Tu texto</p></div>` + F2.ta(textOver, '128/100 palabras · 1/2 usos hoy', true) + `<div class="run">${run()}</div>` },
+};
+F2.render({
+  key: 'paraphrase', short: 'parafraseador', h1: 'Parafrasear texto en español', restLabel: 'los seis registros · sobre el plagio',
+  intro: 'Reescribe un texto con otras palabras sin perder lo que dice. Seis registros, del académico al creativo, y el resultado marcado para que veas qué ha cambiado.',
+  outEmpty: 'El resultado aparecerá aquí', selector,
+  priceLine: 'Gratis: 100 palabras, 2 usos al día · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba',
+  mobile: [
+    { t: '1 · Vacío · primera visita', d: 'Desplegable cerrado con Estándar, contador de cuota y botón «Parafrasear», desactivado solo mientras el editor está vacío.', s: S.empty, cookies: true },
+    { t: '2 · Desplegable abierto', d: 'Los seis registros, cada uno con su línea de descripción (F2-07).', s: S.open },
+    { t: '3 · Más de 100 palabras', d: 'El contador en ámbar «128/100», el aviso y el botón activo (F2-01, F2-02).', s: S.limit },
+    { t: '4 · Resultado', d: 'El resultado primero, sus dos acciones y la nota; debajo, el texto original (F2-04).', s: S.result, tall: true },
+  ],
+  desktop: [
+    { t: '5 · Vacío', d: 'Rejilla 3 × 2 con los seis registros y la descripción del activo a la derecha.', s: S.empty },
+    { t: '6 · Más de 100 palabras', d: 'Mismo aviso que en móvil; el botón no se desactiva.', s: S.limit },
+    { t: '7 · Resultado', d: 'Original | resultado marcado, con «Copiar», «Comprobar con el detector» y la nota bajo el resultado.', s: S.result, h: 860 },
+  ],
+});
+</script>
+</body></html>

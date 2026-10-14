@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>F2 · /corrector-ortografico-gramatical · 390 y 1440</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="f2-kit.css">
+</head><body><div class="doc">
+<div class="nav"><a href="F2 Plantilla compartida.html">Plantilla compartida</a><a href="F2 Detector.html">Detector</a><a href="F2 Parafraseador.html">Parafraseador</a><a class="on" href="F2 Corrector.html">Corrector</a></div>
+<h1>F2 · /corrector-ortografico-gramatical · sin sesión</h1>
+<p class="lede">La misma plantilla y el mismo límite que el parafraseador (100 palabras, 2 usos). Lo específico es el selector de modo (F2-08) y el resultado con la lista de cambios (F2-09). Decisión del 14-10: la lista se diseña <b>sin «tipo»</b>, porque sale del diff del cliente (antes → después), y el recuento va sin desglose.</p>
+<h2>Móvil · 390 × 844</h2>
+<div class="frames" id="mob"></div>
+<h2>Escritorio · 1440 (al 62 %)</h2>
+<div class="frames" id="desk"></div>
+<div class="spec">
+<h2>Ficha · específico del corrector</h2>
+<p>Lo compartido está en <a href="F2 Plantilla compartida.html">Plantilla compartida</a>. El límite, el contador, el aviso, las acciones del resultado y el modal al agotar los usos funcionan como en el <a href="F2 Parafraseador.html">parafraseador</a>.</p>
+<table>
+<tr><th>Elemento</th><th>Valores</th><th>Origen</th></tr>
+<tr class="g"><td colspan="3">Copy</td></tr>
+<tr><td>Botón</td><td>«Corregir» (<code>editor.run.correct</code>)</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Aviso (a)</td><td>«<b>Gratis: 100 palabras por uso.</b> Corregiremos las primeras 100; el resto se queda en el editor.»</td><td><span class="k sp">específico</span> F2-02</td></tr>
+<tr><td>Nota (b)</td><td>«Esto son 100 palabras corregidas. Con Ilimitado no hay límite → <b>Probar 3 días gratis</b>»</td><td><span class="k sp">específico</span></td></tr>
+<tr class="g"><td colspan="3">Selector de modo (F2-08)</td></tr>
+<tr><td>Escritorio</td><td>franja sobre las columnas · padding 12 16 · rejilla de 2 columnas iguales, gap 8 · cada modo es una tarjeta de radio: padding 9 12, radio 10, borde 1 #e5e5e5 · nombre 14/600 + línea 13 / 18 #525252 · activo: borde 2 #2b45c4, fondo <code>--brand-softer #f7f8fe</code> y nombre en #1b2a76 · <code>role="radiogroup"</code></td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Móvil</td><td>segmentado de 2 · alto 40 · radio 8 · gap 6 · 14/500, activo relleno #2b45c4 600 · debajo, la línea del modo activo a 12 / 16 #525252, margen 8 (los dos nombres con su línea no caben en 179 px sin pasar a 4 líneas)</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Textos</td><td>General: «Corrige lo que está mal y no toca lo demás.» · Académico: «Además, señala lo válido pero impropio del registro: coloquialismos, muletillas, abuso de la pasiva.» Salen de «Dos modos, distinta ambición» · por defecto, General</td><td><span class="k sp">específico</span></td></tr>
+<tr class="g"><td colspan="3">Estado (b): resultado (F2-09)</td></tr>
+<tr><td>Texto marcado</td><td>en el sitio del área de texto (izquierda en escritorio, arriba en móvil) · 15 / 23 · lo borrado en #8f2018 tachado (<code>text-decoration-color #c43d2f</code>) · lo añadido sobre <code>--success-soft #e6f4ed</code>, en #0f5537 · lo no procesado (de la palabra 101 en adelante) en #a3a3a3 · encima, «TU TEXTO, CON LOS CAMBIOS» (12/600, versalitas) y a la derecha «Editar texto» (13/600 #2b45c4), que devuelve el área de texto editable</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Alto del texto marcado</td><td>escritorio: el mismo que el área de texto (168), con desplazamiento interno, para que «Corregir» no baje · móvil: el texto entero, sin desplazamiento interno</td><td><span class="k sp">específico</span></td></tr><tr><td>Panel de cambios</td><td>escritorio: columna derecha · cabecera de padding 12 16 con borde inferior 1: «7 cambios» 15/600 + «Aceptar todos» (contorno 1,5 #2b45c4, 36, 13/600) a la derecha · móvil: acordeón bajo el texto, <code>&lt;details open&gt;</code>, con el resumen en una fila de 48 «7 cambios»</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Fila</td><td>padding 10 16 (móvil 10 12) · borde inferior 1 #f0f0f0 · «antes → después» 14 / 20: lo de antes tachado en #8f2018, la flecha en #a3a3a3 y lo de después en #0f5537 600 · para las inserciones puras, «∅ → ,», y para las supresiones, «en → ∅» · <b>sin tipo</b> · «Aceptar»: alto 32 (36 en móvil), padding 0 10, 13/600, <code>--brand-soft #eef1fd</code> / <code>--brand-ink #1b2a76</code> / borde <code>--brand-line #c6cef4</code> · «Ignorar»: texto 13/600 #525252 · al pulsar, la fila baja a una opacidad de 0,55 con «Aceptado» o «Ignorado» y el texto marcado se actualiza</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Recuento</td><td>«{n} cambios», sin desglose (decisión 14-10) · baja a medida que se acepta o se ignora · «Aceptar todos» aplica los pendientes</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Datos</td><td>cliente: <code>diffWords(original, corregido)</code>, agrupando una supresión y una inserción contiguas en un solo cambio. «Copiar resultado» copia el original con los cambios aceptados aplicados, y los pendientes cuentan como aceptados</td><td><span class="k sp">específico</span></td></tr>
+<tr><td>Acciones</td><td>bajo la lista (escritorio) o bajo el acordeón (móvil): «Copiar resultado» · «Comprobar con el detector» · la nota, como en el parafraseador</td><td><span class="k sh">compartido</span> con el parafraseador</td></tr>
+</table>
+</div>
+<div class="notes">
+<div class="nt"><h3>Para validar</h3><ul>
+<li><b>Descripciones de una línea.</b> «Dos modos, distinta ambición» es un párrafo, así que he resumido las dos líneas a partir de él. Si queréis usar frases literales: General = «Corrige lo que está mal y no toca lo demás.» (literal); la de Académico está acortada.</li>
+<li><b>En móvil, el modo va en un segmentado</b> con la línea del modo activo debajo, no en dos tarjetas. Con nombre y línea en las dos, el selector medía 104 px más y el botón quedaba bajo el banner de cookies.</li>
+<li><b>El recuento del brief</b> («12 cambios: 7 ortografía · 3 puntuación · 2 concordancia») pasa a «7 cambios», según la decisión del 14-10.</li>
+</ul></div>
+<div class="nt"><h3>Fuera del brief (para la familia siguiente)</h3><ul>
+<li>El FAQ «¿Está incluido en el plan gratuito?» sigue diciendo «No».</li>
+<li>Sin tipo, un cambio de tilde y uno de puntuación pesan igual en la lista. Si en algún momento el modelo devuelve segmentos, la columna «tipo» y el desglose del recuento caben sin rehacer el panel.</li>
+<li>Para corregir, 100 palabras por uso se queda corto: la mayoría de los trabajos tienen más de 500. El corrector es justo donde «Ilimitado no hay límite» tiene más fuerza.</li>
+</ul></div>
+</div>
+</div>
+<script src="f2-kit.js"></script>
+<script>
+const MODES = [['General', 'Corrige lo que está mal y no toca lo demás.'], ['Académico', 'Además, señala lo válido pero impropio del registro: coloquialismos, muletillas, abuso de la pasiva.']];
+const selector = (d) => d
+  ? `<div class="modes" role="radiogroup">${MODES.map(([n, t], i) => `<div class="mode${i ? '' : ' on'}"><b>${n}</b><span>${t}</span></div>`).join('')}</div>`
+  : `<div class="seg">${MODES.map(([n], i) => `<span class="o${i ? '' : ' on'}">${n}</span>`).join('')}</div><p class="segd">${MODES[0][1]}</p>`;
+const RAW = 'El impacto de las redes sociales en la atencion de los adolescentes. En el mundo actual las redes sociales se han convertido en una parte fundamental de la vida cotidiana de los adolescentes, plataformas como Instagram, TikTok y YouTube ofrecen un flujo constante de contenido diseñado para captar la atención de los usuarios. Sin embargo este fenómeno plantea importantes interrogantes sobre sus efectos en la capacidad de concentración de los jóvenes, sobretodo en una etapa en donde el cerebro todavia se esta formando';
+const TAIL = '. Los estudios mas recientes apuntan a que el uso intensivo reduce la atención sostenida.';
+const MARKED = 'El impacto de las redes sociales en la <span class="mk-del">atencion</span><span class="mk-ins">atención</span> de los adolescentes. En el mundo actual<span class="mk-ins">,</span> las redes sociales se han convertido en una parte fundamental de la vida cotidiana de los adolescentes<span class="mk-del">, plataformas</span><span class="mk-ins">. Plataformas</span> como Instagram, TikTok y YouTube ofrecen un flujo constante de contenido diseñado para captar la atención de los usuarios. Sin embargo<span class="mk-ins">,</span> este fenómeno plantea importantes interrogantes sobre sus efectos en la capacidad de concentración de los jóvenes, <span class="mk-del">sobretodo</span><span class="mk-ins">sobre todo</span> en una etapa en <span class="mk-del">donde</span><span class="mk-ins">la que</span> el cerebro <span class="mk-del">todavia</span><span class="mk-ins">todavía</span> se <span class="mk-del">esta</span><span class="mk-ins">está</span> formando<span class="dim" style="color:#a3a3a3">' + TAIL + '</span>';
+const CH = [['atencion', 'atención'], ['∅', ','], [', plataformas', '. Plataformas'], ['∅', ','], ['sobretodo', 'sobre todo'], ['donde', 'la que'], ['todavia', 'todavía'], ['esta', 'está']];
+const rows = CH.map(([a, b], i) => `<div class="cr${i === 0 ? ' done' : ''}"><div class="ch">${a === '∅' ? '<span style="color:#a3a3a3">∅</span>' : `<s>${a}</s>`}<i>→</i><em>${b}</em></div>${i === 0 ? '' : '<span class="ok">Aceptar</span><span class="no">Ignorar</span>'}</div>`).join('');
+const acts = `<div class="resbar"><button class="btn btn-md fill">Copiar resultado</button><a class="btn btn-md line" href="#">Comprobar con el detector</a></div><p class="rnote">Esto son 100 palabras corregidas. Con Ilimitado no hay límite → <a href="#">Probar 3 días gratis</a></p>`;
+const list = `<div class="cl" style="margin:-16px -16px 0"><div class="clh"><b>7 cambios</b><span class="btn btn-md line">Aceptar todos</span></div>${rows}</div>${acts}`;
+const marked = `<div class="orig" style="border-top:0"><div style="display:flex;align-items:center"><p class="lbl" style="margin:0">Tu texto, con los cambios</p><a class="editlink" href="#" style="margin-left:auto">Editar texto</a></div><div class="res mres" style="margin-top:8px">${MARKED}</div></div>`;
+const run = (dis) => `<button class="btn btn-run"${dis ? ' disabled' : ''}>Corregir</button>`;
+const warn = '<b>Gratis: 100 palabras por uso.</b> Corregiremos las primeras 100; el resto se queda en el editor.';
+const S = {
+  empty: { q: '0/100 palabras · 0/2 usos hoy', run: run(true) },
+  limit: { text: RAW + '<span class="cut"></span><span class="dim">' + TAIL + '</span>', q: '115/100 palabras · 0/2 usos hoy', over: true, warn, run: run() },
+  result: { left: marked + `<div class="run" style="border-top:1px solid #e5e5e5">${run()}<span class="q over" style="position:static;margin-left:auto">115/100 palabras · 1/2 usos hoy</span></div>`, out: list,
+    mobile: marked + `<details class="acc" open><summary>7 cambios <span class="btn btn-md line" style="height:32px;font-size:13px;margin-left:auto;margin-right:8px">Aceptar todos</span></summary><div class="cl">${rows}</div></details><div class="orig">${acts}</div><div class="run">${run()}</div>` },
+};
+F2.render({
+  key: 'correct', short: 'corrector', h1: 'Corrector ortográfico y gramatical', restLabel: 'qué corrige · dos modos',
+  intro: 'Ortografía, gramática, puntuación y concordancia, con cada cambio marcado sobre tu texto. Corrige lo que está mal sin reescribir lo que está bien.',
+  outEmpty: 'El resultado aparecerá aquí', selector,
+  priceLine: 'Gratis: 100 palabras, 2 usos al día · Pro desde US$7,49/mes · Ilimitado con 3 días de prueba',
+  mobile: [
+    { t: '1 · Vacío · primera visita', d: 'Segmentado General | Académico con la línea del modo activo (F2-08).', s: S.empty, cookies: true },
+    { t: '2 · Más de 100 palabras', d: 'Igual que en el parafraseador, con «Corregiremos».', s: S.limit },
+    { t: '3 · Resultado', d: 'El texto con los cambios en línea y el acordeón debajo, con Aceptar / Ignorar (F2-09). Hay 8 cambios: uno ya está aceptado, así que el recuento dice 7.', s: S.result, tall: true },
+  ],
+  desktop: [
+    { t: '4 · Vacío', d: 'Los dos modos como tarjetas de radio sobre las columnas.', s: S.empty },
+    { t: '5 · Más de 100 palabras', d: 'El aviso entre el texto y el botón.', s: S.limit },
+    { t: '6 · Resultado', d: 'Texto marcado a la izquierda, con la misma altura que el área de texto (desplazable), y la lista a la derecha con «Aceptar todos».', s: S.result, h: 1000 },
+  ],
+});
+</script>
+</body></html>

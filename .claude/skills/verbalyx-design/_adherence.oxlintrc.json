@@ -23,6 +23,7 @@
               "components/navigation/**",
               "components/surfaces/**",
               "components/tools/**",
+              "explorations/**",
               "ui_kits/**",
               "ui_kits/admin/**",
               "ui_kits/app/**",
