@@ -132,9 +132,7 @@ export default async function AppLayout({
                 </div>
               </details>
             </nav>
-            {/* Marked for whoever is reading them: on a free account the
-                two paid tools say so before the wall does. */}
-            <ToolTabs plan={subscriber?.plan.id ?? "free"} />
+            <ToolTabs />
           </div>
         </header>
         {trialEndsWithin24h && (
