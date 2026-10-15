@@ -132,6 +132,29 @@ describe("reserveWords", () => {
     expect(grant.remaining).toBe(month - 1_000);
   });
 
+  it("counts purchased words as left on a paid plan", async () => {
+    // "Te quedan" has to include the top-up, or the editor announces and
+    // sends a cut the top-up would have covered.
+    const pro = {
+      ...free,
+      plan: PLANS.pro,
+      periodStart: new Date("2026-09-01"),
+      topupWords: 5_000,
+    };
+    const month = PLANS.pro.limits.wordsPerMonth ?? 0;
+    expect((await peekWords("user:t", pro)).remaining).toBe(month + 5_000);
+    const grant = await reserveWords("user:t", pro, 1_000);
+    expect(grant.remaining).toBe(month - 1_000 + 5_000);
+    // The bar still draws the plan's own figures.
+    expect(grant.used).toBe(1_000);
+    expect(grant.limit).toBe(month);
+  });
+
+  it("leaves the free tiers' daily figure alone", async () => {
+    const withTopup = { ...free, topupWords: 5_000 };
+    expect((await peekWords("user:u", withTopup)).remaining).toBe(DAY);
+  });
+
   it("keeps serving the plan sold as unlimited, and says so", async () => {
     const unlimited = {
       ...free,
