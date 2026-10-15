@@ -352,7 +352,16 @@
         "tool": "Use the paraphraser",
         "pricing": "see the plans"
       },
-      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
+      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
+      "modes": {
+        "general": {
+          "description": "Fixes what is wrong and leaves the rest alone."
+        },
+        "academico": {
+          "description": "Also flags what is correct but out of register: colloquialisms, fillers, overused passives."
+        }
+      },
+      "modeLabel": "Mode"
     },
     "languageLine": "Understands the Spanish of Spain and of the Americas. It does not translate or go through English."
   },
@@ -1177,7 +1186,18 @@
     "yourText": "Your text",
     "checkWithDetector": "Check with the detector",
     "note": {
-      "paraphrase": "That is {n} words. With Unlimited there is no limit → <link>Try {days} days free</link>"
+      "paraphrase": "That is {n} words. With Unlimited there is no limit → <link>Try {days} days free</link>",
+      "correct": "That is {n} words corrected. With Unlimited there is no limit → <link>Try {days} days free</link>"
     }
+  },
+  "correct": {
+    "reviewLabel": "Your text, with the changes",
+    "editText": "Edit text",
+    "changes": "{n, plural, one {# change} other {# changes}}",
+    "acceptAll": "Accept all",
+    "accept": "Accept",
+    "ignore": "Ignore",
+    "accepted": "Accepted",
+    "ignored": "Ignored"
   }
 }

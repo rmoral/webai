@@ -220,7 +220,12 @@ for (const { path, tool, verb, name } of [
     await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByRole("button", { name: verb }).click();
-    await expect(page.getByText("Un resultado corriente.")).toBeVisible();
+    // The corrector shows its result as a review of the text (F2-09).
+    await expect(
+      tool === "correct"
+        ? page.getByTestId("review-text")
+        : page.getByText("Un resultado corriente."),
+    ).toBeVisible();
     // The run is counted where the limit is shown.
     await expect(page.getByTestId("word-count")).toContainText("1/2 usos hoy");
   });

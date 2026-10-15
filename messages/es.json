@@ -352,7 +352,16 @@
         "tool": "Usa el parafraseador",
         "pricing": "consulta los planes"
       },
-      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
+      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>",
+      "modes": {
+        "general": {
+          "description": "Corrige lo que está mal y no toca lo demás."
+        },
+        "academico": {
+          "description": "Además, señala lo válido pero impropio del registro: coloquialismos, muletillas, abuso de la pasiva."
+        }
+      },
+      "modeLabel": "Modo"
     },
     "languageLine": "Entiende el español de España y de América. No traduce ni pasa por el inglés."
   },
@@ -1177,7 +1186,18 @@
     "yourText": "Tu texto",
     "checkWithDetector": "Comprobar con el detector",
     "note": {
-      "paraphrase": "Esto son {n} palabras. Con Ilimitado no hay límite → <link>Probar {days} días gratis</link>"
+      "paraphrase": "Esto son {n} palabras. Con Ilimitado no hay límite → <link>Probar {days} días gratis</link>",
+      "correct": "Esto son {n} palabras corregidas. Con Ilimitado no hay límite → <link>Probar {days} días gratis</link>"
     }
+  },
+  "correct": {
+    "reviewLabel": "Tu texto, con los cambios",
+    "editText": "Editar texto",
+    "changes": "{n, plural, one {# cambio} other {# cambios}}",
+    "acceptAll": "Aceptar todos",
+    "accept": "Aceptar",
+    "ignore": "Ignorar",
+    "accepted": "Aceptado",
+    "ignored": "Ignorado"
   }
 }
