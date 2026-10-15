@@ -27,6 +27,15 @@ import {
 } from "@/components/tools/overflow";
 import { DetectorResultView } from "@/components/tools/detector-result";
 import { RegisterPicker } from "@/components/tools/register-picker";
+import {
+  ChangeList,
+  CorrectModePicker,
+  ReviewText,
+  applyDecisions,
+  toSegments,
+  type Decision,
+  type Segment,
+} from "@/components/tools/correct-review";
 import { Hint, tourStep, useTour } from "@/components/tools/tour";
 import {
   DiffMarks,
@@ -116,6 +125,7 @@ export function ToolEditor({
   const modes = TOOLS[tool].modes;
   // The paraphraser has its own register picker and result layout (F2).
   const paraphrasing = tool === "paraphrase";
+  const correcting = tool === "correct";
 
   // The three first-visit hints. Derived from the editor's own state, and
   // given no setter for anything -- see components/tools/tour.tsx.
@@ -127,6 +137,14 @@ export function ToolEditor({
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [parts, setParts] = useState<Change[] | null>(null);
+  // The corrector's result as a review (F2-09): the changes over the part
+  // of the text the run reached, the rest as it was, and what the reader
+  // has decided about each change.
+  const [review, setReview] = useState<{
+    segments: Segment[];
+    tail: string;
+  } | null>(null);
+  const [decisions, setDecisions] = useState<Record<number, Decision>>({});
   // Analysis and the exact text it describes, kept together: the window
   // ranges are indices into that text's sentences, so a report paired with a
   // later edit of the box would quote the wrong passages.
@@ -167,9 +185,11 @@ export function ToolEditor({
   const widgetId = useRef<string>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const detector = useTranslations("detector");
   const result = useTranslations("result");
+  const correctCopy = useTranslations("correct");
   const posthog = usePostHog();
 
   // Who is reading, on a page whose server render could not know.
@@ -247,6 +267,7 @@ export function ToolEditor({
   useEffect(() => {
     setOutput("");
     setParts(null);
+    setReview(null);
     setReport(null);
     setError(null);
     setWithheld(null);
@@ -620,6 +641,7 @@ export function ToolEditor({
     });
     setOutput("");
     setParts(null);
+    setReview(null);
     setReport(null);
     setWithheld(null);
     setQuotaNotice(null);
@@ -757,14 +779,33 @@ export function ToolEditor({
         acc += decoder.decode(value, { stream: true });
         setOutput(acc);
       }
+      // The corrector's result is the review, so it waits for the diff
+      // before it is shown (F2-09). The run may have reached only the first
+      // words (a free run's hundred): the review covers those, and the
+      // rest stays as written.
+      if (correcting) {
+        const reachedText =
+          processed !== null && processed < countWords(sent)
+            ? truncateToWords(sent, processed)
+            : sent;
+        const reviewed = await diffParts(reachedText, acc);
+        setReview({
+          segments: reviewed
+            ? toSegments(reviewed)
+            : [{ kind: "same", text: acc }],
+          tail: sent.slice(reachedText.length),
+        });
+        setDecisions({});
+      }
       setStatus("done");
       track(posthog, "tool_result", {
         tool,
         ms: Date.now() - startedAt,
         truncated: overflowed || shortfall > 0,
       });
-      setParts(await diffParts(sent, acc));
 
+      // Wall B before the marks: it needs the counts, not the diff, and
+      // the diff loads its library on demand.
       if (shortfall > 0 && limitToday !== null) {
         const ran = {
           visibleText: acc,
@@ -777,6 +818,7 @@ export function ToolEditor({
         if (paywallDismissed("quota", tool)) setQuotaNotice(ran);
         else setWithheld(ran);
       }
+      setParts(await diffParts(sent, acc));
     } catch {
       setError(t("connectionError"));
       setStatus("idle");
@@ -797,15 +839,67 @@ export function ToolEditor({
   // height to spare. Not scrollIntoView, which would also move the page
   // sideways on a narrow screen and ignores the margin.
   useEffect(() => {
-    if (status !== "done" || !resultRef.current) return;
+    const target = reviewRef.current ?? resultRef.current;
+    if (status !== "done" || !target) return;
     if (!window.matchMedia("(max-width: 639px)").matches) return;
     window.scrollTo({
-      top: resultRef.current.getBoundingClientRect().top + window.scrollY - 64,
+      top: target.getBoundingClientRect().top + window.scrollY - 64,
       behavior: "smooth",
     });
   }, [status]);
 
   const resultFirst = paraphrasing && status === "done";
+  const reviewing = correcting && status === "done" && review !== null;
+  // What "Copiar resultado" and the detector get: the paraphrase, or the
+  // corrected text with what the reader ignored put back.
+  const finalText = review
+    ? applyDecisions(review.segments, decisions, review.tail)
+    : output;
+
+  /**
+   * Under a paraphrase or a correction (F2-04): copy it, take it to the
+   * detector, and on a free plan the note on what a run is.
+   */
+  const resultActions = (note: "paraphrase" | "correct") => (
+    <>
+      <div className="mt-3.5 flex gap-2 whitespace-normal">
+        <Button
+          className="h-10 min-w-0 flex-1 px-2 text-sm leading-4 font-semibold whitespace-normal md:flex-none md:px-5"
+          onClick={() => navigator.clipboard.writeText(finalText)}
+        >
+          {t("copyResult")}
+        </Button>
+        <Button
+          variant="outline"
+          className="border-brand text-brand hover:bg-brand-softer hover:text-brand h-10 min-w-0 flex-1 border-[1.5px] px-2 text-sm leading-4 font-semibold whitespace-normal md:flex-none md:px-5"
+          onClick={() => handOver("detect", finalText)}
+        >
+          {result("checkWithDetector")}
+        </Button>
+      </div>
+      {/* What a free run is, and the way past it. */}
+      {metered && (
+        <p className="mt-3 text-sm leading-5 whitespace-normal text-neutral-800">
+          {result.rich(`note.${note}`, {
+            n: format.number(metered.perUse),
+            days: TRIAL.days,
+            link: (chunks) => (
+              <Link
+                href={{
+                  pathname: "/pricing",
+                  query: { cycle: "monthly" },
+                  hash: "ilimitado",
+                }}
+                className="text-brand font-semibold whitespace-nowrap hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      )}
+    </>
+  );
 
   const hint = tourStep({
     dismissed: tour.dismissed,
@@ -836,13 +930,21 @@ export function ToolEditor({
       )}
 
       <div className="bg-card overflow-hidden rounded-[14px] border shadow-sm">
-        {paraphrasing ? (
+        {paraphrasing || correcting ? (
           <div className="border-b p-3 md:px-4">
-            <RegisterPicker
-              modes={modes}
-              value={mode ?? modes[0]}
-              onChange={setPicked}
-            />
+            {paraphrasing ? (
+              <RegisterPicker
+                modes={modes}
+                value={mode ?? modes[0]}
+                onChange={setPicked}
+              />
+            ) : (
+              <CorrectModePicker
+                modes={modes}
+                value={mode ?? modes[0]}
+                onChange={setPicked}
+              />
+            )}
           </div>
         ) : (
           modes.length > 0 && (
@@ -874,6 +976,9 @@ export function ToolEditor({
               // A paraphrase is read before the original on a phone
               // (F2-04): the result comes first and the box after it.
               resultFirst && "order-last border-t md:order-none md:border-t-0",
+              // The review on a phone: the marked text, the list, then the
+              // button -- so this column's children join the grid's order.
+              reviewing && "max-md:contents",
             )}
           >
             {resultFirst && (
@@ -881,36 +986,67 @@ export function ToolEditor({
                 {result("yourText")}
               </p>
             )}
-            <EditorInput
-              inputRef={inputRef}
-              value={input}
-              onChange={setInput}
-              onReach={() => setReached(true)}
-              placeholder={t("placeholder")}
-              label={t("inputLabel")}
-              processable={processable}
-              dimmed={dimmed}
-              className="h-[200px] md:h-[140px]"
-            >
-              {/* Inside the box, so it takes no room and moves nothing
+            {reviewing && review ? (
+              <div ref={reviewRef} className="p-3 max-md:order-1 md:px-4">
+                <div className="flex items-center">
+                  <p className={LABEL}>{correctCopy("reviewLabel")}</p>
+                  <button
+                    type="button"
+                    className="text-brand ml-auto text-[13px] font-semibold hover:underline"
+                    onClick={() => {
+                      // Back to the box, which still holds what was written.
+                      setStatus("idle");
+                      setReview(null);
+                      setOutput("");
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                  >
+                    {correctCopy("editText")}
+                  </button>
+                </div>
+                <div
+                  data-testid="review-text"
+                  className="mt-2 text-[15px] leading-[23px] whitespace-pre-wrap md:h-[92px] md:overflow-y-auto"
+                >
+                  <ReviewText
+                    segments={review.segments}
+                    decisions={decisions}
+                    tail={review.tail}
+                  />
+                </div>
+              </div>
+            ) : (
+              <EditorInput
+                inputRef={inputRef}
+                value={input}
+                onChange={setInput}
+                onReach={() => setReached(true)}
+                placeholder={t("placeholder")}
+                label={t("inputLabel")}
+                processable={processable}
+                dimmed={dimmed}
+                className="h-[200px] md:h-[140px]"
+              >
+                {/* Inside the box, so it takes no room and moves nothing
                   when the real figure arrives (F2-02, F2-12). Rendered
                   from state, so it is also the signal that the client has
                   taken over: before hydration the box can hold text while
                   React still believes it is empty. */}
-              <p
-                data-testid="word-count"
-                aria-live="polite"
-                className={cn(
-                  "pointer-events-none absolute right-2 bottom-2 h-5 rounded-[5px] bg-white/95 px-1.5 text-xs leading-5 text-neutral-500 tabular-nums",
-                  counterOver &&
-                    "bg-warning-soft text-warning-ink font-semibold",
-                )}
-              >
-                {counter}
-              </p>
-            </EditorInput>
+                <p
+                  data-testid="word-count"
+                  aria-live="polite"
+                  className={cn(
+                    "pointer-events-none absolute right-2 bottom-2 h-5 rounded-[5px] bg-white/95 px-1.5 text-xs leading-5 text-neutral-500 tabular-nums",
+                    counterOver &&
+                      "bg-warning-soft text-warning-ink font-semibold",
+                  )}
+                >
+                  {counter}
+                </p>
+              </EditorInput>
+            )}
 
-            {kind && (
+            {kind && !reviewing && (
               <LimitNotice
                 kind={kind}
                 plan={plan}
@@ -956,7 +1092,8 @@ export function ToolEditor({
             <div
               className={cn(
                 "relative p-3 md:flex md:items-center md:gap-3 md:px-4",
-                !kind && !showCost && "border-t",
+                (reviewing || (!kind && !showCost)) && "border-t",
+                reviewing && "max-md:order-3",
               )}
             >
               <Button
@@ -987,6 +1124,16 @@ export function ToolEditor({
                   {detector("trimMyself")}
                 </Button>
               )}
+              {/* The box is the review now, so the counter sits here. */}
+              {reviewing && (
+                <p
+                  data-testid="word-count"
+                  aria-live="polite"
+                  className="hidden h-5 rounded-[5px] px-1.5 text-xs leading-5 text-neutral-500 tabular-nums md:ml-auto md:block"
+                >
+                  {counter}
+                </p>
+              )}
             </div>
           </div>
 
@@ -995,6 +1142,7 @@ export function ToolEditor({
             className={cn(
               "flex min-h-[120px] min-w-0 flex-col border-t md:min-h-64 md:border-t-0",
               resultFirst && "order-first border-t-0 md:order-none",
+              reviewing && "max-md:order-2",
             )}
           >
             {/* Invisible unless Cloudflare wants a click, and then here, in
@@ -1039,6 +1187,15 @@ export function ToolEditor({
                   </>
                 }
               />
+            ) : reviewing && review ? (
+              <>
+                <ChangeList
+                  segments={review.segments}
+                  decisions={decisions}
+                  onDecide={setDecisions}
+                />
+                <div className="p-3 md:p-4">{resultActions("correct")}</div>
+              </>
             ) : (
               <div className="flex-1 p-3 text-[15px] whitespace-pre-wrap md:p-4 md:text-sm">
                 {resultFirst ? (
@@ -1047,42 +1204,7 @@ export function ToolEditor({
                     <div className="text-[15px] leading-[23px]">
                       <DiffMarks parts={parts} fallback={output} />
                     </div>
-                    <div className="mt-3.5 flex gap-2 whitespace-normal">
-                      <Button
-                        className="h-10 min-w-0 flex-1 px-2 text-sm leading-4 font-semibold whitespace-normal md:flex-none md:px-5"
-                        onClick={() => navigator.clipboard.writeText(output)}
-                      >
-                        {t("copyResult")}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="border-brand text-brand hover:bg-brand-softer hover:text-brand h-10 min-w-0 flex-1 border-[1.5px] px-2 text-sm leading-4 font-semibold whitespace-normal md:flex-none md:px-5"
-                        onClick={() => handOver("detect", output)}
-                      >
-                        {result("checkWithDetector")}
-                      </Button>
-                    </div>
-                    {/* What a free run is, and the way past it. */}
-                    {metered && (
-                      <p className="mt-3 text-sm leading-5 whitespace-normal text-neutral-800">
-                        {result.rich("note.paraphrase", {
-                          n: format.number(metered.perUse),
-                          days: TRIAL.days,
-                          link: (chunks) => (
-                            <Link
-                              href={{
-                                pathname: "/pricing",
-                                query: { cycle: "monthly" },
-                                hash: "ilimitado",
-                              }}
-                              className="text-brand font-semibold whitespace-nowrap hover:underline"
-                            >
-                              {chunks}
-                            </Link>
-                          ),
-                        })}
-                      </p>
-                    )}
+                    {resultActions("paraphrase")}
                   </>
                 ) : status === "done" && !measures ? (
                   <DiffMarks parts={parts} fallback={output} />
@@ -1101,20 +1223,24 @@ export function ToolEditor({
                 )}
               </div>
             )}
-            {status === "done" && parts && !measures && !resultFirst && (
-              <div className="flex flex-wrap items-center gap-4 border-t px-3 py-2 md:px-4">
-                <HighlightLegend kind="rewritten" />
-                <HighlightLegend kind="added" />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto"
-                  onClick={() => navigator.clipboard.writeText(output)}
-                >
-                  {t("copyResult")}
-                </Button>
-              </div>
-            )}
+            {status === "done" &&
+              parts &&
+              !measures &&
+              !resultFirst &&
+              !reviewing && (
+                <div className="flex flex-wrap items-center gap-4 border-t px-3 py-2 md:px-4">
+                  <HighlightLegend kind="rewritten" />
+                  <HighlightLegend kind="added" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto"
+                    onClick={() => navigator.clipboard.writeText(output)}
+                  >
+                    {t("copyResult")}
+                  </Button>
+                </div>
+              )}
           </div>
         </div>
       </div>
