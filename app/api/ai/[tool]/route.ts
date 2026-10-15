@@ -10,7 +10,7 @@ import { getSession } from "@/lib/auth/server";
 import { checkEntitlement, getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
 import { saveDocument } from "@/lib/documents/store";
-import { hashIp } from "@/lib/security/crypto";
+import { anonymousSubject } from "@/lib/security/crypto";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import {
   aiToolRequestSchema,
@@ -133,7 +133,7 @@ async function handle(
   const user = await getSession();
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "0.0.0.0";
-  const subject = user ? `user:${user.id}` : `ip:${hashIp(ip)}`;
+  const subject = user ? `user:${user.id}` : anonymousSubject(ip);
 
   if (!user && !(await verifyTurnstile(turnstileToken, ip))) {
     return error(403, "captcha_failed", t("captcha_failed"));

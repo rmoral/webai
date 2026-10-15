@@ -1,6 +1,12 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { decryptText, encryptText, hashIp } from "@/lib/security/crypto";
+import {
+  anonymousSubject,
+  decryptText,
+  encryptText,
+  hashIp,
+  quotaNetwork,
+} from "@/lib/security/crypto";
 import {
   aiToolRequestSchema,
   countWords,
@@ -36,6 +42,32 @@ describe("hashIp", () => {
     const hash = hashIp("203.0.113.7");
     expect(hash).toBe(hashIp("203.0.113.7"));
     expect(hash).not.toContain("203");
+  });
+});
+
+describe("anonymous quota subjects", () => {
+  it("keeps an IPv4 address whole", () => {
+    expect(quotaNetwork("203.0.113.7")).toBe("203.0.113.7");
+    expect(quotaNetwork("::ffff:203.0.113.7")).toBe("203.0.113.7");
+  });
+
+  it("keys IPv6 by its /64, so rotating privacy addresses are one visitor", () => {
+    const a = "2001:db8:85a3:12:a1b2:c3d4:e5f6:1";
+    const b = "2001:0db8:85a3:0012:9999:8888:7777:2";
+    expect(quotaNetwork(a)).toBe("2001:db8:85a3:12::/64");
+    expect(quotaNetwork(b)).toBe(quotaNetwork(a));
+    expect(anonymousSubject(a)).toBe(anonymousSubject(b));
+    // Compressed forms expand before the cut.
+    expect(quotaNetwork("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    // Another /64 is another visitor.
+    expect(anonymousSubject("2001:db8:85a3:13::1")).not.toBe(
+      anonymousSubject(a),
+    );
+  });
+
+  it("never carries the address in clear", () => {
+    expect(anonymousSubject("203.0.113.7")).toMatch(/^ip:/);
+    expect(anonymousSubject("203.0.113.7")).not.toContain("203");
   });
 });
 

@@ -55,3 +55,33 @@ export function hashIp(ip: string): string {
   if (!secret) throw new Error("IP_HASH_SECRET is not set");
   return createHmac("sha256", secret).update(ip).digest("base64url");
 }
+
+/**
+ * The network an address belongs to, for keying anonymous quotas.
+ *
+ * An IPv6 device rotates its privacy addresses inside its /64, so keyed by
+ * the full address one phone was a new visitor every few hours -- with a
+ * fresh allowance each time. Keyed by the /64 it is one visitor, which is
+ * also how rate limiters treat IPv6. IPv4, and IPv4 mapped into IPv6, are
+ * kept whole.
+ */
+export function quotaNetwork(ip: string): string {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  if (mapped) return mapped[1];
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.toLowerCase().split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = ip.includes("::")
+    ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right]
+    : left;
+  return `${groups
+    .slice(0, 4)
+    .map((g) => g.replace(/^0+(?=.)/, ""))
+    .join(":")}::/64`;
+}
+
+/** The quota subject of a signed-out visitor: their network, hashed. */
+export function anonymousSubject(ip: string): string {
+  return `ip:${hashIp(quotaNetwork(ip))}`;
+}
