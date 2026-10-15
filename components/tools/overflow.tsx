@@ -223,11 +223,15 @@ export function LimitNotice({
       unlimited: n(PLANS.unlimited.limits.maxWordsPerRequest),
     });
   } else if (kind === "partial") {
-    lead = t("partialLead", { left: n(left) });
+    // A paid plan's allowance is the month's, and it does not refill in a
+    // few hours: the window is named, and the refill only for a day.
+    const window = monthly ? "month" : "day";
+    lead = t("partialLead", { left: n(left), window });
     body = t("partialBody", {
       left: n(left),
       submitted: n(words),
       time: resetsIn,
+      window,
     });
   } else if (kind === "detectorTooLong" || kind === "detector") {
     // One notice for both (F2-03): what this run can analyse, and that the

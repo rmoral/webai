@@ -260,7 +260,7 @@
         },
         {
           "q": "Is it included in the free plan?",
-          "a": "Yes. With or without a free account you can paraphrase {perUse} words per run, {uses} times a day, in all six registers. For longer texts or unlimited runs, Pro or Unlimited."
+          "a": "Yes. With or without a free account you can paraphrase {perUse} words a run, {uses} times a day, in all six registers. For longer texts or more runs, Pro or Unlimited."
         },
         {
           "q": "Can I see what changed?",
@@ -272,25 +272,25 @@
         "tool": "Use the grammar checker",
         "pricing": "see the plans"
       },
-      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
+      "priceLine": "Free: {perUse} words a run, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
       "modes": {
         "estandar": {
-          "description": "Balanced rewrite: changes the wording without straying from the original."
+          "description": "A balanced rewrite: new wording that stays close to the original."
         },
         "fluido": {
-          "description": "Puts reading well aloud first."
+          "description": "Puts how it reads aloud first."
         },
         "formal": {
-          "description": "Impersonal, precise vocabulary and the connectors of an essay or a report."
+          "description": "Impersonal, with precise vocabulary and the linking words of an essay or a report."
         },
         "simple": {
           "description": "Brings the register down until anyone can follow it."
         },
         "creativo": {
-          "description": "Allows images and turns the original did not have, with the same content."
+          "description": "Allows images and turns of phrase the original did not have, with the same content."
         },
         "academico": {
-          "description": "Like formal, and it also keeps citation conventions."
+          "description": "Like Formal, and it also respects citation conventions."
         }
       },
       "modeLabel": "Register"
@@ -340,7 +340,7 @@
         },
         {
           "q": "Is it included in the free plan?",
-          "a": "Yes. With or without a free account you can correct {perUse} words per run, {uses} times a day, in both modes. For longer texts or unlimited runs, Pro or Unlimited."
+          "a": "Yes. With or without a free account you can check {perUse} words a run, {uses} times a day, in both modes. For longer texts or more runs, Pro or Unlimited."
         },
         {
           "q": "Will it change my style?",
@@ -352,10 +352,10 @@
         "tool": "Use the paraphraser",
         "pricing": "see the plans"
       },
-      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
+      "priceLine": "Free: {perUse} words a run, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
       "modes": {
         "general": {
-          "description": "Fixes what is wrong and leaves the rest alone."
+          "description": "Fixes what is wrong and leaves everything else alone."
         },
         "academico": {
           "description": "Also flags what is correct but out of register: colloquialisms, fillers, overused passives."
@@ -363,7 +363,7 @@
       },
       "modeLabel": "Mode"
     },
-    "languageLine": "Understands the Spanish of Spain and of the Americas. It does not translate or go through English."
+    "languageLine": "Understands Spanish from Spain and from Latin America. No translating, no detour through English."
   },
   "proof": {
     "title": "Tested against the detectors",
@@ -380,7 +380,7 @@
     "wordsPerDay": "{words} words a day",
     "wordsPerMonth": "{words} words a month",
     "perRequest": "Up to {words} per request",
-    "freeTools": "All four tools; the paraphraser and the corrector with {perUse} words and {uses} runs a day",
+    "freeTools": "All four tools; the paraphraser and the grammar checker with {perUse} words a run and {uses} runs a day",
     "proTools": "Every tool, history and the passage breakdown",
     "priority": "Priority queue",
     "signup": "Create a free account",
@@ -420,7 +420,7 @@
     "valueNone": "—",
     "valueYes": "Yes",
     "valueNo": "No",
-    "valueFreeTools": "All four · paraphraser and corrector: {perUse} words, {uses} runs a day",
+    "valueFreeTools": "All four · paraphraser and grammar checker: {perUse} words, {uses} runs a day",
     "valueAllTools": "All four",
     "valueTopup": "{amount} for {words}, no expiry",
     "valueTopupNeedsPlan": "Needs a paid plan",
@@ -484,7 +484,7 @@
       "humanize": "Humanize",
       "detect": "Analyse text",
       "paraphrase": "Paraphrase",
-      "correct": "Correct"
+      "correct": "Check text"
     },
     "quota": {
       "words": "{words}/{left} words {window, select, month {this month} other {today}}",
@@ -508,8 +508,8 @@
     "seePlans": "See plans",
     "overflowLead": "We will process the first {words} words",
     "overflowBody": " of the {submitted} you pasted. The rest is dimmed and stays in the editor. Pro raises the limit to {pro} per request; Unlimited, to {unlimited}.",
-    "partialLead": "You have {left} words left today.",
-    "partialBody": " We will process the first {left} of the {submitted} you pasted; the rest is dimmed and stays in the editor. They refill in {time}.",
+    "partialLead": "You have {left} words left {window, select, month {this month} other {today}}.",
+    "partialBody": " We will process the first {left} of the {submitted} you pasted; the rest is dimmed and stays in the editor.{window, select, month {} other { They refill in {time}.}}",
     "spentLead": "You have used your {limit} words for today.",
     "spentBody": " They refill in {time}. Your text stays here, as it is.",
     "spentBodyAnon": " They refill in {time}. Your text stays here, as it is. A free account gives you {free} a day.",
@@ -544,11 +544,11 @@
     "close": "Close",
     "breakdownLock": "See the passage breakdown",
     "usesTitle": "You have used today's {uses} runs",
-    "usesBody": "Tomorrow you get another {uses}, of {words} words each. With Unlimited there is no limit on runs.",
+    "usesBody": "You get another {uses} tomorrow, of up to {words} words each. Unlimited has no limit on runs.",
     "perUseLead": "Free: {n} words per run.",
     "perUseBody": {
-      "paraphrase": " We will process the first {n}; the rest stays in the editor.",
-      "correct": " We will correct the first {n}; the rest stays in the editor."
+      "paraphrase": " We will paraphrase the first {n}; the rest stays in the editor.",
+      "correct": " We will check the first {n}; the rest stays in the editor."
     }
   },
   "trialEnd": {
@@ -600,7 +600,7 @@
     "limitBody": " The detector works best with the whole text.",
     "analyzeFirst": "Analyse the first {n}",
     "trimMyself": "Trim it myself",
-    "whyLine": "Other detectors give a percentage; we do not. <link>Why →</link>",
+    "whyLine": "Other detectors give a percentage; we do not. <link>Here is why →</link>",
     "humanizeThis": "Humanize this text",
     "analyzeAnother": "Analyse another text"
   },
@@ -619,7 +619,7 @@
     "notFoundTitle": "This page does not exist",
     "notFoundBody": "The link you followed does not lead anywhere. The page may have moved.",
     "notFoundCta": "Go to the home page",
-    "uses_exhausted": "You have used today's {uses} runs of this tool. They come back tomorrow."
+    "uses_exhausted": "You have used today's {uses} runs of this tool. They reset tomorrow."
   },
   "app": {
     "history": "History",
@@ -680,7 +680,7 @@
     "signinTitle": "Back to your account",
     "signinLede": "Sign in with Google, or ask us for a link. There was never a password to remember.",
     "benefitWords": "From {from} to {to} words a day, starting now.",
-    "benefitTools": "All four tools, at no cost.",
+    "benefitTools": "All four tools, free.",
     "google": "Continue with Google",
     "or": "or with your email",
     "emailPlaceholder": "you@email.com",
@@ -1186,8 +1186,8 @@
     "yourText": "Your text",
     "checkWithDetector": "Check with the detector",
     "note": {
-      "paraphrase": "That is {n} words. With Unlimited there is no limit → <link>Try {days} days free</link>",
-      "correct": "That is {n} words corrected. With Unlimited there is no limit → <link>Try {days} days free</link>"
+      "paraphrase": "That was {n} words. Unlimited has no limit → <link>Try {days} days free</link>",
+      "correct": "That was {n} words checked. Unlimited has no limit → <link>Try {days} days free</link>"
     }
   },
   "correct": {

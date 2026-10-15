@@ -9,7 +9,8 @@ import { getDb } from "@/lib/db/client";
 import { subscriptions } from "@/lib/db/schema";
 import { quotaDay } from "@/lib/usage/day";
 
-// Quota and anti-abuse layer. Subjects are `user:<id>` or `ip:<hashIp(ip)>`.
+// Quota and anti-abuse layer. Subjects are `user:<id>` or `anonymousSubject(ip)`
+// (the hashed network: an IPv6 /64, an IPv4 address).
 // Fails closed in production if Redis is not configured; in dev without
 // Redis, limits are disabled so the app still runs.
 //
@@ -78,7 +79,12 @@ export interface QuotaGrant {
   granted: number;
   /** Words spent against the allowance, after this reservation. */
   used: number | null;
-  /** Words left in the plan allowance. `null` when the plan is unmetered. */
+  /**
+   * Words the subscriber can still spend: the plan allowance, plus any
+   * top-up balance on a paid plan -- which is what "te quedan" has to
+   * promise, or the editor cuts a run the top-up would have covered.
+   * `null` when the plan is unmetered.
+   */
   remaining: number | null;
   /**
    * The allowance the figures above are measured against. `null` when the
@@ -204,7 +210,7 @@ async function reserve(
     return {
       granted: words,
       used: 0,
-      remaining: limits.wordsPerMonth,
+      remaining: limits.wordsPerMonth + subscriber.topupWords,
       limit: limits.wordsPerMonth,
     };
 
@@ -216,7 +222,7 @@ async function reserve(
     words,
     40 * 24 * 60 * 60,
   );
-  const remaining = Math.max(0, limit - used);
+  const remaining = Math.max(0, limit - used) + subscriber.topupWords;
   if (granted === words) return { granted, used, remaining, limit };
 
   // Ilimitado is sold as unlimited: warn the owner, keep serving.
@@ -233,7 +239,13 @@ async function reserve(
   // rather than half spent.
   const shortfall = words - granted;
   if (await consumeTopupWords(subject, shortfall)) {
-    return { granted: words, used, remaining, limit, fromTopup: shortfall };
+    return {
+      granted: words,
+      used,
+      remaining: remaining - shortfall,
+      limit,
+      fromTopup: shortfall,
+    };
   }
 
   return { granted, used, remaining, limit };
@@ -378,16 +390,24 @@ export async function peekWords(
   if (limit === null) {
     return { used: 0, limit: null, remaining: null, metered };
   }
+  // Purchased words count as left on a paid plan (see QuotaGrant.remaining);
+  // `used` and `limit` stay the plan's, which is what the bar draws.
+  const topup = metered ? 0 : subscriber.topupWords;
   try {
     const client = getRedis();
-    if (!client) return { used: 0, limit, remaining: limit, metered };
+    if (!client) return { used: 0, limit, remaining: limit + topup, metered };
     const key = metered
       ? dailyKey(subject)
       : monthlyKey(subject, subscriber.periodStart);
     const used = Math.min(limit, Number((await client.get<number>(key)) ?? 0));
-    return { used, limit, remaining: Math.max(0, limit - used), metered };
+    return {
+      used,
+      limit,
+      remaining: Math.max(0, limit - used) + topup,
+      metered,
+    };
   } catch (error) {
     Sentry.captureException(error);
-    return { used: 0, limit, remaining: limit, metered };
+    return { used: 0, limit, remaining: limit + topup, metered };
   }
 }

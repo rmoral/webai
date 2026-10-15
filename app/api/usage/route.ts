@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/server";
 import { getSubscriber } from "@/lib/billing/entitlements";
 import { PLANS } from "@/lib/billing/plans";
-import { hashIp } from "@/lib/security/crypto";
+import { anonymousSubject } from "@/lib/security/crypto";
 import { QUOTA_TIMEZONE } from "@/lib/usage/day";
 import type { ToolId } from "@/lib/ai/tools";
 import { checkBurstLimit, peekUses, peekWords } from "@/lib/usage/quotas";
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   const user = await getSession();
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "0.0.0.0";
-  const subject = user ? `user:${user.id}` : `ip:${hashIp(ip)}`;
+  const subject = user ? `user:${user.id}` : anonymousSubject(ip);
 
   // A Redis read is cheap and this runs on page load, but it is still an
   // unauthenticated endpoint: the same burst limit as everything else.
