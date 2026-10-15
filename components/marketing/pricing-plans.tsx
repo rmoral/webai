@@ -182,6 +182,8 @@ export function PricingPlans() {
       <div className="mt-4 grid items-stretch gap-4 md:mt-5 md:grid-cols-3 md:gap-5">
         <Card
           highlighted
+          // The paraphraser's result note links here (F2-04).
+          id="ilimitado"
           className="md:order-2"
           // The only badge on the page, and it names the recommendation
           // rather than an offer.
@@ -346,7 +348,10 @@ function Card({
   note,
   highlighted = false,
   className,
+  id,
 }: {
+  /** An anchor other pages link to. */
+  id?: string;
   title: string;
   badge?: string;
   price: string;
@@ -364,9 +369,10 @@ function Card({
 }) {
   return (
     <section
+      id={id}
       aria-label={title}
       className={cn(
-        "flex flex-col rounded-[14px] border p-5 md:p-6",
+        "flex scroll-mt-28 flex-col rounded-[14px] border p-5 md:p-6",
         highlighted &&
           "border-brand border-2 p-[19px] md:p-[23px] md:shadow-[0_8px_24px_rgb(43_69_196/0.10)]",
         className,

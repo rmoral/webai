@@ -272,7 +272,28 @@
         "tool": "Usa el corrector",
         "pricing": "consulta los planes"
       },
-      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>"
+      "priceLine": "Gratis: {perUse} palabras, {uses} usos al día · Pro desde {pro}/mes · Ilimitado con {days} días de prueba <link>→ Ver planes</link>",
+      "modes": {
+        "estandar": {
+          "description": "Reescritura equilibrada: cambia la formulación sin alejarse del original."
+        },
+        "fluido": {
+          "description": "Prioriza que se lea bien en voz alta."
+        },
+        "formal": {
+          "description": "Trato impersonal, léxico preciso y conectores de un trabajo o un informe."
+        },
+        "simple": {
+          "description": "Baja el registro hasta donde lo entienda cualquiera."
+        },
+        "creativo": {
+          "description": "Se permite imágenes y giros que el original no tenía, con el mismo contenido."
+        },
+        "academico": {
+          "description": "Como el formal, y además respeta la convención de la cita."
+        }
+      },
+      "modeLabel": "Registro"
     },
     "correct": {
       "metaTitle": "Corrector ortográfico y gramatical en español",
@@ -1150,5 +1171,13 @@
       "body": "Ha fallado algo por nuestra parte, no por la tuya. Inténtalo otra vez en un minuto o escríbenos a hola@verbalyx.ai y lo hacemos nosotros."
     },
     "home": "Ir a Verbalyx"
+  },
+  "result": {
+    "label": "Resultado",
+    "yourText": "Tu texto",
+    "checkWithDetector": "Comprobar con el detector",
+    "note": {
+      "paraphrase": "Esto son {n} palabras. Con Ilimitado no hay límite → <link>Probar {days} días gratis</link>"
+    }
   }
 }
