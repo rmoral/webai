@@ -67,20 +67,29 @@ test("on a phone: a dropdown, then the result first and a way on", async ({
   await page
     .getByRole("combobox", { name: "Registro" })
     .selectOption("creativo");
-  const box = await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera.");
   await page.getByRole("button", { name: "Parafrasear" }).click();
   await expect(page.getByText("Un resultado distinto.")).toBeVisible();
   expect(bodies[0]).toMatchObject({ mode: "creativo" });
 
-  // The result above the original, each with its label.
-  const resultTop = (await page
-    .getByText("Resultado", { exact: true })
-    .boundingBox())!.y;
-  const yoursTop = (await page
-    .getByText("Tu texto", { exact: true })
-    .boundingBox())!.y;
+  // The result above the original, each with its label. Measured
+  // together, in page coordinates: the page scrolls smoothly to the
+  // result, and reads taken one after another would straddle the scroll.
+  const [resultTop, yoursTop, boxTop] = await page.evaluate(() => {
+    const top = (el: Element | null | undefined) =>
+      el!.getBoundingClientRect().top + window.scrollY;
+    const byText = (text: string) =>
+      [...document.querySelectorAll("p")].find(
+        (p) => p.textContent?.trim().toLowerCase() === text,
+      );
+    return [
+      top(byText("resultado")),
+      top(byText("tu texto")),
+      top(document.querySelector('textarea[aria-label="Texto de entrada"]')),
+    ];
+  });
   expect(resultTop).toBeLessThan(yoursTop);
-  expect(resultTop).toBeLessThan((await box.boundingBox())!.y);
+  expect(yoursTop).toBeLessThan(boxTop);
 
   // The note names a run's words and links to the trial on /precios.
   await expect(page.getByText(/Esto son 100 palabras/)).toBeVisible();

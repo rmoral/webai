@@ -125,11 +125,25 @@ test("on a phone: a segmented control, then text, list and button in that order"
 
   await typeInto(page, "Texto de entrada", BEFORE);
   await page.getByRole("button", { name: "Corregir" }).click();
-  const text = (await page.getByTestId("review-text").boundingBox())!;
-  const list = (await page.getByTestId("change").first().boundingBox())!;
-  const run = (await page.getByTestId("run").boundingBox())!;
-  expect(text.y).toBeLessThan(list.y);
-  expect(list.y).toBeLessThan(run.y);
+  await expect(page.getByTestId("review-text")).toBeVisible({
+    timeout: 15_000,
+  });
+  // Measured together, in page coordinates: the page scrolls smoothly to
+  // the result when it lands, and three separate reads mid-scroll compare
+  // positions taken at different moments.
+  const [text, list, run] = await page.evaluate(() =>
+    [
+      '[data-testid="review-text"]',
+      '[data-testid="change"]',
+      '[data-testid="run"]',
+    ].map(
+      (selector) =>
+        document.querySelector(selector)!.getBoundingClientRect().top +
+        window.scrollY,
+    ),
+  );
+  expect(text).toBeLessThan(list);
+  expect(list).toBeLessThan(run);
   await expect(
     page.getByText(/Esto son 100 palabras corregidas/),
   ).toBeVisible();
