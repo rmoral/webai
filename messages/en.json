@@ -272,7 +272,28 @@
         "tool": "Use the grammar checker",
         "pricing": "see the plans"
       },
-      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>"
+      "priceLine": "Free: {perUse} words, {uses} runs a day · Pro from {pro}/month · Unlimited with a {days}-day trial <link>→ See plans</link>",
+      "modes": {
+        "estandar": {
+          "description": "Balanced rewrite: changes the wording without straying from the original."
+        },
+        "fluido": {
+          "description": "Puts reading well aloud first."
+        },
+        "formal": {
+          "description": "Impersonal, precise vocabulary and the connectors of an essay or a report."
+        },
+        "simple": {
+          "description": "Brings the register down until anyone can follow it."
+        },
+        "creativo": {
+          "description": "Allows images and turns the original did not have, with the same content."
+        },
+        "academico": {
+          "description": "Like formal, and it also keeps citation conventions."
+        }
+      },
+      "modeLabel": "Register"
     },
     "correct": {
       "metaTitle": "Grammar checker — spelling, grammar and punctuation",
@@ -1150,5 +1171,13 @@
       "body": "Something failed on our side, not yours. Try again in a minute, or write to hola@verbalyx.ai and we will do it for you."
     },
     "home": "Go to Verbalyx"
+  },
+  "result": {
+    "label": "Result",
+    "yourText": "Your text",
+    "checkWithDetector": "Check with the detector",
+    "note": {
+      "paraphrase": "That is {n} words. With Unlimited there is no limit → <link>Try {days} days free</link>"
+    }
   }
 }
