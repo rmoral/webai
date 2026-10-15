@@ -308,3 +308,32 @@ test("analyses the first words of a long text only when asked to", async ({
   expect(cut.status()).toBe(200);
   expect(cut.headers()["x-words-processed"]).toBe("300");
 });
+
+test("from the verdict: why there is no percentage, and the next step", async ({
+  page,
+}) => {
+  // F2-04 and F2-06.
+  const result = await analyse(page, GENERADO);
+  await expect(
+    result.getByText(/Otros detectores dan un porcentaje/),
+  ).toBeVisible();
+  await expect(result.getByRole("link", { name: "Por qué →" })).toHaveAttribute(
+    "href",
+    "#por-que-no-porcentaje",
+  );
+  await expect(page.locator("#por-que-no-porcentaje")).toContainText(
+    "Por qué no verás un porcentaje",
+  );
+
+  // Another text: the box is emptied, on purpose, and has the focus.
+  await result.getByRole("button", { name: "Analizar otro texto" }).click();
+  const box = page.getByLabel("Texto de entrada");
+  await expect(box).toHaveValue("");
+  await expect(box).toBeFocused();
+
+  // The humanizer, with the same text in its box.
+  const again = await analyse(page, GENERADO);
+  await again.getByRole("button", { name: "Humanizar este texto" }).click();
+  await expect(page).toHaveURL(/humanizador-de-texto-ia/);
+  await expect(page.getByLabel("Texto de entrada")).toHaveValue(GENERADO);
+});

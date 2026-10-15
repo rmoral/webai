@@ -618,14 +618,15 @@ test("never processes more than the notice promised", async ({ page }) => {
   expect(sent).toMatchObject({ maxWords: 42 });
 });
 
-test("the detector refuses a partial run instead of scoring a fragment", async ({
+test("the detector offers what the balance covers, never in silence", async ({
   page,
 }) => {
-  // A score over part of a text is a wrong answer about the whole of it,
-  // so the button opens the wall instead of a run that would produce one.
-  const asked: string[] = [];
-  page.on("request", (request) => {
-    if (request.url().includes("/api/ai/")) asked.push(request.url());
+  // F2-03. 280 words with 200 left: the notice names the 200, the button
+  // offers them, and the request says it asked for a cut.
+  let sent: Record<string, unknown> = {};
+  await page.route("**/api/ai/detect", (route) => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({ status: 500, body: "{}" });
   });
   await balance(page, 200);
   await page.goto("/detector-de-ia");
@@ -637,27 +638,46 @@ test("the detector refuses a partial run instead of scoring a fragment", async (
 
   const strip = page.getByTestId("limit-notice");
   await expect(strip).toHaveAttribute("data-kind", "detector");
-  await expect(strip).toContainText("El detector necesita el texto entero.");
-  await expect(strip).toContainText("daría un resultado equivocado");
-
-  await page.getByTestId("run").click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  expect(asked).toEqual([]);
+  await expect(strip).toContainText("Tu plan analiza hasta 200 palabras.");
+  await page.getByRole("button", { name: "Analizar las primeras 200" }).click();
+  await expect.poll(() => sent.truncate).toBe(true);
+  expect(sent).toMatchObject({ maxWords: 200 });
 });
 
-test("the detector says so when the text is longer than one request", async ({
+test("over the ceiling, two ways out and nothing disabled", async ({
   page,
 }) => {
-  // Above the per-request ceiling the server refuses too (413), rather
-  // than silently scoring the first 300 words of 812.
+  // F2-03. 812 words: «Analizar las primeras 300» sends truncate; «Recortar
+  // yo mismo» selects what would not be analysed, and removes nothing.
+  let sent: Record<string, unknown> = {};
+  await page.route("**/api/ai/detect", (route) => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({ status: 500, body: "{}" });
+  });
   await balance(page, 300);
   await page.goto("/detector-de-ia");
-  await typeInto(page, "Texto de entrada", LONG_TEXT);
+  const box = await typeInto(page, "Texto de entrada", LONG_TEXT);
 
   const strip = page.getByTestId("limit-notice");
   await expect(strip).toHaveAttribute("data-kind", "detectorTooLong");
-  await expect(strip).toContainText(`Tiene ${PASTED} palabras`);
-  await expect(strip).toContainText(`tu plan analiza hasta ${CEILING}`);
+  await expect(strip).toContainText(
+    `Tu plan analiza hasta ${CEILING} palabras. El detector funciona mejor con el texto entero.`,
+  );
+  // No "Ver planes" in the strip: the price line below already has it.
+  await expect(strip.getByRole("link")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Recortar yo mismo" }).click();
+  const selection = await box.evaluate((el: HTMLTextAreaElement) =>
+    el.value.slice(el.selectionStart, el.selectionEnd),
+  );
+  expect(selection.startsWith(`palabra${CEILING + 1} `)).toBe(true);
+  expect(selection.endsWith(`palabra${PASTED}`)).toBe(true);
+  await expect(box).toHaveValue(LONG_TEXT);
+
+  await page
+    .getByRole("button", { name: `Analizar las primeras ${CEILING}` })
+    .click();
+  await expect.poll(() => sent.truncate).toBe(true);
 });
 
 test("nothing is dimmed when nothing will be processed", async ({ page }) => {

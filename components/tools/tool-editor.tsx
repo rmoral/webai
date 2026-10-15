@@ -40,9 +40,9 @@ import { TOOLS, resolveMode, type ToolId } from "@/lib/ai/tools";
 import type { DetectorAnalysis } from "@/lib/ai/detector/types";
 import { useViewer } from "@/components/marketing/viewer";
 import { PLANS, type PlanId } from "@/lib/billing/plans";
-import { Link, usePathname } from "@/lib/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { countWords } from "@/lib/security/validation";
+import { countWords, truncateToWords } from "@/lib/security/validation";
 import { minutesUntilQuotaReset } from "@/lib/usage/day";
 
 declare global {
@@ -159,6 +159,9 @@ export function ToolEditor({
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const router = useRouter();
+  const detector = useTranslations("detector");
   const posthog = usePostHog();
 
   // Who is reading, on a page whose server render could not know.
@@ -205,22 +208,31 @@ export function ToolEditor({
   // an effect rather than in the initial state: sessionStorage does not
   // exist on the server, and reading it during render makes the two passes
   // disagree.
+  //
+  // Nothing is written back until the draft has been read for this tool:
+  // the write would otherwise run first, with the empty initial box, and
+  // delete the draft it was about to restore -- which is what a second
+  // mount does (React's development double run, or another tool handing
+  // its text over, F2-04).
+  const [restoredFor, setRestoredFor] = useState<ToolId | null>(null);
   useEffect(() => {
     try {
       setInput(sessionStorage.getItem(`editor:${tool}`) ?? "");
     } catch {
       // Private mode, or storage denied. An empty box is a fine fallback.
     }
+    setRestoredFor(tool);
   }, [tool]);
 
   useEffect(() => {
+    if (restoredFor !== tool) return;
     try {
       if (input) sessionStorage.setItem(`editor:${tool}`, input);
       else sessionStorage.removeItem(`editor:${tool}`);
     } catch {
       // As above: losing the draft is survivable, failing the render is not.
     }
-  }, [input, tool]);
+  }, [input, tool, restoredFor]);
 
   // Switching tool reuses this component, so a previous result would sit
   // under the new tool's heading as if it had produced it.
@@ -295,8 +307,11 @@ export function ToolEditor({
   const monthly = PLANS[plan].limits.wordsPerDay === null;
   // Nothing will run as asked: the strip says why, and the button opens
   // the wall instead of sending a request that can only be refused.
-  const blocked =
-    kind === "exhausted" || kind === "detector" || kind === "detectorTooLong";
+  const blocked = kind === "exhausted";
+  // The detector over what this run can analyse (F2-03): the notice says
+  // so, the button offers the first `processable` words, and the text is
+  // dimmed from the cut on -- never refused, never cut in silence.
+  const detectorCut = measures && processable > 0 && words > processable;
   // Dimming marks the cut, so it only exists when something is cut and
   // something else is kept.
   const dimmed = !blocked && processable > 0 && words > processable;
@@ -511,6 +526,27 @@ export function ToolEditor({
     );
 
   /**
+   * "Recortar yo mismo": selects from the first word past the cut to the
+   * end, with the caret at the cut so the box scrolls to it. Delete or cut
+   * removes the lot; nothing is removed here (F2-03).
+   */
+  function selectPastCut() {
+    const box = inputRef.current;
+    if (!box) return;
+    const kept = truncateToWords(input, processable).length;
+    const start = kept + (input.slice(kept).match(/^\s*/)?.[0].length ?? 0);
+    box.focus();
+    box.setSelectionRange(start, input.length, "backward");
+    // The box scrolls inside: bring the cut into view, a third of the way
+    // down. Proportional rather than measured -- close enough for a line of
+    // text, and the dimmed mirror follows the scroll.
+    box.scrollTop = Math.max(
+      0,
+      (box.scrollHeight * start) / input.length - box.clientHeight / 3,
+    );
+  }
+
+  /**
    * The button. Never disabled by a limit (F2): it does what it says, or
    * opens the wall that explains why it cannot.
    */
@@ -527,7 +563,7 @@ export function ToolEditor({
     // A daily allowance that cannot cover the run: wall B, without a
     // request the server could only refuse. A paid plan's month goes to
     // the server, whose answer names the renewal and the top-up.
-    if (!monthly && (kind === "exhausted" || kind === "detector")) {
+    if (!monthly && kind === "exhausted") {
       const limitToday = PLANS[plan].limits.wordsPerDay ?? 0;
       const spent = {
         visibleText: "",
@@ -553,6 +589,7 @@ export function ToolEditor({
       tool,
       logged_in: plan !== "anonymous",
       words_in: words,
+      truncated: processable < words,
       quota_left: left,
     });
     setOutput("");
@@ -574,6 +611,8 @@ export function ToolEditor({
           turnstileToken: token || undefined,
           // The cut the notice announced, so what comes back can never be
           // more than what the reader was told (F2-13).
+          // Only when the reader pressed "Analizar las primeras {n}".
+          truncate: detectorCut || undefined,
           maxWords:
             processable > 0 && processable < words ? processable : undefined,
         }),
@@ -793,6 +832,7 @@ export function ToolEditor({
               is anything to scroll to (F1-03, F2). */}
           <div className="flex min-w-0 flex-col">
             <EditorInput
+              inputRef={inputRef}
               value={input}
               onChange={setInput}
               onReach={() => setReached(true)}
@@ -800,7 +840,7 @@ export function ToolEditor({
               label={t("inputLabel")}
               processable={processable}
               dimmed={dimmed}
-              className="min-h-[200px] md:min-h-[140px]"
+              className="h-[200px] md:h-[140px]"
             >
               {/* Inside the box, so it takes no room and moves nothing
                   when the real figure arrives (F2-02, F2-12). Rendered
@@ -834,7 +874,11 @@ export function ToolEditor({
                 action={
                   // A run's cut says what happens and nothing else: the
                   // button below still runs (F2-01).
-                  kind === "perUse"
+                  // The detector's cut is offered by the button below, and
+                  // the price line already has "Ver planes" (F2-03).
+                  kind === "perUse" ||
+                  kind === "detector" ||
+                  kind === "detectorTooLong"
                     ? null
                     : kind === "overflow"
                       ? seePlans
@@ -878,8 +922,21 @@ export function ToolEditor({
                 {status === "loading" && (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 )}
-                {t(`run.${tool}`)}
+                {detectorCut
+                  ? detector("analyzeFirst", { n: format.number(processable) })
+                  : t(`run.${tool}`)}
               </Button>
+              {/* The other way out of the cut: select what will not be
+                  analysed, so one keystroke removes it (F2-03). */}
+              {detectorCut && (
+                <Button
+                  variant="link"
+                  className="text-brand mt-1 h-11 w-full text-[15px] font-semibold md:mt-0 md:w-auto"
+                  onClick={selectPastCut}
+                >
+                  {detector("trimMyself")}
+                </Button>
+              )}
             </div>
           </div>
 
@@ -902,6 +959,49 @@ export function ToolEditor({
                 result={report.analysis}
                 text={report.text}
                 plan={plan}
+                actions={
+                  // From the verdict to the next step (F2-04): the other
+                  // tool with this text, or a fresh one here.
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-brand text-brand hover:bg-brand-softer hover:text-brand w-full border-[1.5px] md:w-auto"
+                      onClick={() => {
+                        track(posthog, "cross_tool", {
+                          from: tool,
+                          to: "humanize",
+                        });
+                        // The humanizer's own draft slot: it reads it on
+                        // mount, as it does when the reader comes back.
+                        try {
+                          sessionStorage.setItem(
+                            "editor:humanize",
+                            report.text,
+                          );
+                        } catch {
+                          // The reader lands on an empty humanizer. Worse,
+                          // but not broken.
+                        }
+                        router.push(TOOLS.humanize.path);
+                      }}
+                    >
+                      {detector("humanizeThis")}
+                    </Button>
+                    <Button
+                      variant="link"
+                      className="text-brand h-11 w-full text-[15px] font-semibold md:w-auto"
+                      onClick={() => {
+                        setInput("");
+                        setReport(null);
+                        setStatus("idle");
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      {detector("analyzeAnother")}
+                    </Button>
+                  </>
+                }
               />
             ) : (
               <div className="flex-1 p-3 text-[15px] whitespace-pre-wrap md:p-4 md:text-sm">
