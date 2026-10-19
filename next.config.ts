@@ -14,10 +14,13 @@ import createNextIntlPlugin from "next-intl/plugin";
 // every card that asks for authentication -- which in the EU is most of
 // them -- fails at the last step. *.js.stripe.com is the set of origins
 // Stripe.js spreads the Element frames over.
+// PostHog sends events to eu.i.posthog.com and loads its remote config
+// (and lazy extensions) from eu-assets.i.posthog.com. With the second one
+// blocked, the SDK fetched its flags and never sent a single event.
 // 'unsafe-inline' is required by Next.js hydration; 'unsafe-eval' only in dev.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com https://js.stripe.com https://*.js.stripe.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com`,
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com https://js.stripe.com https://*.js.stripe.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://eu-assets.i.posthog.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.google-analytics.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com",
   "font-src 'self'",
@@ -25,7 +28,7 @@ const csp = [
   // the *.supabase.co wildcard rather than instead of it, because the
   // wildcard does not cover it and switching NEXT_PUBLIC_SUPABASE_URL must
   // not depend on a deploy landing in the same minute.
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.verbalyx.ai wss://auth.verbalyx.ai https://eu.i.posthog.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://challenges.cloudflare.com https://api.stripe.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://pagead2.googlesyndication.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://auth.verbalyx.ai wss://auth.verbalyx.ai https://eu.i.posthog.com https://eu-assets.i.posthog.com https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://challenges.cloudflare.com https://api.stripe.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://pagead2.googlesyndication.com",
   "frame-src https://challenges.cloudflare.com https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://td.doubleclick.net https://www.googletagmanager.com",
   "object-src 'none'",
   "base-uri 'self'",
