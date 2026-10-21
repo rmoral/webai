@@ -17,7 +17,7 @@ Remitente: **Verbalyx <hola@verbalyx.ai>** (ya es el `FROM` de `lib/email.ts`). 
 
 ## Reglas
 
-- **Formato de cifra (F1-09, 13-10-2026):** «US$14,99». Símbolo delante, sin espacio, coma decimal y punto de miles («US$1.234,56»). El mismo `formatUSD` que la web.
+- **Formato de cifra (F1-09, revisado el 21-10-2026):** «$14,99». Símbolo delante, sin espacio, coma decimal y punto de miles («$1.234,56»). El mismo `formatUSD` que la web.
 
 - **Un solo botón por correo.** Cancelar va como enlace de texto visible, subrayado y en negrita, junto a «Cómo cancelar» y nunca en el pie.
 - **Fecha e importe en un bloque tintado a 26 px.** La fecha va siempre con el mes en palabras y fijada en UTC (`longDate` de `lib/billing/notify.ts`).
