@@ -70,11 +70,14 @@ declare global {
           "error-callback"?: () => void;
           /** Invisible unless Cloudflare decides it needs a click. */
           appearance?: "always" | "execute" | "interaction-only";
+          /** "execute": no challenge until `execute()` is called. */
+          execution?: "render" | "execute";
           "before-interactive-callback"?: () => void;
           "after-interactive-callback"?: () => void;
         },
       ) => string;
       reset: (id: string) => void;
+      execute: (id: string) => void;
     };
   }
 }
@@ -215,7 +218,7 @@ export function ToolEditor({
   // instead of guessing at a delay.
   const waiting = useRef<((token: string) => void)[]>([]);
   // Cloudflare asked for a click. The widget is invisible until then
-  // (`interaction-only`), and then it shows in the empty result panel.
+  // (`interaction-only`), and then it shows in a block under the button.
   const [interactive, setInteractive] = useState(false);
 
   const receiveToken = useCallback((token: string) => {
@@ -280,17 +283,23 @@ export function ToolEditor({
 
   // Rendered when the script says it is ready -- on load, and on every
   // mount after that -- rather than by polling for `window.turnstile`.
+  //
+  // Rendered, not run (F1-08): the challenge starts when the button is
+  // pressed, so a visit that never runs the tool never meets Cloudflare.
+  // A press that came before the script did is answered here.
   const renderWidget = useCallback(() => {
     if (!window.turnstile || !widgetRef.current || widgetId.current) return;
     widgetId.current = window.turnstile.render(widgetRef.current, {
       sitekey: TURNSTILE_KEY!,
       appearance: "interaction-only",
+      execution: "execute",
       callback: receiveToken,
       "expired-callback": loseToken,
       "error-callback": loseToken,
       "before-interactive-callback": () => setInteractive(true),
       "after-interactive-callback": () => setInteractive(false),
     });
+    if (waiting.current.length > 0) window.turnstile.execute(widgetId.current);
   }, [receiveToken, loseToken]);
 
   // Which build of the landing a funnel event came from (F2), so the
@@ -495,6 +504,9 @@ export function ToolEditor({
     if (tokenRef.current || !needsToken) {
       return Promise.resolve(tokenRef.current);
     }
+    // The challenge runs now, on the press. Before the script has loaded
+    // there is no widget yet, and `renderWidget` runs it instead.
+    if (widgetId.current) window.turnstile?.execute(widgetId.current);
     return new Promise((resolve) => {
       const waiter = (token: string) => {
         clearTimeout(timer);
@@ -523,6 +535,7 @@ export function ToolEditor({
     if (!widget || !window.turnstile) return Promise.resolve("");
     loseToken();
     window.turnstile.reset(widget);
+    // currentToken runs the new challenge: a reset one waits for execute().
     return currentToken(8_000);
   }
 
@@ -825,8 +838,8 @@ export function ToolEditor({
     } finally {
       // The token that was just sent is spent, whatever came back. Clearing
       // it alongside the reset is what stops the *second* run from going
-      // out with a dead token -- the same race as the first click, one
-      // request later, and the button now waits for the new one.
+      // out with a dead token. The reset does not run a new challenge:
+      // the next press does.
       if (widgetId.current) {
         loseToken();
         window.turnstile?.reset(widgetId.current);
@@ -1135,6 +1148,26 @@ export function ToolEditor({
                 </p>
               )}
             </div>
+            {/* Invisible unless Cloudflare wants a click (F1-08), and then
+                in a block under the button, at its full height from the
+                first frame so nothing jumps while the widget draws. The
+                box above it never moves. */}
+            {needsToken && (
+              <div
+                className={cn(
+                  interactive &&
+                    "flex min-h-[99px] flex-col items-center gap-1.5 px-3 pb-3 md:items-start md:px-4",
+                  reviewing && "max-md:order-3",
+                )}
+              >
+                {interactive && (
+                  <p className="text-xs leading-4 text-neutral-500">
+                    {t("turnstileNeeded")}
+                  </p>
+                )}
+                <div ref={widgetRef} data-testid="antibot" />
+              </div>
+            )}
           </div>
 
           <div
@@ -1145,15 +1178,6 @@ export function ToolEditor({
               reviewing && "max-md:order-2",
             )}
           >
-            {/* Invisible unless Cloudflare wants a click, and then here, in
-                the empty result panel: it never inserts a row under the
-                button (F2-12). */}
-            {needsToken && (
-              <div
-                ref={widgetRef}
-                className={cn(interactive && "flex justify-center p-3")}
-              />
-            )}
             {hint === 3 && <Hint step={3} onDismiss={tour.dismiss} />}
             {measures && report ? (
               <DetectorResultView

@@ -489,7 +489,8 @@
     "quota": {
       "words": "{words}/{left} palabras {window, select, month {este mes} other {hoy}}",
       "uses": "{words}/{perUse} palabras · {used}/{uses} usos hoy"
-    }
+    },
+    "turnstileNeeded": "Cloudflare necesita comprobar que no eres un robot."
   },
   "tour": {
     "step2": "Elige el registro antes de darle: académico conserva la terminología, informal se permite más.",

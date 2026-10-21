@@ -489,7 +489,8 @@
     "quota": {
       "words": "{words}/{left} words {window, select, month {this month} other {today}}",
       "uses": "{words}/{perUse} words · {used}/{uses} runs today"
-    }
+    },
+    "turnstileNeeded": "Cloudflare needs to check that you're not a robot."
   },
   "tour": {
     "step2": "Pick the register before you run it: academic keeps the terminology, informal allows more.",

@@ -11,8 +11,9 @@ import { typeInto } from "./helpers";
 // click of the visit answered "Verificación anti-bot fallida", with no way
 // to retry. What these tests hold is the gap itself, and the recovery.
 //
-// Cloudflare's script is replaced by a stub of the two calls the editor
-// actually uses -- render() and reset(), each answering with a token. The
+// Cloudflare's script is replaced by a stub of the three calls the editor
+// actually uses -- render(), execute() and reset(). As the real widget
+// with `execution: "execute"`, it answers with a token only when executed. The
 // widget's own behaviour is Cloudflare's to test; ours is what the editor
 // does while waiting for it, which is what broke. It also means the suite
 // needs no network and no site key of its own.
@@ -22,6 +23,10 @@ const ERROR = "Verificación anti-bot fallida";
 /** Replaces the Turnstile script with one that answers after `delayMs`. */
 async function stubTurnstile(page: Page, delayMs: number) {
   const state = { requested: false };
+  await page.exposeFunction("__executed", () => {
+    executed.count += 1;
+  });
+  const executed = { count: 0 };
   await page.route("**/challenges.cloudflare.com/**", async (route) => {
     state.requested = true;
     await route.fulfill({
@@ -38,17 +43,17 @@ async function stubTurnstile(page: Page, delayMs: number) {
           window.turnstile = {
             render(el, options) {
               opts = options;
-              el.setAttribute("data-testid", "antibot");
-              answer();
+              if (options.execution !== "execute") answer();
               return "stub-widget";
             },
-            reset() { answer(); },
+            execute() { window.__executed(); answer(); },
+            reset() { if (opts && opts.execution !== "execute") answer(); },
           };
         })();
       `,
     });
   });
-  return state;
+  return Object.assign(state, { executed });
 }
 
 /**
@@ -146,12 +151,42 @@ test("a failed check recovers on its own, without the reader doing anything", as
   await expect(page.getByText(ERROR)).toHaveCount(0);
 });
 
-test("when Cloudflare wants a click, the widget shows in the result panel", async ({
+test("the challenge runs on the press, not on arrival", async ({ page }) => {
+  // F1-08: a visit that never presses the button never meets Cloudflare,
+  // and the widget takes no room in the fold.
+  const state = await stubTurnstile(page, 50);
+  await page.route("**/api/ai/humanize", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      body: "Un resultado corriente.",
+    }),
+  );
+  await page.goto("/humanizador-de-texto-ia");
+  await typeInto(page, "Texto de entrada", "Un texto cualquiera para probar.");
+  test.skip(
+    !(await usesTurnstile(page, state)),
+    "This build carries no Turnstile site key",
+  );
+
+  await page.waitForTimeout(1_000);
+  expect(state.executed.count).toBe(0);
+  const box = await page.getByTestId("antibot").boundingBox();
+  expect(box?.height ?? 0).toBe(0);
+
+  await page.getByTestId("run").click();
+  await expect(page.getByText("Un resultado corriente.")).toBeVisible({
+    timeout: 20_000,
+  });
+  expect(state.executed.count).toBe(1);
+});
+
+test("when Cloudflare wants a click, the widget shows under the button", async ({
   page,
 }) => {
   // The widget is `interaction-only`, so nothing shows unless Cloudflare
-  // asks. When it does, it appears in the empty result panel, and never
-  // as a row inserted under the button (F2-12).
+  // asks. When it does, it appears in a block under the button, and the
+  // box above it does not move (F1-08).
   const state = { requested: false };
   await page.route("**/challenges.cloudflare.com/**", async (route) => {
     state.requested = true;
@@ -161,11 +196,12 @@ test("when Cloudflare wants a click, the widget shows in the result panel", asyn
       body: `
         window.turnstile = {
           render(el, options) {
-            el.setAttribute("data-testid", "antibot");
             el.style.height = "65px";
-            options["before-interactive-callback"]();
+            el.style.width = "300px";
+            window.__opts = options;
             return "stub-widget";
           },
+          execute() { window.__opts["before-interactive-callback"](); },
           reset() {},
         };
       `,
@@ -178,12 +214,15 @@ test("when Cloudflare wants a click, the widget shows in the result panel", asyn
     "This build carries no Turnstile site key",
   );
 
-  const before = await page.getByTestId("run").boundingBox();
-  await expect(page.getByTestId("antibot")).toBeVisible();
+  const input = page.getByLabel("Texto de entrada");
+  const before = await input.boundingBox();
+  await page.getByTestId("run").click();
+  await expect(
+    page.getByText("Cloudflare necesita comprobar que no eres un robot."),
+  ).toBeVisible();
+  // The box did not move: the block went in below the button.
+  expect((await input.boundingBox())!.y).toBe(before!.y);
   const run = await page.getByTestId("run").boundingBox();
-  // The button did not move: nothing was inserted above or beside it.
-  expect(run!.y).toBe(before!.y);
-  // And the widget is in the result column, to the right on a desktop.
   const widget = await page.getByTestId("antibot").boundingBox();
-  expect(widget!.x).toBeGreaterThan(run!.x + run!.width);
+  expect(widget!.y).toBeGreaterThanOrEqual(run!.y + run!.height);
 });
