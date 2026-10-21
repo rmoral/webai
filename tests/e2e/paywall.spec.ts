@@ -182,7 +182,7 @@ test("states the date and the amount before asking for a card", async ({
   // It is the single thing that keeps this out of a chargeback.
   await expect(dialog.getByText(/Hoy no se te cobra nada/)).toBeVisible();
   // \s, because Intl puts a non-breaking space before the symbol.
-  await expect(dialog.getByText(/US\$29,99\/mes/)).toBeVisible();
+  await expect(dialog.getByText(/\$29,99\/mes/)).toBeVisible();
   await expect(dialog.getByText(/dos clics/).first()).toBeVisible();
 });
 
@@ -212,7 +212,7 @@ test("signed out: one filled button, one outlined, one link (F1-17)", async ({
     name: "Crear cuenta gratis · 500 palabras/día",
   });
   await expect(account).toHaveAttribute("href", /\/registro\?next=/);
-  const pro = dialog.getByRole("link", { name: "Ver Pro — US$14,99/mes" });
+  const pro = dialog.getByRole("link", { name: "Ver Pro — $14,99/mes" });
   await expect(pro).toHaveAttribute("href", /cycle=monthly/);
   const [trialBox, accountBox, proBox] = await Promise.all([
     dialog

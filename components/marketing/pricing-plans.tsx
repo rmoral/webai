@@ -114,7 +114,7 @@ export function PricingPlans() {
     </Button>
   );
 
-  /** "Hoy US$0,00 · el {date} …", with the two figures in bold. */
+  /** "Hoy $0,00 · el {date} …", with the two figures in bold. */
   const trialNote = (key: "trialNoteYearly" | "trialNoteMonthly") =>
     t.rich(key, {
       zero: formatUSD(0, locale),

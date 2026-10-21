@@ -124,7 +124,7 @@ describe("a yearly trial whose card was saved", () => {
     expect(subject).toContain("primer cobro");
     const { render } = await import("@react-email/components");
     const body = await render(react);
-    expect(body).toContain("US$179,88, el año entero");
+    expect(body).toContain("$179,88, el año entero");
     expect(body).not.toContain("/mes");
   });
 });

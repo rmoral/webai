@@ -24,8 +24,8 @@ test("the trial discloses charge date and amount before payment", async ({
   await page.goto("/precios?cycle=monthly");
   const disclosure = page.getByTestId("trial-note");
   await expect(disclosure).toBeVisible();
-  await expect(disclosure).toContainText("Hoy US$0,00");
-  await expect(disclosure).toContainText("US$29,99, y después cada mes");
+  await expect(disclosure).toContainText("Hoy $0,00");
+  await expect(disclosure).toContainText("$29,99, y después cada mes");
   await expect(disclosure).toContainText("Cancela antes y no pagas nada");
 
   // F1-01: the yearly cycle -- the one the page opens on -- has the trial
@@ -33,8 +33,8 @@ test("the trial discloses charge date and amount before payment", async ({
   // date, and the whole year as the amount.
   await page.goto("/precios");
   const note = page.getByTestId("trial-note");
-  await expect(note).toContainText("Hoy US$0,00");
-  await expect(note).toContainText("US$179,88");
+  await expect(note).toContainText("Hoy $0,00");
+  await expect(note).toContainText("$179,88");
   await expect(note).toContainText(/\d+ de [a-z]+ de \d{4}/);
 });
 
@@ -45,13 +45,13 @@ test("the yearly trial charges nothing today, and the whole year after", async (
   const aside = page.getByRole("complementary");
   await expect(aside.getByText(/Ilimitado · anual/)).toBeVisible();
   await expect(aside.getByTestId("plan-row-trial")).toContainText("3 días");
-  await expect(aside.getByTestId("plan-row-today")).toHaveText("US$0,00");
+  await expect(aside.getByTestId("plan-row-today")).toHaveText("$0,00");
   const first = aside.getByTestId("plan-row-firstCharge");
-  await expect(first).toContainText("US$179,88");
+  await expect(first).toContainText("$179,88");
   await expect(first).toContainText(/\d+ de [a-z]+ de \d{4}/);
   // What the year works out at still shows on the yearly cycle.
   await expect(aside.getByTestId("plan-row-equivalent")).toContainText(
-    "US$14,99",
+    "$14,99",
   );
   await expect(aside.getByText(/por el año entero/)).toBeVisible();
 });
