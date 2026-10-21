@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -126,6 +126,38 @@ describe("no figure is written by hand", () => {
           }
         }
       }
+    }
+  });
+});
+
+describe("one price format (F1-09)", () => {
+  // "$14,99", never "US$14,99", "14,99 US$" or, in Spanish, "$14.99".
+  // formatUSD is the only place a figure gets its symbol, so a "US$" in the
+  // source or the copy is a second format coming back.
+  const SOURCES = ["app", "components", "lib", "emails", "messages"];
+
+  function files(dir: string): string[] {
+    return readdirSync(join(ROOT, dir), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory()
+        ? files(join(dir, e.name))
+        : /\.(tsx?|json|html)$/.test(e.name)
+          ? [join(dir, e.name)]
+          : [],
+    );
+  }
+
+  it("formats every figure as $14,99 ($14.99 in English)", () => {
+    expect(formatUSD(14.99)).toBe("$14,99");
+    expect(formatUSD(1234.56)).toBe("$1.234,56");
+    expect(formatUSD(14.99, "en")).toBe("$14.99");
+  });
+
+  it("writes US$ nowhere in the site", () => {
+    for (const file of SOURCES.flatMap(files)) {
+      expect(
+        readFileSync(join(ROOT, file), "utf8").includes("US$"),
+        `${file} contains "US$"`,
+      ).toBe(false);
     }
   });
 });

@@ -28,15 +28,15 @@ import { subscriptionParams } from "@/lib/billing/subscribe";
 import { auditStripe, describeCheckoutRejection } from "@/lib/billing/stripe";
 
 describe("formatUSD", () => {
-  it("leads with US$ and follows the locale's punctuation", () => {
-    expect(formatUSD(14.99)).toBe("US$14,99");
-    expect(formatUSD(0)).toBe("US$0,00");
-    expect(formatUSD(179.88, "en")).toBe("US$179.88");
+  it("leads with $ and follows the locale's punctuation", () => {
+    expect(formatUSD(14.99)).toBe("$14,99");
+    expect(formatUSD(0)).toBe("$0,00");
+    expect(formatUSD(179.88, "en")).toBe("$179.88");
   });
 
   it("groups four-digit amounts, which es-ES leaves alone by default", () => {
-    expect(formatUSD(1234.56)).toBe("US$1.234,56");
-    expect(formatUSD(1234.56, "en")).toBe("US$1,234.56");
+    expect(formatUSD(1234.56)).toBe("$1.234,56");
+    expect(formatUSD(1234.56, "en")).toBe("$1,234.56");
   });
 });
 
@@ -769,7 +769,7 @@ describe("planRows", () => {
       "trial",
       "today",
       "firstCharge",
-      // "Equivale a US$14,99/mes" stays on the yearly cycle.
+      // "Equivale a $14,99/mes" stays on the yearly cycle.
       "equivalent",
     ]);
     expect(row("unlimited", "yearly", "today")).toMatchObject({ amount: 0 });

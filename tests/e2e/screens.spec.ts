@@ -126,7 +126,7 @@ test("the trial is offered on both cycles of Ilimitado", async ({ page }) => {
     card.getByRole("link", { name: "Probar 3 días gratis" }),
   ).toHaveAttribute("href", /cycle=monthly/);
   const monthlyNote = card.getByTestId("trial-note");
-  await expect(monthlyNote).toContainText("Hoy US$0,00");
+  await expect(monthlyNote).toContainText("Hoy $0,00");
   await expect(monthlyNote).toContainText("29,99, y después cada mes");
 });
 
